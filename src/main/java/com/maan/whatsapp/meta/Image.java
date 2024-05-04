@@ -12,12 +12,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Nfm_reply {
+public class Image {
 	
-	private String response_json;
+	private String mime_type;
 	
-	private String body;
+	private String sha256;
 	
-	private String name;
+	private String id;
 	
+
 }

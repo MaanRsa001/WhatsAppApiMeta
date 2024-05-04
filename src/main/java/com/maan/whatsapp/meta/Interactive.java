@@ -17,6 +17,11 @@ public class Interactive {
 	private String type;
 	
 	private Nfm_reply nfm_reply;
-
+	
+	private ButtonReply button_reply;
+	
+	private ListReply list_reply;
+	
+	
 }
 

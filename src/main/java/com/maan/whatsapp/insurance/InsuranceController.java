@@ -50,4 +50,8 @@ public class InsuranceController {
 		return service.b2cGenerateQuote(req);
 	}
 	
+	@PostMapping("/renewal/quote")
+	public Object renewalQuote(@RequestBody B2CQuoteRequest req) throws WhatsAppValidationException {
+		return service.renewalQuote(req);
+	}
 }

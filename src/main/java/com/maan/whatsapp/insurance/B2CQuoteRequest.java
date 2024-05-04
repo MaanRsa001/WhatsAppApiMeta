@@ -14,6 +14,10 @@ public class B2CQuoteRequest {
 	
 	@JsonProperty("mobileNo")
 	private String mobileNo;
+	
+	@JsonProperty("RegistrationNo")
+	private String regisrationNo;
+	
 
 	@JsonProperty("TypeofInsurance")
 	private String typeofInsurance;

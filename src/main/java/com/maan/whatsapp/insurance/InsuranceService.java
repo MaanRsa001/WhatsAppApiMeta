@@ -13,5 +13,7 @@ public interface InsuranceService {
 	String buypolicy(String request) throws WhatsAppValidationException ;
 
 	Object b2cGenerateQuote(B2CQuoteRequest req) throws WhatsAppValidationException;
+
+	Object renewalQuote(B2CQuoteRequest req)throws WhatsAppValidationException ;
 	
 }

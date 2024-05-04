@@ -12,12 +12,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Nfm_reply {
+public class ListReply {
 	
-	private String response_json;
+	private String id;
 	
-	private String body;
+	private String title;
 	
-	private String name;
-	
+	private String description;
+
 }

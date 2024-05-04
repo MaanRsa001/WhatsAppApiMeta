@@ -1,7 +1,5 @@
 package com.maan.whatsapp.request.wati.getcont;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
@@ -19,8 +17,6 @@ import lombok.Setter;
 public class WebhookReq {
 
 	private String id;
-
-	private String created;
 	
 	private String whatsappMessageId;
 	
@@ -30,50 +26,31 @@ public class WebhookReq {
 
 	private String conversationId;
 
-	private String ticketId;
-
 	private String text;
 
 	private String type;
 
 	private String data;
 	
-	private String sourceId;
-	
-	private String sourceUrl;
-	
 	private String timestamp;
-
-	private String owner;
-
-	private String eventType;
-
-	private String statusString;
-
-	private String avatarUrl;
-
-	private String assignedId;
-
-	private String operatorName;
-
-	private String operatorEmail;
 
 	private String waId;
 
-	private List<MessageContact> messageContact;
-
 	private String senderName;
-	
-	private String listReply;
-	
-	private InteractiveButtonReply interactiveButtonReply;
 	
 	private String buttonReply;
 	
-	private String replyContextId;
+	private String phoneNumberId;
 	
-	private String sourceType;
-
+	private String mimeType;
+	
+	private String imageId;
+	
+	private String interactiveType;
+	
+	private String buttonTitle;
+	
+	private String displayMobileNo;
 }
 
 

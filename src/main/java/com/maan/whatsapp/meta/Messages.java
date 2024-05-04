@@ -28,5 +28,11 @@ public class Messages {
 	
 	private Interactive interactive;
 	
+	private Location location;
+	
+	private Image image;
+	
+	
+	
 }
 

@@ -92,7 +92,6 @@ public class Thread_User_Creation extends Thread {
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					
@@ -117,7 +116,7 @@ public class Thread_User_Creation extends Thread {
 					
 					
 					
-					log.info("MerchantReference : "+merchantRefNo+" || paymentStatus" +paymentStatus);
+					log.info("MerchantReference : "+merchantRefNo+" || paymentStatus : " +paymentStatus);
 
 					if("COMPLETED".equalsIgnoreCase(paymentStatus)) {
 						
@@ -128,9 +127,7 @@ public class Thread_User_Creation extends Thread {
 						log.info("TIRA POST API CALLING ....."+quoteNo);
 						response =service.callEwayApi(tiraPostApi, tiraPostReq);
 						log.info("TIRA POST API CALLING RESPONSE ....."+quoteNo);
-					
-						log.info("payment status || COMPLETED = "+paymentStatus+"");
-						
+											
 						String encodeQuoteNo =new String(Base64.getEncoder().encodeToString(quoteNo.getBytes()));
 						
 						String policyDocumentUrl =documentApi+encodeQuoteNo;

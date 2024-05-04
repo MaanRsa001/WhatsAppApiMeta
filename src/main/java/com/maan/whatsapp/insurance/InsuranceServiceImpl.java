@@ -396,7 +396,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				Map<String,String> motorUsageMap =new HashMap<>();
 				motorUsageMap.put("CompanyId", companyId);
 				motorUsageMap.put("BodyType", bodyTypeDesc);
-				motorUsageMap.put("MotorUsageName", "Private or Normal");
+				motorUsageMap.put("MotorUsageName", "");
 				
 				String motorUsageApi =this.vehUpdateApi;
 				Gson gson = new Gson();
@@ -2663,6 +2663,306 @@ public class InsuranceServiceImpl implements InsuranceService{
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public Object renewalQuote(B2CQuoteRequest req) throws WhatsAppValidationException {
+		Map<String,Object> flowRes =new HashMap<>();
+		List<Error> errorList = new ArrayList<>(2);
+			String response="";
+			Map<String,Object> tiraResult=null;
+			List<Map<String,Object>> errors=null;
+			try {
+				Map<String,Object> motorMap= new HashMap<String, Object>();
+				motorMap.put("CompanyId", "100002");
+				motorMap.put("RegistrationNo", req.getRegisrationNo());
+				
+				String motorReq =mapper.writeValueAsString(motorMap);
+				System.out.println(motorReq);
+				response =serviceImpl.callEwayApi(saveMotorApi, motorReq);
+				System.out.println(response);
+				
+			 tiraResult =mapper.readValue(response, Map.class);
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			String referenceno =tiraResult.get("request_reference_no")==null?"":tiraResult.get("request_reference_no").toString();
+			String customerName =tiraResult.get("customer_name")==null?"":tiraResult.get("customer_name").toString();
+			String sectionId =tiraResult.get("section_id")==null?"":tiraResult.get("section_id").toString();
+			String customerRefNo =tiraResult.get("customer_reference_no")==null?"":tiraResult.get("customer_reference_no").toString();
+			String productId =tiraResult.get("product_id")==null?"":tiraResult.get("product_id").toString();
+			String refNo ="";
+			String coverId ="";
+			Map<String,Object> viewCalcMap =new HashMap<String,Object>();
+			viewCalcMap.put("ProductId", productId);
+			viewCalcMap.put("RequestReferenceNo", referenceno);
+			List<Map<String,Object>> view=null;
+			Long premium=0L;
+			Long vatTax =0L;
+			Double vatPercentage=0D;
+			List<Map<String,Object>> coverList3=null;
+			try {
+				String viewCalcReq =mapper.writeValueAsString(viewCalcMap);
+				String viewCalc=this.viewCalcApi;
+				response =serviceImpl.callEwayApi(viewCalc, viewCalcReq);
+				System.out.println("PREMIUM RESPONSE ===>   "+response);
+				Map<String,Object> viewCalcRes =mapper.readValue(response, Map.class);
+				 view =viewCalcRes.get("Result")==null?null:
+					mapper.readValue(mapper.writeValueAsString(viewCalcRes.get("Result")), List.class);
+				 
+				 coverList3= view.get(0).get("CoverList")==null?null:
+					 mapper.readValue(mapper.writeValueAsString( view.get(0).get("CoverList")), List.class);
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+				refNo=view.get(0).get("RequestReferenceNo")==null?"":view.get(0).get("RequestReferenceNo").toString();
+						
+				String referalRemarks =coverList3.stream()
+						.filter(p -> p.get("CoverageType").equals("B"))
+						.map(p ->p.get("ReferalDescription")==null?"":p.get("ReferalDescription").toString())
+						.collect(Collectors.joining());
+				System.out.println(referalRemarks);
+			
+				if(StringUtils.isNotBlank(referalRemarks))	{
+					
+					errorList.add(new Error("*QUOTATION HAS BEEN REFERRAL ("+refNo+") || CONTACT ADMIN..!*", "ErrorMsg", "101"));
+				}
+				
+				if(errorList.size()>0) {
+					throw new WhatsAppValidationException(errorList);
+
+				}
+				
+				Map<String,Object> cover_list=coverList3.stream().filter(p ->p.get("CoverageType").equals("B"))
+				.map(p ->p).findFirst().orElse(null);
+				
+				coverId=cover_list.get("CoverId")==null?"":cover_list.get("CoverId").toString();
+				
+				Map<String,Object> tax =null;
+				try {
+				List<Map<String,Object>> taxList =cover_list.get("Taxes")==null?null: 
+								mapper.readValue(mapper.writeValueAsString(cover_list.get("Taxes")), List.class);
+				tax=taxList.stream().filter(p ->p.get("TaxId").equals("1")).findFirst().orElse(null);
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+				}
+				
+			premium =cover_list.get("PremiumExcluedTax")==null?0L:Double.valueOf(cover_list.get("PremiumExcluedTax").toString()).longValue();
+			vatTax =tax.get("TaxAmount")==null?0L:Double.valueOf(tax.get("TaxAmount").toString()).longValue();
+			vatPercentage =tax.get("TaxRate")==null?0L:Double.valueOf(tax.get("TaxRate").toString());
+			coverId=cover_list.get("CoverId")==null?"5":cover_list.get("CoverId").toString();
+				
+			
+			Long totalPremium =premium+vatTax;
+			
+			
+			// user creation block
+			
+			log.info("USER CREATION BLOCK START : "+new Date());
+									
+			Map<String,Object> userCreateMap =new HashMap<>();
+			userCreateMap.put("CompanyId", "100002");
+			userCreateMap.put("CustomerId", customerRefNo);
+			userCreateMap.put("ProductId", productId);
+			userCreateMap.put("ReferenceNo", refNo);
+			userCreateMap.put("UserMobileNo", req.getWhatsAppNo());
+			userCreateMap.put("UserMobileCode", req.getWhatsAppCode());
+			userCreateMap.put("AgencyCode", "10303");
+			
+			String userCreationReq =objectPrint.toJson(userCreateMap);
+			
+			log.info("User Creation Request || "+userCreationReq);
+			response =serviceImpl.callEwayApi(this.ewayLoginCreateApi, userCreationReq);
+			log.info("User Creation Response || "+response);
+
+			log.info("USER CREATION BLOCK END : "+new Date());
+
+			String exception="";
+			
+			log.info("BUYPOLICY  BLOCK START : "+new Date());
+			
+			// buypolicy block 
+			Map<String,Object> coversMap =new HashMap<String,Object>();
+			coversMap.put("CoverId", coverId);
+			coversMap.put("SubCoverId", "");
+			coversMap.put("SubCoverYn", "N");
+			List<Map<String,Object>> coversMapList =new ArrayList<Map<String,Object>>();
+			coversMapList.add(coversMap);
+			Map<String,Object> vehicleMap =new HashMap<String,Object>();
+			vehicleMap.put("SectionId", sectionId);
+			vehicleMap.put("Id", "1");
+			vehicleMap.put("Covers", coversMapList);
+			List<Map<String,Object>> vehiMapList =new ArrayList<Map<String,Object>>();
+			vehiMapList.add(vehicleMap);
+			Map<String,Object> buypolicyMap =new HashMap<String,Object>();
+			buypolicyMap.put("RequestReferenceNo", refNo);
+			buypolicyMap.put("CreatedBy", "guest");
+			buypolicyMap.put("ProductId", "5");
+			buypolicyMap.put("ManualReferralYn", "N");
+			buypolicyMap.put("Vehicles", vehiMapList);
+
+			String buypolicyReq =objectPrint.toJson(buypolicyMap);
+			
+			System.out.println("buypolicyReq" +buypolicyReq);
+			response =serviceImpl.callEwayApi(buyploicyApi, buypolicyReq);
+			System.out.println("buypolicyRes" +response);
+
+			Map<String,Object> buyPolicyResult =null;
+				try {	
+					Map<String,Object>	buyPolicyRes =mapper.readValue(response, Map.class);
+					buyPolicyResult =buyPolicyRes.get("Result")==null?null:
+						mapper.readValue(mapper.writeValueAsString(buyPolicyRes.get("Result")), Map.class);
+				}catch (Exception e) {
+					e.printStackTrace();
+					exception=e.getMessage();
+				}
+				
+
+				if(StringUtils.isNotBlank(exception)) {
+					errorList.add(new Error(exception, "ErrorMsg", "101"));
+				}
+				
+				if(errorList.size()>0) {
+					throw new WhatsAppValidationException(errorList);
+
+				}
+			
+				log.info("BUYPOLICY  BLOCK END : "+new Date());
+				
+				log.info("MAKE PAYMENT BLOCK START : "+new Date());
+				
+				// make payment
+				Map<String,Object> makePaymentMap = new HashMap<String,Object>();
+				makePaymentMap.put("CreatedBy", "guest");
+				makePaymentMap.put("EmiYn", "N");
+				makePaymentMap.put("InstallmentMonth", "");
+				makePaymentMap.put("InstallmentPeriod", "");
+				makePaymentMap.put("InsuranceId", "100002");
+				makePaymentMap.put("Premium", totalPremium);
+				makePaymentMap.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
+				makePaymentMap.put("Remarks", "None");
+				makePaymentMap.put("SubUserType", "B2C");
+				makePaymentMap.put("UserType", "Broker");
+					
+				String makePaymentReq =objectPrint.toJson(makePaymentMap);
+				
+				System.out.println("makePaymentReq" +makePaymentReq);
+
+				response =serviceImpl.callEwayApi(makePaymentApi, makePaymentReq);
+				System.out.println("makePaymentRes" +response);
+
+				Map<String,Object> makePaymentResult =null;
+					try {	
+						Map<String,Object>	makePaymentRes =mapper.readValue(response, Map.class);
+						makePaymentResult =makePaymentRes.get("Result")==null?null:
+							mapper.readValue(mapper.writeValueAsString(makePaymentRes.get("Result")), Map.class);
+					}catch (Exception e) {
+						e.printStackTrace();
+						exception=e.getMessage();
+					}
+				
+					
+					if(StringUtils.isNotBlank(exception)) {
+						errorList.add(new Error(exception, "ErrorMsg", "101"));
+					}
+					
+					if(errorList.size()>0) {
+						throw new WhatsAppValidationException(errorList);
+
+					}
+					
+					// insert payment 
+					
+					Map<String,Object> insertPayment =new HashMap<String,Object>();
+					insertPayment.put("CreatedBy", "guest");
+					insertPayment.put("InsuranceId", "100002");
+					insertPayment.put("EmiYn", "N");
+					insertPayment.put("Premium", totalPremium);
+					insertPayment.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
+					insertPayment.put("Remarks", "None");
+					insertPayment.put("PayeeName", customerName);
+					insertPayment.put("SubUserType", "B2C");
+					insertPayment.put("UserType", "Broker");
+					insertPayment.put("PaymentId", makePaymentResult.get("PaymentId"));
+					insertPayment.put("PaymentType", "4");
+					
+					String insertPaymentReq =objectPrint.toJson(insertPayment);
+					
+					System.out.println("insertPaymentReq" +insertPaymentReq);
+
+					response =serviceImpl.callEwayApi(insertPaymentApi, insertPaymentReq);
+					
+					System.out.println("insertPaymentRes" +response);
+					
+					Map<String,Object> insertPaymentResult =null;
+					try {	
+						Map<String,Object>	insertPaymentRes =mapper.readValue(response, Map.class);
+						insertPaymentResult =insertPaymentRes.get("Result")==null?null:
+							mapper.readValue(mapper.writeValueAsString(insertPaymentRes.get("Result")), Map.class);
+					}catch (Exception e) {
+						e.printStackTrace();
+						exception=e.getMessage();
+					}
+					
+					
+					if(StringUtils.isNotBlank(exception)) {
+						errorList.add(new Error(exception, "ErrorMsg", "101"));
+					}
+					
+					if(errorList.size()>0) {
+						throw new WhatsAppValidationException(errorList);
+
+					}
+				
+				String merchantRefNo =insertPaymentResult.get("MerchantReference")==null?"":
+						insertPaymentResult.get("MerchantReference").toString();
+				
+				String quoteNo =insertPaymentResult.get("QuoteNo")==null?"":
+					insertPaymentResult.get("QuoteNo").toString();
+				
+				log.info("RequestRefNo : "+refNo+" ||  MerchantReference : "+merchantRefNo+" || QuoteNo : "+quoteNo+" ");
+		
+				
+				log.info("MAKE PAYMENT BLOCK END : "+new Date());
+				
+				Map<String,String> paymentMap =new HashMap<>();
+				paymentMap.put("MerchantRefNo", merchantRefNo);
+				paymentMap.put("CompanyId", "100002");
+				paymentMap.put("WhatsappCode", req.getWhatsAppCode());
+				paymentMap.put("WhtsappNo", req.getWhatsAppNo());
+				paymentMap.put("QuoteNo", quoteNo);
+				
+				String payJson =objectPrint.toJson(paymentMap);
+				
+				String encodeReq =Base64.getEncoder().encodeToString(payJson.getBytes());
+				
+				String paymnetUrl =ewayMotorPaymentLink+encodeReq;
+				
+				System.out.println("PAYMENT LINK :" +paymnetUrl);
+			
+			
+			//whatsapp BOT Response		
+			Map<String,Object> map =new HashMap<>();
+			map.put("referenceno", tiraResult.get("request_reference_no")==null?"":tiraResult.get("request_reference_no").toString());
+			map.put("inceptiondate", tiraResult.get("inception_date")==null?"":tiraResult.get("inception_date").toString());
+			map.put("expirydate", tiraResult.get("expiry_date")==null?"":tiraResult.get("expiry_date").toString());
+			map.put("link", "www.google.com");
+			map.put("registration", tiraResult.get("registration_number")==null?"":tiraResult.get("registration_number").toString());
+			map.put("chassis", tiraResult.get("chassis_number")==null?"":tiraResult.get("chassis_number").toString());
+			map.put("suminsured", tiraResult.get("sum_insured")==null?"":tiraResult.get("sum_insured").toString());
+			map.put("usage",tiraResult.get("tira_motor_usage")==null?"":tiraResult.get("tira_motor_usage").toString());
+			map.put("vehtype", tiraResult.get("tira_body_type")==null?"":tiraResult.get("tira_body_type").toString());
+			map.put("color",tiraResult.get("color_desc")==null?"":tiraResult.get("color_desc").toString());
+			map.put("premium", premium);
+			map.put("vatamt",vatTax);
+			map.put("totalpremium",totalPremium);
+			map.put("vat", vatPercentage);
+			
+			flowRes.put("Response", map);
+			
+			return flowRes;
+					
 	}
 	
 	

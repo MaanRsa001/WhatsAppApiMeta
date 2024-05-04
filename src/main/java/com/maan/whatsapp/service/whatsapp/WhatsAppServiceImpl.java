@@ -401,7 +401,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 	
 							WAWatiReq res = WAWatiReq.builder()
 									.msg(cntRes.getMessage())
-									.sessionid(request.getTicketId())
+									.sessionid(request.getDisplayMobileNo())
 									.waid(String.valueOf(waid))
 									.wamsgId(request.getId())
 									.parentMsgId(cntRes.getParentMsgId())

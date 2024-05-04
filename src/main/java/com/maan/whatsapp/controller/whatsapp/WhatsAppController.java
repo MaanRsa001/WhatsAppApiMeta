@@ -80,6 +80,7 @@ public class WhatsAppController {
 	
 	@PostMapping("/webhook/meta")
 	public ResponseEntity<String> webhookRes(@RequestBody MetaWebhookRequest req,HttpServletResponse res) throws IOException {
+		WebhookReq webhookReq = new WebhookReq();
 		try {	
 		 if(req!=null) {
 			 
@@ -90,12 +91,61 @@ public class WhatsAppController {
 				log.info("meta/Webhook request ==>"+printReq.toJson(req));
 				
 				String from =msg.get(0).getFrom();
-									
-				sendFlowMessage(from);
+					
+				String type =msg.get(0).getType();
+				
+				webhookReq.setPhoneNumberId(req.getEntry().get(0).getChanges().get(0).getValue().getMetadata().getPhone_number_id());
+				webhookReq.setDisplayMobileNo(req.getEntry().get(0).getChanges().get(0).getValue().getMetadata().getDisplay_phone_number());
+				webhookReq.setType(type);
+				webhookReq.setWhatsappMessageId(msg.get(0).getId());
+				webhookReq.setWaId(from);
+				
+				if("text".equalsIgnoreCase(type)) {
+					webhookReq.setText(msg.get(0).getText().getBody());	
+					
+				}else if("location".equalsIgnoreCase(type)) {
+					
+					String locationUrl ="https://www.google.com/maps/search/"+msg.get(0).getLocation().getLatitude()+","+msg.get(0).getLocation().getLongitude()+"";
+					webhookReq.setData(locationUrl);
+					
+				}else if("image".equalsIgnoreCase(type)) {
+					
+					webhookReq.setImageId(msg.get(0).getImage().getId());
+					webhookReq.setData(msg.get(0).getImage().getSha256());
+					webhookReq.setMimeType(msg.get(0).getImage().getMime_type());
+					
+				}else if("interactive".equalsIgnoreCase(type)) {
+					
+					String inteType =msg.get(0).getInteractive().getType();
+					webhookReq.setInteractiveType(inteType);
+					
+					if("button_reply".equalsIgnoreCase(inteType)) {
+						
+						webhookReq.setText(msg.get(0).getInteractive().getButton_reply().getTitle());						
+						
+					}else if("nfm_reply".equalsIgnoreCase(inteType)) {
+						
+						webhookReq.setText(msg.get(0).getInteractive().getNfm_reply().getResponse_json());
+					
+					}else if("list_reply".equalsIgnoreCase(inteType)) {
+						webhookReq.setText(msg.get(0).getInteractive().getList_reply().getId());
+						webhookReq.setButtonTitle(msg.get(0).getInteractive().getList_reply().getTitle());
+					
+					}
+					
+					webhookReq.setType("text");
+				}
+				
+				webhookReq.setTimestamp(msg.get(0).getTimestamp());
+				webhookReq.setSenderName(req.getEntry().get(0).getChanges().get(0).getValue().getContacts().get(0).getProfile().getName());
+				
+				
+				log.info("Modfied Webhook request || "+printReq.toJson(webhookReq));
+				//sendFlowMessage(from);
 					
 				res.setStatus(200);
 
-				return new ResponseEntity<String>("",HttpStatus.OK);
+				return new ResponseEntity<String>(printReq.toJson(webhookReq),HttpStatus.OK);
 					
 				
 			}
