@@ -31,38 +31,55 @@ public class WAWatiReq {
 
 	private String sessionid;
 	
-	private String isButtonMsg;
-	
-	private String msgType;
-	
-	private String imageUrl;
-	
-	private String imageName;
-	
-	private String msgFooter;
-	
-	private String msgHeader;
-	
-	private String button1;
-	
-	private String button2;
-	
-	private String button3; 
-
-	@JsonProperty("ParentMsgID")
-	private String parentMsgId;
-
-	@JsonProperty("MessageID")
 	private String messageId;
 
-	@JsonProperty("UserReply")
+	private String messageType;
+	
+	private String button_1;
+	
+	private String button_2;
+	
+	private String button_3;
+	
+	private String flow_button_name;
+	
+	private String cta_button_name;
+	
+	private String flowId;
+	
+	private String flowToken;
+	
+	private String flowApi;
+	
+	private String flowApiAuth;
+	
+	private String flowApiMethod;
+	
+	private String location_button_name;
+	
+	private String flow_requestdata_yn;
+	
+	private String menu_button_name;
+	
+	private String parentMsgId;
+	
 	private String userReply;
-
-	@JsonProperty("IsJobYn")
+	
 	private String isjobyn;
-	
-	private String isTemplateMsg;
-	
 
-
+	private String apiData;
+	
+	private String interactiveYn;
+	
+	private String flow_index_screen_name;
+	
+	private String flow_api_request;
+	
+	private String isCtaDynamicYn;
+	
+	private String ctaButtonUrl;
+	
+	private String ctaButtonKeys;
+	
+	
 }

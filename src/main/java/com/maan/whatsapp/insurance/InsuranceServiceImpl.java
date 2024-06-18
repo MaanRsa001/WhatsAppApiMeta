@@ -1,12 +1,16 @@
 package com.maan.whatsapp.insurance;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.claimintimation.ClaimIntimationEntity;
@@ -42,6 +49,7 @@ import com.maan.whatsapp.response.error.Error;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Service
 @PropertySource("classpath:WebServiceUrl.properties")
@@ -113,7 +121,8 @@ public class InsuranceServiceImpl implements InsuranceService{
 	@Value("${turl.api}")						
 	private String turlApi;
 	
-	
+	@Value("${wh.stp.getallmotordetails}")						
+	private String wh_stp_getallmotordetails;
 	
 	
 	Logger log = LogManager.getLogger(getClass());
@@ -126,7 +135,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 		
 		List<Error> list = new ArrayList<>();
 
-		if("RegistrationNo".equalsIgnoreCase(req.getType())) {
+		/*if("RegistrationNo".equalsIgnoreCase(req.getType())) {
 			if(!req.getRegisrationNo().matches("[a-zA-Z0-9]*")){
 				list.add(new Error("Special character or Whitespace does not allow  for Registration no","ErrorMsg","500"));
 			}else if(StringUtils.isNotBlank(req.getRegisrationNo())) {
@@ -179,10 +188,11 @@ public class InsuranceServiceImpl implements InsuranceService{
 				list.add(new Error("Please choose valid claim type","ErrorMsg","500"));
 
 			}
-		}else if("AirtelPayNo".equalsIgnoreCase(req.getType())) {
+		}*/
+		 if("AirtelPayNo".equalsIgnoreCase(req.getType())) {
 			
-			if(!req.getAirtelPayNo().matches("0?[0-9]{9}")) {
-				list.add(new Error("Please enter valid mobile number which should be 9 digits","ErrorMsg","500"));
+			if(!req.getMobile_no().matches("0?[0-9]{9}")) {
+			//	list.add(new Error("Please enter valid mobile number which should be 9 digits","ErrorMsg","500"));
 			}
 		}
 		
@@ -194,10 +204,27 @@ public class InsuranceServiceImpl implements InsuranceService{
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Object generateQuote(InsuranceReq req) throws WhatsAppValidationException {
+	public Object generateQuote(InsuranceReq req) throws WhatsAppValidationException, JsonMappingException, JsonProcessingException {
 		    List<Error> errorList = new ArrayList<>();
 			String response ="";
 			String companyId ="100002";
+			
+			String decode_str =new String(Base64.getDecoder().decode(req.getQuote_form()));
+			
+			Map<String,Object> data = mapper.readValue(decode_str, Map.class);
+		
+			String idType =data.get("idType")==null?"":data.get("idType").toString();
+			String customerName =data.get("customerName")==null?"":data.get("customerName").toString();
+			String idNumber =data.get("idNumber")==null?"":data.get("idNumber").toString();
+			String sumInsured =data.get("sumInsured")==null?"0":data.get("sumInsured").toString();
+			String registrationNo =data.get("registrationNo")==null?"":data.get("registrationNo").toString();
+			String policyType =data.get("policyType")==null?"":data.get("policyType").toString();
+			String sectionName =data.get("sectionName")==null?"":data.get("sectionName").toString();
+			String bodyType =data.get("bodyType")==null?"":data.get("bodyType").toString();
+			String vehicleUsage =data.get("vehicleUsage")==null?"":data.get("vehicleUsage").toString();
+			String claimyn =data.get("claimyn")==null?"":data.get("claimyn").toString();
+			String customer_name ="";
+		
 			
 			//==============================TIRA CHECK BLOCK START=============================================
 			
@@ -205,7 +232,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 			Map<String,String> tiraMap = new HashMap<String,String>();
 			tiraMap.put("ReqChassisNumber", "");
-			tiraMap.put("ReqRegNumber", req.getRegisrationNo());
+			tiraMap.put("ReqRegNumber", registrationNo);
 			tiraMap.put("InsuranceId", companyId);
 			tiraMap.put("BranchCode", "02");
 			tiraMap.put("BrokerBranchCode", "01");
@@ -235,7 +262,17 @@ public class InsuranceServiceImpl implements InsuranceService{
 					Map<String,Object> strToMap1 =mapper.readValue(response, Map.class);
 					policyHolder =strToMap1.get("Result")==null?null:
 						mapper.readValue(mapper.writeValueAsString(strToMap1.get("Result")), Map.class);
+				
+					customer_name =policyHolder==null?"":policyHolder.get("Policyholdername")==null?""
+							:policyHolder.get("Policyholdername").toString();
+
+				}else {
+					
+					customer_name =policyHolder.get("Policyholdername")==null?"":policyHolder.get("Policyholdername").toString();
 				}
+				
+				customer_name =StringUtils.isBlank(customer_name)?customerName:customer_name;
+		
 			
 			}catch (Exception e) {
 				e.printStackTrace();
@@ -250,12 +287,12 @@ public class InsuranceServiceImpl implements InsuranceService{
 
 			log.info("CUSTOMER INSERT BLOCK START : "+new Date());
 			
-			String airtelPayno =req.getAirtelPayNo().startsWith("0")?req.getAirtelPayNo().substring(1):req.getAirtelPayNo();
+			String airtelPayno =req.getMobile_no();
 			String nida_date_of_birth ="";
 			Map<String,Object> customerMap= new HashMap<String,Object>();
 			String customerRefNo="";
-			if("2".equals(req.getIdType())) {
-				String nida_no =req.getIdNumber();
+			if("2".equals(idType)) {
+				String nida_no =idNumber;
 				if(nida_no.length()>7) {
 					String subStr =nida_no.substring(0, 8);
 					String year =subStr.substring(0,4);
@@ -268,22 +305,23 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 			if(policyHolder==null) {
 				String api =this.customerApi;
-				String id=req.getIdType();
 				customerMap.put("InsuranceId", "100002");
 				customerMap.put("BranchCode", "02");
 				customerMap.put("ProductId", "5");
 				customerMap.put("BrokerBranchCode", "1");
-				customerMap.put("ClientName", req.getCustomerName());
+				customerMap.put("ClientName", customer_name);
 				customerMap.put("CreatedBy", "guest");
 				customerMap.put("BusinessType", "1");
-				customerMap.put("IdNumber", req.getIdNumber());
+				customerMap.put("IdNumber", idNumber);
 				customerMap.put("Clientstatus", "Y");
 				customerMap.put("IdType", "");
 				customerMap.put("Title", "1");
 				customerMap.put("SaveOrSubmit", "Save");
 				customerMap.put("Status", "Y");
-				customerMap.put("MobileNo1",airtelPayno);
-				customerMap.put("MobileCode1", "255");
+				customerMap.put("MobileNo1",req.getWhatsAppNo());
+				customerMap.put("MobileCode1",  req.getWhatsAppCode());
+				customerMap.put("WhatsappCode", req.getWhatsAppCode());
+				customerMap.put("WhatsappNo", req.getWhatsAppNo());	
 				customerMap.put("PolicyHolderType", "1");
 				customerMap.put("Nationality", "TZA");
 				customerMap.put("Gender", "M");
@@ -298,8 +336,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				
 				
 				customerMap.put("IsTaxExempted", "N");
-				String idType ="1".equals(id)?"4":"2".equals(id)?"1":"3".equals(id)?"3":
-					"4".equals(id)?"6":"5".equals(id)?"2":"5";
+			
 				customerMap.put("PolicyHolderTypeid", idType);
 				
 				customerMap.put("DobOrRegDate", idType.equals("1")?nida_date_of_birth:"13/01/2004"); 	
@@ -318,22 +355,24 @@ public class InsuranceServiceImpl implements InsuranceService{
 			}else {
 				
 				String api =this.customerApi;
-				String id=req.getIdType();
+				String id=idType;
 				customerMap.put("InsuranceId", "100002");
 				customerMap.put("BranchCode", "02");
 				customerMap.put("ProductId", "5");
 				customerMap.put("BrokerBranchCode", "1");
-				customerMap.put("ClientName", req.getCustomerName());
+				customerMap.put("ClientName", customer_name);
 				customerMap.put("CreatedBy", "guest");
 				customerMap.put("BusinessType", "1");
-				customerMap.put("IdNumber", req.getIdNumber());
+				customerMap.put("IdNumber", idNumber);
 				customerMap.put("Clientstatus", "Y");
 				customerMap.put("IdType", "");
 				customerMap.put("Title", "1");
 				customerMap.put("SaveOrSubmit", "Save");
 				customerMap.put("Status", "Y");
-				customerMap.put("MobileNo1",airtelPayno);
-				customerMap.put("MobileCode1","255");
+				customerMap.put("MobileNo1",req.getWhatsAppNo());
+				customerMap.put("MobileCode1",  req.getWhatsAppCode());
+				customerMap.put("WhatsappCode", req.getWhatsAppCode());
+				customerMap.put("WhatsappNo", req.getWhatsAppNo());	
 				
 				customerMap.put("PolicyHolderType", "1");
 				customerMap.put("CityName", policyHolder.get("Districtname")==null?"Ilala":policyHolder.get("Districtname").toString());
@@ -347,8 +386,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				customerMap.put("Address1",policyHolder.get("Districtname")==null?"P.O.Box 9942,Dar es Salaam":policyHolder.get("Districtname").toString());
 				customerMap.put("IsTaxExempted", "N");
 				
-				String idType ="1".equals(id)?"4":"2".equals(id)?"1":"3".equals(id)?"3":
-					"4".equals(id)?"6":"5".equals(id)?"2":"5";
+				
 				customerMap.put("PolicyHolderTypeid", idType);
 				
 				customerMap.put("DobOrRegDate", idType.equals("1")?nida_date_of_birth:"13/01/2004"); 	
@@ -392,8 +430,8 @@ public class InsuranceServiceImpl implements InsuranceService{
 				
 				String policyStartDate =policyDate.get("PolicyStartDate");
 				String policyEndDate =policyDate.get("PolicyEndDate");
-				String bodyTypeDesc =tiraResult.get("VehicleType")==null?"":tiraResult.get("VehicleType").toString();
-				Map<String,String> motorUsageMap =new HashMap<>();
+				//String bodyTypeDesc =tiraResult.get("VehicleType")==null?"":tiraResult.get("VehicleType").toString();
+				/*Map<String,String> motorUsageMap =new HashMap<>();
 				motorUsageMap.put("CompanyId", companyId);
 				motorUsageMap.put("BodyType", bodyTypeDesc);
 				motorUsageMap.put("MotorUsageName", "");
@@ -423,7 +461,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				String sectionId =sectionMap.get("CODE")==null?"":sectionMap.get("CODE").toString();
 				Map<String,Object> usageMap =claimIntimationRepository.getClaimDeatils(req.getMobileNo(),"MOTOR_USAGE",req.getMotorUsageId());
 				String motorUsage =usageMap.get("CODE")==null?"":usageMap.get("CODE").toString();
-				
+				*/
 				
 				String saveMotorApi=this.saveMotorApi;
 				Map<String,Object> motorMap =new HashMap<>();
@@ -431,7 +469,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				motorMap.put("AcExecutiveId", ""); 
 				motorMap.put("CommissionType", ""); 
 				motorMap.put("CustomerCode", "620499");// login
-				motorMap.put("CustomerName", req.getCustomerName()); //login
+				motorMap.put("CustomerName", customer_name); //login
 				motorMap.put("BdmCode", "620499");  //login
 				motorMap.put("BrokerCode", "10303"); //login
 				motorMap.put("LoginId", "guest"); //login
@@ -439,7 +477,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				motorMap.put("ApplicationId", "1");
 				motorMap.put("CustomerReferenceNo",customerRefNo);
 				motorMap.put("RequestReferenceNo", "");
-				motorMap.put("Idnumber", req.getIdNumber());
+				motorMap.put("Idnumber",idNumber);
 				motorMap.put("VehicleId", "1");
 				motorMap.put("AcccessoriesSumInsured", "0");
 				motorMap.put("AccessoriesInformation", "");
@@ -458,38 +496,38 @@ public class InsuranceServiceImpl implements InsuranceService{
 				motorMap.put("Gpstrackinginstalled", "N");
 				motorMap.put("Grossweight", tiraResult.get("Grossweight")==null?"": tiraResult.get("Grossweight"));
 				motorMap.put("HoldInsurancePolicy", "N"); 
-				motorMap.put("Insurancetype", sectionId); //dub
+				motorMap.put("Insurancetype", Arrays.asList(sectionName)); //dub
 				motorMap.put("InsuranceId", "100002");
-				motorMap.put("InsuranceClass", req.getTypeofInsurance());//req.getPolicyType());
+				motorMap.put("InsuranceClass", policyType);//req.getPolicyType());
 				motorMap.put("InsurerSettlement", "");
 				motorMap.put("InterestedCompanyDetails", "");
 				motorMap.put("ManufactureYear", tiraResult.get("ManufactureYear")==null?"": tiraResult.get("ManufactureYear"));
 				motorMap.put("ModelNumber", "");
 				motorMap.put("MotorCategory", tiraResult.get("ReqMotorCategory")==null?"": tiraResult.get("ReqMotorCategory"));
-				motorMap.put("Motorusage", motorUsage); //doubt
-				motorMap.put("NcdYn", req.getClaimType().equalsIgnoreCase("yes")?"Y":"N");
+				motorMap.put("MotorusageId", vehicleUsage); //doubt
+				motorMap.put("NcdYn", claimyn.equalsIgnoreCase("1")?"Y":"N");
 				motorMap.put("NoOfClaims", "");
 				motorMap.put("NumberOfAxels", tiraResult.get("NumberOfAxels")==null?"": tiraResult.get("NumberOfAxels"));
 				motorMap.put("BranchCode", "02"); //login
 				motorMap.put("AgencyCode", "10303");//ogin
 				motorMap.put("ProductId", "5");
-				motorMap.put("SectionId", sectionId);//Insurancetype as same
-				motorMap.put("PolicyType", req.getTypeofInsurance());//req.getPolicyType());// policy yeare same as
+				motorMap.put("SectionId", sectionName);//Insurancetype as same
+				motorMap.put("PolicyType", policyType);//req.getPolicyType());// policy yeare same as
 				motorMap.put("RadioOrCasseteplayer", "");
 				motorMap.put("RegistrationYear", "99999");
-				motorMap.put("Registrationnumber", req.getRegisrationNo());
+				motorMap.put("Registrationnumber", registrationNo);
 				motorMap.put("RoofRack", "");
 				motorMap.put("SeatingCapacity", "");
 				motorMap.put("SourceType", "B2C Broker");
 				motorMap.put("SpotFogLamp", "");
 				motorMap.put("Stickerno", "");
-				motorMap.put("SumInsured", StringUtils.isBlank(req.getSumInsured())?"0":req.getSumInsured());
+				motorMap.put("SumInsured", sumInsured);
 				motorMap.put("Tareweight", tiraResult.get("Tareweight")==null?"": tiraResult.get("Tareweight"));
 				motorMap.put("TppdFreeLimit", "");
 				motorMap.put("TppdIncreaeLimit", "0");
 				motorMap.put("TrailerDetails", "");
 				motorMap.put("Vehcilemodel", tiraResult.get("Vehcilemodel")==null?"": tiraResult.get("Vehcilemodel"));
-				motorMap.put("VehicleType", bodyType);//tiraResult.get("VehicleType")==null?"": tiraResult.get("VehicleType"));
+				motorMap.put("VehicleTypeId", bodyType);//tiraResult.get("VehicleType")==null?"": tiraResult.get("VehicleType"));
 				motorMap.put("Vehiclemake", tiraResult.get("Vehiclemake")==null?"": tiraResult.get("Vehiclemake"));
 				motorMap.put("WindScreenSumInsured", "0");
 				motorMap.put("Windscreencoverrequired", "");
@@ -526,7 +564,10 @@ public class InsuranceServiceImpl implements InsuranceService{
 				motorMap.put("IsFinanceEndt", "");
 				motorMap.put("OrginalPolicyNo", "");
 				motorMap.put("Status", "Y");
-	
+				motorMap.put("VehicleType", "none");
+				motorMap.put("Motorusage", "none");
+
+				
 				Map<String,String> exchangeRateScenarioReq =new HashMap<>();
 				exchangeRateScenarioReq.put("OldAcccessoriesSumInsured", "");
 				exchangeRateScenarioReq.put("OldCurrency", "TZS");
@@ -548,10 +589,11 @@ public class InsuranceServiceImpl implements InsuranceService{
 					Map<String,Object> motorRes =mapper.readValue(response, Map.class);
 					errors =motorRes.get("ErrorMessage")==null?null:
 						mapper.readValue(mapper.writeValueAsString(motorRes.get("ErrorMessage")), List.class);
-					if(errors.isEmpty())
-						motorResult =motorRes.get("Result")==null?null:
-							mapper.readValue(mapper.writeValueAsString(motorRes.get("Result")), Map.class);
-					
+					if(errors.isEmpty()) {
+						List<Map<String,Object>> result_list =motorRes.get("Result")==null?null:
+							mapper.readValue(mapper.writeValueAsString(motorRes.get("Result")), List.class);
+						motorResult=result_list.get(0);
+					}				
 				}catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -718,7 +760,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 						List<Map<String,Object>> coversMapList =new ArrayList<Map<String,Object>>();
 						coversMapList.add(coversMap);
 						Map<String,Object> vehicleMap =new HashMap<String,Object>();
-						vehicleMap.put("SectionId", sectionId);
+						vehicleMap.put("SectionId", sectionName);
 						vehicleMap.put("Id", "1");
 						vehicleMap.put("Covers", coversMapList);
 						List<Map<String,Object>> vehiMapList =new ArrayList<Map<String,Object>>();
@@ -809,11 +851,15 @@ public class InsuranceServiceImpl implements InsuranceService{
 								insertPayment.put("Premium", totalPremium);
 								insertPayment.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
 								insertPayment.put("Remarks", "None");
-								insertPayment.put("PayeeName", req.getCustomerName());
+								insertPayment.put("PayeeName", customer_name);
 								insertPayment.put("SubUserType", "B2C");
 								insertPayment.put("UserType", "Broker");
 								insertPayment.put("PaymentId", makePaymentResult.get("PaymentId"));
 								insertPayment.put("PaymentType", "4");
+								insertPayment.put("WhatsappCode", req.getWhatsAppCode());
+								insertPayment.put("WhatsappNo", req.getWhatsAppNo());							
+								insertPayment.put("MobileCode1", req.getWhatsAppCode());
+								insertPayment.put("MobileNo1", airtelPayno);
 								
 								String insertPaymentReq =objectPrint.toJson(insertPayment);
 								
@@ -876,10 +922,10 @@ public class InsuranceServiceImpl implements InsuranceService{
 						map.put("referenceno", view.get(0).get("RequestReferenceNo")==null?"":view.get(0).get("RequestReferenceNo").toString());
 						map.put("inceptiondate", policyStartDate);
 						map.put("expirydate", policyEndDate);
-						map.put("link", paymnetUrl);
+						map.put("url", paymnetUrl);
 						map.put("registration", tiraResult.get("Registrationnumber")==null?"":tiraResult.get("Registrationnumber").toString());
 						map.put("chassis", tiraResult.get("Chassisnumber")==null?"":tiraResult.get("Chassisnumber").toString());
-						map.put("suminsured", StringUtils.isBlank(req.getSumInsured()) ?"N/A":req.getSumInsured());
+						map.put("suminsured", sumInsured);
 						map.put("usage",tiraResult.get("Motorusage")==null?"":tiraResult.get("Motorusage").toString());
 						map.put("vehtype", tiraResult.get("VehicleType")==null?"":tiraResult.get("VehicleType").toString());
 						map.put("color",tiraResult.get("Color")==null?"":tiraResult.get("Color").toString());
@@ -887,6 +933,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 						map.put("vatamt", vatTax.toString());
 						map.put("totalpremium", totalPremium.toString());
 						map.put("vat", String.valueOf(vatPercentage.longValue()));
+						map.put("customer_name", customerName);
 						return map;
 						
 					}else {
@@ -956,7 +1003,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 	}
 	
 	@SuppressWarnings("unchecked")
-	private Map<String,Object> checkRegistrationWithTira(String registerNo) {
+	public Map<String,Object> checkRegistrationWithTira(String registerNo) {
 		Map<String,Object> tiraResult =null;
 		try {
 			Map<String,String> tiraMap = new HashMap<String,String>();
@@ -1481,7 +1528,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				motorMap.put("Registrationnumber",registrationNo);
 				motorMap.put("RoofRack", "");
 				motorMap.put("SeatingCapacity", "");
-				motorMap.put("SourceType", "B2C Broker");
+				motorMap.put("SourceType", "b2c broker");
 				motorMap.put("SpotFogLamp", "");
 				motorMap.put("Stickerno", "");
 				motorMap.put("SumInsured", StringUtils.isBlank(req.getSumInsured())?"0":req.getSumInsured());
@@ -1771,7 +1818,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 							makePaymentMap.put("Premium", totalPremium);
 							makePaymentMap.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
 							makePaymentMap.put("Remarks", "None");
-							makePaymentMap.put("SubUserType", "B2C");
+							makePaymentMap.put("SubUserType", "b2c");
 							makePaymentMap.put("UserType", "Broker");
 								
 							String makePaymentReq =objectPrint.toJson(makePaymentMap);
@@ -1811,7 +1858,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 								insertPayment.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
 								insertPayment.put("Remarks", "None");
 								insertPayment.put("PayeeName", customerName);
-								insertPayment.put("SubUserType", "B2C");
+								insertPayment.put("SubUserType", "b2c");
 								insertPayment.put("UserType", "Broker");
 								insertPayment.put("PaymentId", makePaymentResult.get("PaymentId"));
 								insertPayment.put("PaymentType", "4");
@@ -2642,21 +2689,28 @@ public class InsuranceServiceImpl implements InsuranceService{
 	
 	public Map<String,Object> getWhatsappFlowMaster() {
 		try {
-			
+			String vehicleUsage ="[ {\"id\": \"1\", \"title\": \"--SELECT--\"}]";
+			String error_messages =" {\"id\": \"\", \"\": \"\"}";
 			String token =this.aysyncThread.getEwayToken();
 			
 			CompletableFuture<List<Map<String,String>>> policyholderId =aysyncThread.getPolicyHolderId(token);
 			CompletableFuture<List<Map<String,String>>> section =aysyncThread.getSection(token);
 			CompletableFuture<List<Map<String,String>>> bodyType =aysyncThread.getBodyType(token);
-			
-			CompletableFuture.allOf(policyholderId,section,bodyType).join();
+			CompletableFuture<List<Map<String,String>>> policyType =aysyncThread.policyType(token);
+			CompletableFuture.allOf(policyholderId,section,bodyType,policyType).join();
 			
 
 			Map<String,Object> data =new HashMap<String, Object>();
+			
 			data.put("sectionName", section.get());
 			data.put("bodyType", bodyType.get());
 			data.put("idType", policyholderId.get());
-		
+			data.put("policyType", policyType.get());
+			data.put("vehicleUsage",  mapper.readValue(vehicleUsage, List.class));
+			data.put("disble_suminsured_field",false);
+			data.put("isSuminsuredRequired",false);
+			data.put("error_messages",mapper.readValue(error_messages, Map.class));
+			
 			return data;
 			
 		}catch (Exception e) {
@@ -2965,5 +3019,460 @@ public class InsuranceServiceImpl implements InsuranceService{
 					
 	}
 	
+	@Override
+	public Object generateStpQuote(InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException {
+		String response ="";
+		List<Error> errorList = new ArrayList<>(2);
+		Map<String,Object> bot_response_data = new HashMap<String, Object>();
+
+		String stp_request =new String(Base64.getDecoder().decode(req.getQuote_form()));
+		
+		Map<String,Object> stp_req =mapper.readValue(stp_request, Map.class);
+		
+		String customer_name = stp_req.get("customer_name")==null?"":stp_req.get("customer_name").toString();
+		
+		Map<String,Object> customerCreationReq = new HashMap<String, Object>();
+		customerCreationReq.put("Address1",  stp_req.get("address")==null?"":stp_req.get("address").toString());
+		customerCreationReq.put("BranchCode", "01");
+		customerCreationReq.put("BrokerBranchCode", "1");
+		customerCreationReq.put("BusinessType", "1");
+		customerCreationReq.put("ClientName", customer_name);
+		customerCreationReq.put("Clientstatus", "Y");
+		customerCreationReq.put("CreatedBy",req.getWhatsAppCode() + req.getWhatsAppNo());
+		customerCreationReq.put("IdNumber", "8213571024");
+		customerCreationReq.put("IdType", "1");
+		customerCreationReq.put("InsuranceId", "100002");
+		customerCreationReq.put("IsTaxExempted", "N");
+		customerCreationReq.put("Language", "1");
+		customerCreationReq.put("MobileCode1",stp_req.get("country_code")==null?"":stp_req.get("country_code").toString());
+		customerCreationReq.put("MobileCodeDesc1",stp_req.get("country_code")==null?"":stp_req.get("country_code").toString());
+		customerCreationReq.put("MobileNo1", stp_req.get("mobile_no")==null?"":stp_req.get("mobile_no").toString());
+		customerCreationReq.put("Placeofbirth", stp_req.get("address")==null?"":stp_req.get("address").toString());
+		customerCreationReq.put("PolicyHolderType", "1");
+		customerCreationReq.put("PolicyHolderTypeid", "59");
+		customerCreationReq.put("PreferredNotification", "sms");
+		customerCreationReq.put("ProductId", "46");
+		customerCreationReq.put("RegionCode", stp_req.get("region")==null?"":stp_req.get("region").toString());
+		customerCreationReq.put("SaveOrSubmit", "Save");
+		customerCreationReq.put("Status", "Y");
+		customerCreationReq.put("ClientStatus", "Y");
+		customerCreationReq.put("Title", stp_req.get("title")==null?"":stp_req.get("title").toString());
+		customerCreationReq.put("Type", "b2c");
+		customerCreationReq.put("VrTinNo", "0");
+		customerCreationReq.put("WhatsappCode", stp_req.get("country_code")==null?"":stp_req.get("country_code").toString());
+		customerCreationReq.put("WhatsappDesc", stp_req.get("country_code")==null?"":stp_req.get("country_code").toString());
+		customerCreationReq.put("WhatsappNo", req.getWhatsAppNo());
+		customerCreationReq.put("CityName", "Ilala");
+		customerCreationReq.put("CityCode", "11000");
+		customerCreationReq.put("StateCode", "10000");
+		customerCreationReq.put("StateName", "Dar es Salaam");
+		customerCreationReq.put("Street", "7th FLOOR,Exim Tower,Ghana Avenue");
+		customerCreationReq.put("Address1", "P.O.Box 9942,Dar es Salaam");
+		customerCreationReq.put("Nationality", "TZA");
+
+		
+		String api_request =mapper.writeValueAsString(customerCreationReq);
+		
+		System.out.println("CUSTOMER : " +api_request);
+
+		String api =this.customerApi;
+		
+		String api_response =serviceImpl.callEwayApi(api, api_request);
+		
+		
+		System.out.println("CUSTOMER : " +api_response);
+		
+		Map<String,Object> cust =mapper.readValue(api_response, Map.class);
+		
+		Map<String,Object> cust_rsult =cust.get("Result")==null?null:
+			mapper.readValue(mapper.writeValueAsString(cust.get("Result")), Map.class);
+		
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		
+		Date system_date = new Date();
+		
+		String policy_start_date = sdf.format(system_date);
+		Calendar calendar = new GregorianCalendar();
+		calendar.setTime(system_date);
+		calendar.add(Calendar.DATE, 29);
+		
+		String policy_end_date = sdf.format(calendar.getTime());
+		
+		String customerRefNo = cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString();
+		
+		Map<String,Object> stpReq = new HashMap<String, Object>();
+		stpReq.put("AcccessoriesSumInsured", "0");
+		stpReq.put("AgencyCode", "10303");
+		stpReq.put("ApplicationId", "1");
+		stpReq.put("AxelDistance", "01");
+		stpReq.put("BdmCode", "620499");
+		stpReq.put("BranchCode", "02");
+		stpReq.put("BrokerBranchCode", "1");
+		stpReq.put("BrokerCode", "10303");
+		stpReq.put("Chassisnumber", stp_req.get("chassis_no")==null?"":stp_req.get("chassis_no").toString());
+		stpReq.put("CollateralYn", "N");
+		stpReq.put("Color", stp_req.get("vehicle_color")==null?"":stp_req.get("vehicle_color").toString());
+		stpReq.put("ColorDesc", "");
+		stpReq.put("CreatedBy","guest");
+		stpReq.put("CubicCapacity", "100");
+		stpReq.put("Currency", "TZS");
+		stpReq.put("CustomerCode", "620499");
+		stpReq.put("CustomerReferenceNo", cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString());
+		stpReq.put("DrivenByDesc", "Driver");
+		stpReq.put("EndorsementYn", "N");
+		stpReq.put("EngineCapacity",stp_req.get("engine_capacity")==null?"":stp_req.get("engine_capacity").toString());
+		stpReq.put("ExchangeRate", "1.0");
+		stpReq.put("FleetOwnerYn", "N");
+		stpReq.put("FuelType", stp_req.get("fuel_used")==null?"":stp_req.get("fuel_used").toString());
+		stpReq.put("FuelTypeDesc", "");
+		stpReq.put("Gpstrackinginstalled", "N");
+		stpReq.put("Grossweight", "100");
+		stpReq.put("HavePromoCode", "N");
+		stpReq.put("HoldInsurancePolicy", "N");
+		stpReq.put("Idnumber", "8213571024");
+		stpReq.put("InsuranceClass", "3");
+		stpReq.put("InsuranceId", "100002");
+		stpReq.put("Insurancetype", Arrays.asList("73"));
+		stpReq.put("LoginId", "guest");
+		stpReq.put("ManufactureYear", stp_req.get("manufacture_year")==null?"":stp_req.get("manufacture_year").toString());
+		stpReq.put("MotorCategory", "");
+		stpReq.put("MotorCategoryDesc", "Common Usage");
+		stpReq.put("Motorusage", "Common Usage");
+		stpReq.put("MotorusageId", stp_req.get("vehicle_usage")==null?"":stp_req.get("vehicle_usage").toString());
+		stpReq.put("Ncb", "0");
+		stpReq.put("NcdYn", "N");
+		stpReq.put("NoOfVehicles", "1");
+		stpReq.put("NumberOfAxels", "1");
+		stpReq.put("OwnerCategory", "");
+		stpReq.put("PolicyEndDate", policy_end_date);
+		stpReq.put("PolicyStartDate", policy_start_date);
+		stpReq.put("PolicyType", "1");
+		stpReq.put("ProductId", "46");
+		stpReq.put("RegistrationYear", "02/05/2006");
+		stpReq.put("Registrationnumber",  stp_req.get("chassis_no")==null?"":stp_req.get("chassis_no").toString());
+		stpReq.put("SavedFrom", "Owner");
+		stpReq.put("SearchFromApi", false);
+		stpReq.put("SeatingCapacity", stp_req.get("seating_capacity")==null?"":stp_req.get("seating_capacity").toString());
+		stpReq.put("SectionId", "73");
+		stpReq.put("SourceTypeId", "b2c");
+		stpReq.put("Status", "Y");
+		stpReq.put("SubUserType", "b2c");
+		stpReq.put("SumInsured", "0");
+		stpReq.put("Tareweight", "100");
+		stpReq.put("TppdIncreaeLimit", "0");
+		stpReq.put("UserType", "Broker");
+		stpReq.put("Vehcilemodel", "");
+		stpReq.put("VehcilemodelId", stp_req.get("model")==null?"":stp_req.get("model").toString());
+		stpReq.put("VehicleId", "1");
+		stpReq.put("VehicleModel", "");
+		stpReq.put("VehicleType", "PICK UP");
+		stpReq.put("VehicleTypeId", stp_req.get("body_type")==null?"":stp_req.get("body_type").toString());
+		stpReq.put("Vehiclemake", "");
+		stpReq.put("VehiclemakeId", stp_req.get("make")==null?"":stp_req.get("make").toString());
+		stpReq.put("WindScreenSumInsured", "0");
+		stpReq.put("periodOfInsurance", "30");
+		stpReq.put("EngineNumber", "");
+
+		 api_request =mapper.writeValueAsString(stpReq);
+		
+		log.info("STP Save Motor Request : "+api_request);
+
+		 api =this.saveMotorApi;
+		
+		 api_response =serviceImpl.callEwayApi(api, api_request);
+		
+		log.info("STP Save Motor response : "+api_response);
+		
+		Map<String,Object> motorResult=null;
+		List<Map<String,Object>> errors=null;
+		String refNo="";
+		Map<String,Object> motorRes =mapper.readValue(api_response, Map.class);
+		errors =motorRes.get("ErrorMessage")==null?null:
+			mapper.readValue(mapper.writeValueAsString(motorRes.get("ErrorMessage")), List.class);
+		if(errors.isEmpty()) {
+			List<Map<String,Object>> saveMotoResult =motorRes.get("Result")==null?null:
+				mapper.readValue(mapper.writeValueAsString(motorRes.get("Result")), List.class);
+
+			motorResult =saveMotoResult.get(0);
+			refNo=motorResult.get("RequestReferenceNo")==null?"":motorResult.get("RequestReferenceNo").toString();
+					
+			Map<String,Object> calcMap = new HashMap<>();
+			calcMap.put("InsuranceId", motorResult.get("InsuranceId")==null?"":motorResult.get("InsuranceId"));
+			calcMap.put("BranchCode", "01");
+			calcMap.put("AgencyCode", "10303");
+			calcMap.put("SectionId", motorResult.get("SectionId")==null?"":motorResult.get("SectionId"));
+			calcMap.put("ProductId", motorResult.get("ProductId")==null?"":motorResult.get("ProductId"));
+			calcMap.put("MSRefNo", motorResult.get("MSRefNo")==null?"":motorResult.get("MSRefNo"));
+			calcMap.put("VehicleId", motorResult.get("VehicleId")==null?"":motorResult.get("VehicleId"));
+			calcMap.put("CdRefNo", motorResult.get("CdRefNo")==null?"":motorResult.get("CdRefNo"));
+			calcMap.put("VdRefNo", motorResult.get("VdRefNo")==null?"":motorResult.get("VdRefNo"));
+			calcMap.put("CreatedBy", motorResult.get("CreatedBy")==null?"":motorResult.get("CreatedBy"));
+			calcMap.put("productId", motorResult.get("ProductId")==null?"":motorResult.get("ProductId"));
+			calcMap.put("sectionId", motorResult.get("SectionId")==null?"":motorResult.get("SectionId"));
+			calcMap.put("RequestReferenceNo", refNo);
+			calcMap.put("EffectiveDate",policy_start_date);
+			calcMap.put("PolicyEndDate", policy_end_date);
+			calcMap.put("CoverModification", "N");
+			
+			String calcApi =this.calcApi;
+			
+			List<Map<String,Object>> coverList =null;
+			Map<String,Object> calcRes=null;
+			try {
+				String calcReq =mapper.writeValueAsString(calcMap);
+				log.info("CALC Request || "+calcRes);
+				 api_response =serviceImpl.callEwayApi(calcApi, calcReq);
+				calcRes =mapper.readValue(api_response, Map.class);
+				coverList=calcRes.get("CoverList")==null?null:
+					mapper.readValue(mapper.writeValueAsString(calcRes.get("CoverList")), List.class);
+				log.info("CALC Response || "+mapper.writeValueAsString(coverList));
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			
+			Long premium=0L;
+			Long vatTax =0L;
+			Double vatPercentage=0D;
+			
+			
+			List<Map<String,Object>> tax = (List<Map<String,Object>>)coverList.get(0).get("Taxes");
+			
+					
+			premium =coverList.get(0).get("PremiumExcluedTax")==null?0L:Double.valueOf(coverList.get(0).get("PremiumExcluedTax").toString()).longValue();
+			vatTax =tax.get(0).get("TaxAmount")==null?0L:Double.valueOf(tax.get(0).get("TaxAmount").toString()).longValue();
+			vatPercentage =tax.get(0).get("TaxRate")==null?0L:Double.valueOf(tax.get(0).get("TaxRate").toString());
+					
+				
+			Long totalPremium =premium+vatTax;
+				
+			
+			// user creation block
+			
+			log.info("USER CREATION BLOCK START : "+new Date());
+									
+			Map<String,Object> userCreateMap =new HashMap<>();
+			userCreateMap.put("CompanyId", "100002");
+			userCreateMap.put("CustomerId", customerRefNo);
+			userCreateMap.put("ProductId", "46");
+			userCreateMap.put("ReferenceNo", refNo);
+			userCreateMap.put("UserMobileNo", req.getWhatsAppNo());
+			userCreateMap.put("UserMobileCode", req.getWhatsAppCode());
+			userCreateMap.put("AgencyCode", "10303");
+			
+			String userCreationReq =objectPrint.toJson(userCreateMap);
+			
+			log.info("User Creation Request || "+userCreationReq);
+			response =serviceImpl.callEwayApi(this.ewayLoginCreateApi, userCreationReq);
+			log.info("User Creation Response || "+response);
+
+			log.info("USER CREATION BLOCK END : "+new Date());
+
+			String exception="";
+			
+			log.info("BUYPOLICY  BLOCK START : "+new Date());
+			
+			// buypolicy block 
+			Map<String,Object> coversMap =new HashMap<String,Object>();
+			coversMap.put("CoverId", "5");
+			coversMap.put("SubCoverId", "");
+			coversMap.put("SubCoverYn", "N");
+			List<Map<String,Object>> coversMapList =new ArrayList<Map<String,Object>>();
+			coversMapList.add(coversMap);
+			Map<String,Object> vehicleMap =new HashMap<String,Object>();
+			vehicleMap.put("SectionId", "73");
+			vehicleMap.put("Id", "1");
+			vehicleMap.put("Covers", coversMapList);
+			List<Map<String,Object>> vehiMapList =new ArrayList<Map<String,Object>>();
+			vehiMapList.add(vehicleMap);
+			Map<String,Object> buypolicyMap =new HashMap<String,Object>();
+			buypolicyMap.put("RequestReferenceNo", refNo);
+			buypolicyMap.put("CreatedBy", "guest");
+			buypolicyMap.put("ProductId", "46");
+			buypolicyMap.put("ManualReferralYn", "N");
+			buypolicyMap.put("Vehicles", vehiMapList);
+
+			String buypolicyReq =objectPrint.toJson(buypolicyMap);
+			
+			System.out.println("buypolicyReq" +buypolicyReq);
+			response =serviceImpl.callEwayApi(buyploicyApi, buypolicyReq);
+			System.out.println("buypolicyRes" +response);
+
+			Map<String,Object> buyPolicyResult =null;
+				try {	
+					Map<String,Object>	buyPolicyRes =mapper.readValue(response, Map.class);
+					buyPolicyResult =buyPolicyRes.get("Result")==null?null:
+						mapper.readValue(mapper.writeValueAsString(buyPolicyRes.get("Result")), Map.class);
+				}catch (Exception e) {
+					e.printStackTrace();
+					exception=e.getMessage();
+				}
+				
+
+				if(StringUtils.isNotBlank(exception)) {
+					errorList.add(new Error(exception, "ErrorMsg", "101"));
+				}
+				
+				if(errorList.size()>0) {
+					throw new WhatsAppValidationException(errorList);
+
+				}
+			
+				log.info("BUYPOLICY  BLOCK END : "+new Date());
+				
+				log.info("MAKE PAYMENT BLOCK START : "+new Date());
+				
+				// make payment
+				Map<String,Object> makePaymentMap = new HashMap<String,Object>();
+				makePaymentMap.put("CreatedBy", "guest");
+				makePaymentMap.put("EmiYn", "N");
+				makePaymentMap.put("InstallmentMonth", "");
+				makePaymentMap.put("InstallmentPeriod", "");
+				makePaymentMap.put("InsuranceId", "100002");
+				makePaymentMap.put("Premium", totalPremium);
+				makePaymentMap.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
+				makePaymentMap.put("Remarks", "None");
+				makePaymentMap.put("SubUserType", "b2c");
+				makePaymentMap.put("UserType", "Broker");
+					
+				String makePaymentReq =objectPrint.toJson(makePaymentMap);
+				
+				System.out.println("makePaymentReq" +makePaymentReq);
+
+				response =serviceImpl.callEwayApi(makePaymentApi, makePaymentReq);
+				System.out.println("makePaymentRes" +response);
+
+				Map<String,Object> makePaymentResult =null;
+					try {	
+						Map<String,Object>	makePaymentRes =mapper.readValue(response, Map.class);
+						makePaymentResult =makePaymentRes.get("Result")==null?null:
+							mapper.readValue(mapper.writeValueAsString(makePaymentRes.get("Result")), Map.class);
+					}catch (Exception e) {
+						e.printStackTrace();
+						exception=e.getMessage();
+					}
+				
+					
+					if(StringUtils.isNotBlank(exception)) {
+						errorList.add(new Error(exception, "ErrorMsg", "101"));
+					}
+					
+					if(errorList.size()>0) {
+						throw new WhatsAppValidationException(errorList);
+
+					}
+					
+					// insert payment 
+					
+					Map<String,Object> insertPayment =new HashMap<String,Object>();
+					insertPayment.put("CreatedBy", "guest");
+					insertPayment.put("InsuranceId", "100002");
+					insertPayment.put("EmiYn", "N");
+					insertPayment.put("Premium", totalPremium);
+					insertPayment.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
+					insertPayment.put("Remarks", "None");
+					insertPayment.put("PayeeName", customer_name);
+					insertPayment.put("SubUserType", "b2c");
+					insertPayment.put("UserType", "Broker");
+					insertPayment.put("PaymentId", makePaymentResult.get("PaymentId"));
+					insertPayment.put("PaymentType", "4");
+					
+					String insertPaymentReq =objectPrint.toJson(insertPayment);
+					
+					System.out.println("insertPaymentReq" +insertPaymentReq);
+
+					response =serviceImpl.callEwayApi(insertPaymentApi, insertPaymentReq);
+					
+					System.out.println("insertPaymentRes" +response);
+					
+					Map<String,Object> insertPaymentResult =null;
+					try {	
+						Map<String,Object>	insertPaymentRes =mapper.readValue(response, Map.class);
+						insertPaymentResult =insertPaymentRes.get("Result")==null?null:
+							mapper.readValue(mapper.writeValueAsString(insertPaymentRes.get("Result")), Map.class);
+					}catch (Exception e) {
+						e.printStackTrace();
+						exception=e.getMessage();
+					}
+					
+					
+					if(StringUtils.isNotBlank(exception)) {
+						errorList.add(new Error(exception, "ErrorMsg", "101"));
+					}
+					
+					if(errorList.size()>0) {
+						throw new WhatsAppValidationException(errorList);
+
+					}
+				
+				String merchantRefNo =insertPaymentResult.get("MerchantReference")==null?"":
+						insertPaymentResult.get("MerchantReference").toString();
+				
+				String quoteNo =insertPaymentResult.get("QuoteNo")==null?"":
+					insertPaymentResult.get("QuoteNo").toString();
+				
+				log.info("RequestRefNo : "+refNo+" ||  MerchantReference : "+merchantRefNo+" || QuoteNo : "+quoteNo+" ");
+		
+				
+				log.info("MAKE PAYMENT BLOCK END : "+new Date());
+				
+				Map<String,String> paymentMap =new HashMap<>();
+				paymentMap.put("MerchantRefNo", merchantRefNo);
+				paymentMap.put("CompanyId", "100002");
+				paymentMap.put("WhatsappCode", req.getWhatsAppCode());
+				paymentMap.put("WhtsappNo", req.getWhatsAppNo());
+				paymentMap.put("QuoteNo", quoteNo);
+				
+				String payJson =objectPrint.toJson(paymentMap);
+				
+				String encodeReq =Base64.getEncoder().encodeToString(payJson.getBytes());
+				
+				String paymnetUrl =ewayMotorPaymentLink+encodeReq;
+				
+				System.out.println("PAYMENT LINK :" +paymnetUrl);
+				
+			//==============================BUYPOLICY BLOCK END=============================================
+				
+			
+			Map<String,Object> getMotorReq = new HashMap<String, Object>();
+			getMotorReq.put("RequestReferenceNo", refNo);
+				
+			api_request =mapper.writeValueAsString(getMotorReq);
+				
+			api =this.wh_stp_getallmotordetails;
+				
+			api_response =serviceImpl.callEwayApi(api, api_request);
+				
+			Map<String,Object> getMotorRes =mapper.readValue(api_response, Map.class);
+				 
+			List<Map<String,Object>> motor_res =getMotorRes.get("Result")==null?null:
+				mapper.readValue(mapper.writeValueAsString(getMotorRes.get("Result")), List.class);
+				 
+			System.out.println(motor_res);
+				
+			Map<String,Object> mot = motor_res.get(0);
+				
+			bot_response_data.put("registration", mot.get("Registrationnumber")==null?"N/A":mot.get("Registrationnumber"));
+			bot_response_data.put("usage", mot.get("MotorUsageDesc")==null?"N/A":mot.get("MotorUsageDesc"));
+			bot_response_data.put("vehtype", mot.get("VehicleTypeDesc")==null?"N/A":mot.get("VehicleTypeDesc"));
+			bot_response_data.put("color","N/A");
+			bot_response_data.put("premium", premium);
+			bot_response_data.put("url", paymnetUrl);
+			bot_response_data.put("vatamt", vatTax);
+			bot_response_data.put("vat", String.valueOf(vatPercentage.longValue()));
+			bot_response_data.put("totalpremium", totalPremium);
+			bot_response_data.put("inceptiondate", policy_start_date);
+			bot_response_data.put("expirydate",policy_end_date);
+			bot_response_data.put("referenceno", refNo);
+			bot_response_data.put("veh_model_desc", mot.get("VehcilemodelDesc")==null?"N/A":mot.get("VehcilemodelDesc"));
+			bot_response_data.put("veh_make_desc", mot.get("VehiclemakeDesc")==null?"N/A":mot.get("VehiclemakeDesc"));
+			bot_response_data.put("customer_name", customer_name);
+			
+		}
+		
+		return bot_response_data;
+		
+	}
 	
 }

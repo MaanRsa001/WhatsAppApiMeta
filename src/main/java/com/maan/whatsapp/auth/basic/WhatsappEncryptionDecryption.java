@@ -21,14 +21,27 @@ import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.meta.MetaEncryptDecryptRes;
+import com.maan.whatsapp.service.common.CommonService;
 
 @Component
+//@PropertySource("classpath:WebServiceUrl.properties")
 public class WhatsappEncryptionDecryption {
+		
+	
+	
+	private static String metaSecurityKeyFilePath ="";
+	
+	static {
+		CommonService cs = new CommonService();
+		metaSecurityKeyFilePath =cs.getwebserviceurlProperty().getProperty("metaSecurityKeyFilePath").trim();
+	}
 	
 	private static class DecryptionInfo {
         public final String clearPayload;
@@ -38,6 +51,8 @@ public class WhatsappEncryptionDecryption {
             this.clearPayload = clearPayload;
             this.clearAesKey = clearAesKey;
         }
+        
+        
     }
 
     private static final int AES_KEY_SIZE = 128;
@@ -51,7 +66,6 @@ public class WhatsappEncryptionDecryption {
             String response ="";
             int responseCode;
             try {
-
             	
             	org.json.JSONObject requestJson = new org.json.JSONObject(req);
     	 		 
@@ -86,7 +100,9 @@ public class WhatsappEncryptionDecryption {
     }
 
     private static DecryptionInfo decryptRequestPayload(byte[] encrypted_flow_data, byte[] encrypted_aes_key, byte[] initial_vector) throws Exception {
-        final RSAPrivateKey privateKey = readPrivateKeyFromPkcs8UnencryptedPem("C:\\Users\\MAANSAROVAR04\\privatenew.pem"); // for local
+
+    	
+    	RSAPrivateKey privateKey = readPrivateKeyFromPkcs8UnencryptedPem(metaSecurityKeyFilePath); // for local
     	
         //final RSAPrivateKey privateKey = readPrivateKeyFromPkcs8UnencryptedPem("/home/ewayportal/commonpath/privatenew.pem"); // for live and uat
 
@@ -167,7 +183,7 @@ public class WhatsappEncryptionDecryption {
     public static String metaEncryption(MetaEncryptDecryptRes req ) {
     	try {
     		
-    	     String response = encryptAndEncodeResponse(req.getEncrypted_flow_data(), req.getEncrypted_aes_key(), req.getInitial_vector());
+    	   String response = encryptAndEncodeResponse(req.getEncrypted_flow_data(), req.getEncrypted_aes_key(), req.getInitial_vector());
            return response;
     	}catch (Exception e) {
 			e.printStackTrace();

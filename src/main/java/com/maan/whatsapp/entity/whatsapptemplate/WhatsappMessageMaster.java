@@ -35,11 +35,5 @@ public class WhatsappMessageMaster {
 	private String remarks;
 	private String iscommonmsg;
 	private String commonmsgid;
-	private String is_buttonmsg;
-	private String image_url;
-	private String image_name;
-	private String msg_type;
-	private String msg_button1;
-	private String msg_button2;
-	private String msg_button3;
+	
 }

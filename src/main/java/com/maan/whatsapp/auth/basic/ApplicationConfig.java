@@ -52,7 +52,7 @@ public class ApplicationConfig extends WebSecurityConfigurerAdapter {
 				"/webui/**", "/h2-console/**", "/*.jsp", "/**/*.jsp", "/configuration/**", "/swagger-ui/**", "/ui/**",
 				"/swagger-resources/**", "/api-docs", "/api-docs/**", "/fonts/**", "/v2/api-docs/**", "/*.html",
 				"/**/*.html", "/*.jpg", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.gif", "/**/*.svg",
-				"/**/*.ico", "/**/*.ttf", "/**/*.woff", "/**/*.woff2", "/**/*.otf", "/whatsapp/webhook","/whatsapp/webhook/meta/**","/whatsapptemplate/document/download/**",
+				"/**/*.ico", "/**/*.ttf", "/**/*.woff", "/**/*.woff2", "/**/*.otf", "/whatsappflow/**","/whatsapp/webhook","/whatsapp/webhook/meta/**","/whatsapptemplate/document/download/**",
 "/insurance/buypolicy/**");
 	}
 

@@ -28,23 +28,25 @@ public class QWhatsappTemplateMaster extends EntityPathBase<WhatsappTemplateMast
 
     public final StringPath apiurl = createString("apiurl");
 
-    public final StringPath button1 = createString("button1");
+    public final StringPath button_1 = createString("button_1");
 
-    public final StringPath button2 = createString("button2");
+    public final StringPath button_1_sw = createString("button_1_sw");
 
-    public final StringPath button3 = createString("button3");
+    public final StringPath button_2 = createString("button_2");
 
-    public final StringPath buttonBody = createString("buttonBody");
+    public final StringPath button_2_sw = createString("button_2_sw");
 
-    public final StringPath buttonFooter = createString("buttonFooter");
+    public final StringPath button_3 = createString("button_3");
 
-    public final StringPath buttonHeader = createString("buttonHeader");
+    public final StringPath button_3_sw = createString("button_3_sw");
 
-    public final StringPath buttonSw1 = createString("buttonSw1");
+    public final StringPath ctaButtonKeys = createString("ctaButtonKeys");
 
-    public final StringPath buttonSw2 = createString("buttonSw2");
+    public final StringPath ctaButtonName = createString("ctaButtonName");
 
-    public final StringPath buttonSw3 = createString("buttonSw3");
+    public final StringPath ctaButtonNameSw = createString("ctaButtonNameSw");
+
+    public final StringPath ctaButtonUrl = createString("ctaButtonUrl");
 
     public final DateTimePath<java.util.Date> entry_date = createDateTime("entry_date", java.util.Date.class);
 
@@ -56,19 +58,35 @@ public class QWhatsappTemplateMaster extends EntityPathBase<WhatsappTemplateMast
 
     public final StringPath file_yn = createString("file_yn");
 
+    public final StringPath flow_index_screen_name = createString("flow_index_screen_name");
+
+    public final StringPath flowApi = createString("flowApi");
+
+    public final StringPath flowApiAuth = createString("flowApiAuth");
+
+    public final StringPath flowApiMethod = createString("flowApiMethod");
+
+    public final StringPath flowApiRequest = createString("flowApiRequest");
+
+    public final StringPath flowButtonName = createString("flowButtonName");
+
+    public final StringPath flowButtonNameSw = createString("flowButtonNameSw");
+
+    public final StringPath flowId = createString("flowId");
+
+    public final StringPath flowToken = createString("flowToken");
+
     public final StringPath formpageUrl = createString("formpageUrl");
 
     public final StringPath formpageYn = createString("formpageYn");
 
-    public final StringPath imageName = createString("imageName");
-
-    public final StringPath imageUrl = createString("imageUrl");
+    public final StringPath interactiveButtonYn = createString("interactiveButtonYn");
 
     public final StringPath isapicall = createString("isapicall");
 
-    public final StringPath isButtonMsg = createString("isButtonMsg");
-
     public final StringPath ischatyn = createString("ischatyn");
+
+    public final StringPath isCtaDynamicYn = createString("isCtaDynamicYn");
 
     public final StringPath isdocuplyn = createString("isdocuplyn");
 
@@ -84,9 +102,15 @@ public class QWhatsappTemplateMaster extends EntityPathBase<WhatsappTemplateMast
 
     public final StringPath isskipyn = createString("isskipyn");
 
-    public final StringPath isTemplateMsg = createString("isTemplateMsg");
-
     public final StringPath isvalidationapi = createString("isvalidationapi");
+
+    public final StringPath locButtonName = createString("locButtonName");
+
+    public final StringPath locButtonNameSw = createString("locButtonNameSw");
+
+    public final StringPath menu_button_name = createString("menu_button_name");
+
+    public final StringPath menu_button_name_sw = createString("menu_button_name_sw");
 
     public final StringPath message_content_ar = createString("message_content_ar");
 
@@ -96,9 +120,11 @@ public class QWhatsappTemplateMaster extends EntityPathBase<WhatsappTemplateMast
 
     public final StringPath message_regards_en = createString("message_regards_en");
 
-    public final StringPath msgType = createString("msgType");
+    public final StringPath messageType = createString("messageType");
 
     public final StringPath remarks = createString("remarks");
+
+    public final StringPath requestdataYn = createString("requestdataYn");
 
     public final StringPath requestkey = createString("requestkey");
 
@@ -117,8 +143,6 @@ public class QWhatsappTemplateMaster extends EntityPathBase<WhatsappTemplateMast
     public final StringPath stagesub_desc = createString("stagesub_desc");
 
     public final StringPath status = createString("status");
-
-    public final StringPath templateName = createString("templateName");
 
     public final QWhatsappTemplateMasterPK tempMasterPk;
 

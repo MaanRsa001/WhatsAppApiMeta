@@ -185,6 +185,17 @@ public class CommonService {
 		}
 		return dates;
 	}
+	
+	public String formatdatewithtime4(Date date) {
+		String dates = "";
+		try {
+			SimpleDateFormat sdf2 = new SimpleDateFormat("dd-MM-yyyy");
+			dates = sdf2.format(date);
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return dates;
+	}
 
 	public String formatdatewithtime4(String date) {
 		try {

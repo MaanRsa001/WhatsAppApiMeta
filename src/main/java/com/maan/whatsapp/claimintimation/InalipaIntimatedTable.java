@@ -23,7 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "inalipa_intimated_table")
+@Table(name = "whatsapp_inalipa_intimated_table")
 @DynamicInsert
 @DynamicUpdate
 public class InalipaIntimatedTable implements Serializable{

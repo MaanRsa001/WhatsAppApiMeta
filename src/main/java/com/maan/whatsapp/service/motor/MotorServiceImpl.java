@@ -3,8 +3,8 @@ package com.maan.whatsapp.service.motor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -25,12 +25,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
-import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.claimintimation.ClaimIntimationRepository;
-import com.maan.whatsapp.claimintimation.InalipaIntimatedTable;
 import com.maan.whatsapp.claimintimation.InalipaIntimatedTableRepository;
 import com.maan.whatsapp.entity.master.PreinspectionDataDetail;
 import com.maan.whatsapp.entity.master.QWhatsappTemplateMaster;
@@ -51,6 +49,7 @@ import com.maan.whatsapp.request.motor.ClaimDocReq;
 import com.maan.whatsapp.request.motor.ClaimDocumentReq;
 import com.maan.whatsapp.request.motor.DocInsertReq;
 import com.maan.whatsapp.request.motor.DocumentJsonFormatReq;
+import com.maan.whatsapp.request.whatsapp.WAWatiReq;
 import com.maan.whatsapp.response.error.Error;
 import com.maan.whatsapp.response.error.Errors;
 import com.maan.whatsapp.service.common.CommonService;
@@ -98,7 +97,6 @@ public class MotorServiceImpl implements MotorService {
 	
 	String claimWhatsappToken="";
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public String callMotorApi(WhatsappRequestDetail detail, String waid) {
 		try {
@@ -136,15 +134,61 @@ public class MotorServiceImpl implements MotorService {
 				String regardsAr = StringUtils.isBlank(waTempM.getMessage_regards_ar()) ? ""
 						: waTempM.getMessage_regards_ar().trim();
 
+				String isCtaDynamicYn =StringUtils.isBlank(waTempM.getIsCtaDynamicYn())?"N":waTempM.getIsCtaDynamicYn();
+				String ctaButtonUrl =StringUtils.isBlank(waTempM.getCtaButtonUrl())?"":waTempM.getCtaButtonUrl();
+				String ctaButtonkeys =StringUtils.isBlank(waTempM.getCtaButtonKeys())?"":waTempM.getCtaButtonKeys();
+			
 				String isValidationApi = StringUtils.isBlank(detail.getIsvalidationapi()) ? "N" : detail.getIsvalidationapi();
 				
 				String resStringAr =StringUtils.isBlank(waTempM.getResponseStringAr())?"":waTempM.getResponseStringAr();
 				
-				String errorResStrTZS =StringUtils.isBlank(waTempM.getErrorResponseStrTzs())?"":waTempM.getErrorResponseStrTzs();
+				//String errorResStrTZS =StringUtils.isBlank(waTempM.getErrorResponseStrTzs())?"":waTempM.getErrorResponseStrTzs();
 				
-				String templateMsg =StringUtils.isBlank(waTempM.getIsTemplateMsg())?"N":waTempM.getIsTemplateMsg();
-				String templateName=StringUtils.isBlank(waTempM.getTemplateName())?"N":waTempM.getTemplateName();
+				String interactive_button_yn=StringUtils.isBlank(waTempM.getInteractiveButtonYn())?"N":waTempM.getInteractiveButtonYn();
+		
+				String language =contactRepo.getLanguage(waid.toString());
 				
+				String msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+				
+				
+				String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+								flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+								location_button_name="",menu_button_name="",message_type="";
+				
+				if("Y".equalsIgnoreCase(interactive_button_yn)) {
+					message_type =waTempM.getMessageType();
+					if("FLOW".equalsIgnoreCase(message_type)) {
+						flow_token =StringUtils.isBlank(waTempM.getFlowToken())?"":waTempM.getFlowToken();
+						flowRequestDataYn =StringUtils.isBlank(waTempM.getRequestdataYn())?"N":waTempM.getRequestdataYn();
+						flow_api =StringUtils.isBlank(waTempM.getFlowApi())?"":waTempM.getFlowApi();
+						flow_api_auth =StringUtils.isBlank(waTempM.getFlowApiAuth())?"":waTempM.getFlowApiAuth();
+						flow_api_method =StringUtils.isBlank(waTempM.getFlowApiMethod())?"":waTempM.getFlowApiMethod();
+						flow_id =StringUtils.isBlank(waTempM.getFlowId())?"":waTempM.getFlowId();
+					}
+					
+					if("English".equalsIgnoreCase(language)) {
+						button1 =StringUtils.isBlank(waTempM.getButton_1())?"":waTempM.getButton_1();
+						button2 =StringUtils.isBlank(waTempM.getButton_2())?"":waTempM.getButton_2();
+						button3 =StringUtils.isBlank(waTempM.getButton_3())?"":waTempM.getButton_3();
+						flow_button_name =StringUtils.isBlank(waTempM.getFlowButtonName())?"":waTempM.getFlowButtonName();
+						cta_button_name =StringUtils.isBlank(waTempM.getCtaButtonName())?"":waTempM.getCtaButtonName();
+						location_button_name =StringUtils.isBlank(waTempM.getLocButtonName())?"":waTempM.getLocButtonName();
+						menu_button_name=StringUtils.isBlank(waTempM.getMenu_button_name())?"":waTempM.getMenu_button_name();
+					}else if("Swahili".equalsIgnoreCase(language)) {
+						button1 =StringUtils.isBlank(waTempM.getButton_1_sw())?"":waTempM.getButton_1_sw();
+						button2 =StringUtils.isBlank(waTempM.getButton_2_sw())?"":waTempM.getButton_2_sw();
+						button3 =StringUtils.isBlank(waTempM.getButton_3_sw())?"":waTempM.getButton_3_sw();
+						flow_button_name =StringUtils.isBlank(waTempM.getFlowButtonNameSw())?"":waTempM.getFlowButtonNameSw();
+						cta_button_name =StringUtils.isBlank(waTempM.getCtaButtonNameSw())?"":waTempM.getCtaButtonNameSw();
+						location_button_name =StringUtils.isBlank(waTempM.getLocButtonNameSw())?"":waTempM.getLocButtonNameSw();
+						menu_button_name=StringUtils.isBlank(waTempM.getMenu_button_name_sw())?"":waTempM.getMenu_button_name_sw();
+
+					}						
+				}
+				
+
+
+					
 				String request = "";
                    log.info("reqString ==>"+reqString +"reqDetList"+reqDetList);
 				//if(isValidationApi.equalsIgnoreCase("N")) {
@@ -165,41 +209,51 @@ public class MotorServiceImpl implements MotorService {
 
 				String code = map.get("Code") == null ? "" : String.valueOf(map.get("Code"));
 				
-				String language=contactRepo.getLanguage(waid);
 
 				if ((code.equals("200")||code.equals("201")) && isValidationApi.equalsIgnoreCase("N")) {
 
 					String apiResp = map.get("Response") == null ? "" : String.valueOf(map.get("Response"));
-
-					if (StringUtils.isNotBlank(apiResp)) {
+					
+					if("English".equalsIgnoreCase(language)) {
 						
-						if("N".equalsIgnoreCase(templateMsg)) {
-							
-							if("English".equalsIgnoreCase(language))
-								response = msgEn + "\\n" + setApiResponse(respString, apiResp) + "\\n" + regardsEn;
-							else if("Swahili".equalsIgnoreCase(language))
-								response = msgAr + "\\n" + setApiResponse(resStringAr, apiResp) + "\\n" + regardsAr;
-						}else if("Y".equalsIgnoreCase(templateMsg)) {
-							Map<String,Object> resultMap =objectMapper.readValue(apiResp, Map.class);
-							List<Map<String,Object>>listMap =resultMap.entrySet().stream().map(p ->{
-								Map<String,Object> obj =new HashMap<String,Object>();
-								obj.put("name", p.getKey());
-								obj.put("value", p.getValue().toString());
-								return obj;
-							}).collect(Collectors.toList());
-							Map<String,Object> receiversMap = new HashMap<String,Object>();
-							receiversMap.put("whatsappNumber", waid);
-							receiversMap.put("customParams", listMap);
-							List<Map<String,Object>> receiversMapList = new ArrayList<Map<String,Object>>();
-							receiversMapList.add(receiversMap);
-							Map<String,Object> tempReq =new HashMap<String,Object>();
-							tempReq.put("template_name", templateName);
-							tempReq.put("broadcast_name", "none");
-							tempReq.put("receivers", receiversMapList);
-							
-							response =new Gson().toJson(tempReq);
-						}
+						apiResp =setApiResponse(respString, apiResp);
+						
+						apiResp = msgEn + "\n" + apiResp + "\n" + regardsEn; 
+						
+					}else if("Swahili".equalsIgnoreCase(language)) {
+						
+						apiResp =setApiResponse(resStringAr, apiResp);
+						
+						apiResp = msgAr + "\n" + apiResp + "\n" + regardsAr; 
 					}
+					
+					WAWatiReq waRequest = WAWatiReq.builder()
+							.filepath("")
+							.msg(apiResp)
+							.waid(String.valueOf(waid))
+							.button_1(button1) 
+							.button_2(button2) 
+							.button_3(button3) 
+							.messageId(waTempM.getRemarks())
+							.flow_button_name(flow_button_name)
+							.flowApi(flow_api)
+							.flowId(flow_id)
+							.flowToken(flow_token)
+							.flowApiAuth(flow_api_auth)
+							.flowApiMethod(flow_api_method)
+							.flow_requestdata_yn(flowRequestDataYn)
+							.cta_button_name(cta_button_name)
+							.location_button_name(location_button_name)
+							.messageType(message_type)
+							.menu_button_name(menu_button_name)
+							.interactiveYn(interactive_button_yn)
+							.apiData(map.get("Response") == null ? "N" : String.valueOf(map.get("Response")))
+							.isCtaDynamicYn(isCtaDynamicYn)
+							.ctaButtonUrl(ctaButtonUrl)
+							.ctaButtonKeys(ctaButtonkeys)
+							.build();
+						
+					response = cs.reqPrint(waRequest);
 				
 				} else if (code.equals("403")) {
 
@@ -211,11 +265,39 @@ public class MotorServiceImpl implements MotorService {
 						if("English".equalsIgnoreCase(language))
 							response = setErrApiResponse(errResString, pojo);
 						else if("Swahili".equalsIgnoreCase(language))
-							response = setErrApiResponse(errResString, pojo);			
+							response = setErrApiResponse(errResString, pojo);	
+						
+						
+						WAWatiReq waRequest = WAWatiReq.builder()
+								.filepath("")
+								.msg(response)
+								.waid(String.valueOf(waid))
+								.button_1(button1) 
+								.button_2(button2) 
+								.button_3(button3) 
+								.messageId(waTempM.getRemarks())
+								.flow_button_name(flow_button_name)
+								.flowApi(flow_api)
+								.flowId(flow_id)
+								.flowToken(flow_token)
+								.flowApiAuth(flow_api_auth)
+								.flowApiMethod(flow_api_method)
+								.flow_requestdata_yn(flowRequestDataYn)
+								.cta_button_name(cta_button_name)
+								.location_button_name(location_button_name)
+								.messageType(message_type)
+								.menu_button_name(menu_button_name)
+								.interactiveYn(interactive_button_yn)
+								.apiData("N")
+								.isCtaDynamicYn(isCtaDynamicYn)
+								.ctaButtonUrl(ctaButtonUrl)
+								.ctaButtonKeys(ctaButtonkeys)
+								.build();
+						
+						response = cs.reqPrint(waRequest);
 						
 					}
-					detail.setIsTemplateMsg("N");
-					detailRepo.save(detail);
+					
 				}else if("Y".equalsIgnoreCase(isResSaveApi) || "Y".equalsIgnoreCase(isResMsg)) {
 					
 					response = map.get("Response") == null ? "" : String.valueOf(map.get("Response"));
@@ -544,23 +626,21 @@ public class MotorServiceImpl implements MotorService {
 			
 			requestStr = setApiRequest(reqDetList, reqDet.getRequeststring());
 						
-			String commonurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api");
+			String image_url = cs.getwebserviceurlProperty().getProperty("meta.get.image.api");
 			
-			String fileurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.getMedia");
+			String auth = cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
 
-			String auth = cs.getwebserviceurlProperty().getProperty("whatsapp.auth");
 
-			String url = commonurl + fileurl;
 	
-				OkHttpClient okhttp = new OkHttpClient.Builder()
+			OkHttpClient okhttp = new OkHttpClient.Builder()
 						.readTimeout(30, TimeUnit.SECONDS)
 						.build();
 				
-			url = url.replace("{data}", document);
-			url = url.trim();
+			image_url = image_url.replace("{IMAGE_ID}", document);
+			image_url = image_url.trim();
 		
 			Request request = new Request.Builder()
-					.url(url)
+					.url(image_url)
 					.addHeader("Authorization", auth)
 					.get()
 					.build();
@@ -568,12 +648,33 @@ public class MotorServiceImpl implements MotorService {
 			Response response = okhttp.newCall(request)
 					.execute();
 
-			InputStream is = response.body().byteStream();
+		
 			
-			byte[] bytess = IOUtils.toByteArray(is);
 			
-			 
-			String base_64=Base64Utils.encodeToString(bytess);
+			String imageRes =response.body().string();
+			
+			Map<String,Object> meta_image =objectMapper.readValue(imageRes, Map.class);
+						
+			String image =meta_image.get("url")==null?"":meta_image.get("url").toString();
+			String mime_type =meta_image.get("mime_type")==null?"":meta_image.get("mime_type").toString();
+
+			URL url = new URL(image);
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	        connection.setRequestMethod("GET");
+	        connection.setRequestProperty("Authorization", auth);
+	        
+			InputStream is = connection.getInputStream();
+			
+			byte [] byte_array =IOUtils.toByteArray(is);
+			
+			String base_64=Base64Utils.encodeToString(byte_array);
+			
+			//String file_path =cs.getwebserviceurlProperty().getProperty("meta.image.store.path");
+			//file_path =file_path+"_"+System.currentTimeMillis();
+			//File file = new File(file_path);
+
+			//FileUtils.copyToFile(is, file);
+			
 			
 			Map<String,Object> mapReq =objectMapper.readValue(requestStr, Map.class);
 			LinkedHashMap<String,Object> apiReq=new LinkedHashMap<String,Object>();
@@ -593,22 +694,17 @@ public class MotorServiceImpl implements MotorService {
 			list.add(listMap);
 			
 			apiReq.put("DocumentUploadDetails", list);
-			apiReq.put("file", "data:image/jpeg;base64,"+base_64);
-			String claimRefNo =mapReq.get("ClaimNo")==null?"":mapReq.get("ClaimNo").toString();
-			if("100015".equals(mapReq.get("InsId")) && StringUtils.isBlank(claimRefNo)) {
-				LocalDate accDate = LocalDate.parse(mapReq.get("AccidentDate").toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-				List<InalipaIntimatedTable> claimRef = inalipaintiRepo.getClaimUploadDetails(mapReq.get("mobileNo").toString(),accDate );
-				if(!CollectionUtils.isEmpty(claimRef))
-					apiReq.put("ClaimNo", claimRef.get(0).getClaimNo());
-			}else {
-				if(claimRefNo.contains("-")) {
-					log.info("Inside contains || ClaimRefNo : "+claimRefNo+"");
-					apiReq.put("ClaimNo", claimRefNo);
-				}else {
-					Map<String,Object> map=intimationRepository.getClaimDeatils(waid.toString(),"CLAIM_UPLOAD", claimRefNo);
-					apiReq.put("ClaimNo", map.get("CLAIM_REF_NO")==null?"":map.get("CLAIM_REF_NO"));
-				}
+			apiReq.put("file", "data:"+mime_type+";base64,"+base_64);
+			String claimRefNo =mapReq.get("claim_number")==null?"":mapReq.get("claim_number").toString();
+			Boolean encode_status = isBase64Encoded(claimRefNo);
+			
+			if(encode_status) {
+				claimRefNo =new String(Base64.getDecoder().decode(claimRefNo));
+				Map<String,Object> map =objectMapper.readValue(claimRefNo, Map.class);
+				claimRefNo = map.get("claim_no").toString();
 			}
+			
+			apiReq.put("ClaimNo", claimRefNo);
 			apiReq.put("ProductId", mapReq.get("ProductId")==null?"":mapReq.get("ProductId"));
 			String req =print.toJson(apiReq);
 			log.info("Upload Image Request "+req);
@@ -938,6 +1034,16 @@ public class MotorServiceImpl implements MotorService {
 		return tran_id;
 	}
 	
+	public static boolean isBase64Encoded(String str) {
+        try {
+            Base64.getDecoder().decode(str);
+            return true;
+        } catch (IllegalArgumentException e) {
+        	//e.printStackTrace();
+            return false;
+            
+        }
+    }
 
 	
 }

@@ -25,12 +25,6 @@ public class QWhatsappMessageMaster extends EntityPathBase<WhatsappMessageMaster
 
     public final DateTimePath<java.util.Date> entrydate = createDateTime("entrydate", java.util.Date.class);
 
-    public final StringPath image_name = createString("image_name");
-
-    public final StringPath image_url = createString("image_url");
-
-    public final StringPath is_buttonmsg = createString("is_buttonmsg");
-
     public final StringPath iscommonmsg = createString("iscommonmsg");
 
     public final StringPath messagedescar = createString("messagedescar");
@@ -38,14 +32,6 @@ public class QWhatsappMessageMaster extends EntityPathBase<WhatsappMessageMaster
     public final StringPath messagedescen = createString("messagedescen");
 
     public final StringPath messageid = createString("messageid");
-
-    public final StringPath msg_button1 = createString("msg_button1");
-
-    public final StringPath msg_button2 = createString("msg_button2");
-
-    public final StringPath msg_button3 = createString("msg_button3");
-
-    public final StringPath msg_type = createString("msg_type");
 
     public final StringPath remarks = createString("remarks");
 

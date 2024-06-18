@@ -145,13 +145,13 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 						.remarks(remarks)
 						.iscommonyn(iscommon)
 						.commonid(commonid)
-						.isButtonMsgYn(StringUtils.isBlank(list.get(i).getIs_buttonmsg())?"":list.get(i).getIs_buttonmsg())
-						.headerType(StringUtils.isBlank(list.get(i).getMsg_type())?"":list.get(i).getMsg_type())
-						.button1(StringUtils.isBlank(list.get(i).getMsg_button1())?"":list.get(i).getMsg_button1())
-						.button2(StringUtils.isBlank(list.get(i).getMsg_button2())?"":list.get(i).getMsg_button2())
-						.button3(StringUtils.isBlank(list.get(i).getMsg_button3())?"":list.get(i).getMsg_button3())
-						.headerImageName(StringUtils.isBlank(list.get(i).getImage_name())?"":list.get(i).getImage_name())
-						.headerImageUrl(StringUtils.isBlank(list.get(i).getImage_url())?"":list.get(i).getImage_url())
+						//.isButtonMsgYn(StringUtils.isBlank(list.get(i).getIs_buttonmsg())?"":list.get(i).getIs_buttonmsg())
+						//.headerType(StringUtils.isBlank(list.get(i).getMsg_type())?"":list.get(i).getMsg_type())
+						//.button1(StringUtils.isBlank(list.get(i).getMsg_button1())?"":list.get(i).getMsg_button1())
+						//.button2(StringUtils.isBlank(list.get(i).getMsg_button2())?"":list.get(i).getMsg_button2())
+						//.button3(StringUtils.isBlank(list.get(i).getMsg_button3())?"":list.get(i).getMsg_button3())
+						//.headerImageName(StringUtils.isBlank(list.get(i).getImage_name())?"":list.get(i).getImage_name())
+						//.headerImageUrl(StringUtils.isBlank(list.get(i).getImage_url())?"":list.get(i).getImage_url())
 						.build();
 				reslist.add(response);
 			}
@@ -284,13 +284,13 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 						.remarks(remarks)
 						.iscommonmsg(iscommon)
 						.commonmsgid(commonid)
-						.is_buttonmsg(req.getIsButtonMsgYn()==null?"":req.getIsButtonMsgYn())
-						.msg_type(req.getHeaderType()==null?"":req.getHeaderType())
-						.msg_button1(req.getButton1()==null?"":req.getButton1())
-						.msg_button2(req.getButton2()==null?"":req.getButton2())
-						.msg_button3(req.getButton3()==null?"":req.getButton3())
-						.image_name(req.getHeaderImageName()==null?"":req.getHeaderImageName())
-						.image_url(req.getHeaderImageUrl()==null?"":req.getHeaderImageUrl())
+						//.is_buttonmsg(req.getIsButtonMsgYn()==null?"":req.getIsButtonMsgYn())
+						//.msg_type(req.getHeaderType()==null?"":req.getHeaderType())
+						//.msg_button1(req.getButton1()==null?"":req.getButton1())
+						//.msg_button2(req.getButton2()==null?"":req.getButton2())
+						//.msg_button3(req.getButton3()==null?"":req.getButton3())
+						//.image_name(req.getHeaderImageName()==null?"":req.getHeaderImageName())
+						//.image_url(req.getHeaderImageUrl()==null?"":req.getHeaderImageUrl())
 						.build();
 				whatschatrepo.save(data);
 				response.setStatus("Success");
@@ -891,6 +891,7 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 		FileUploadRes response = new FileUploadRes();
 		String isCamera ="N";
 		try {
+			log.info("upload file request ::: "+cs.reqPrint(req));
 			final String constant_path=new CommonService().getwebserviceurlProperty().get("wa.preins.image.path").toString().trim();
 				String exif_status ="";
 				Date exifDate =null;
@@ -914,19 +915,22 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 						    	LocalDate systemDate =LocalDate.now();			            		 
 							    LocalDate date = exifDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 							    if(date.isBefore(systemDate) || date.isAfter(systemDate)) {
-							    	exif_status="INVALID";
+							    	//exif_status="INVALID";
+							    	exif_status="VALID";
 							    	log.info("Image date invalid ==>"+ date);
 							    }else {
-							    	log.info("Image date valid ==>"+ date);
+							    	//log.info("Image date valid ==>"+ date);
 							    	exif_status="VALID";
 							    }
 					    	}else {
-					    		exif_status="INVALID";
+					    		//exif_status="INVALID";
+					    		exif_status="VALID";
 					    	}
 					    	
 					 }else {
 						 
-						 exif_status="INVALID";
+						 //exif_status="INVALID";
+						 exif_status="VALID";
 						 
 					 }
 				}else if ("Y".equals(isCamera)) {

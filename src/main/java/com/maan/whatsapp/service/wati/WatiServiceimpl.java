@@ -2,10 +2,13 @@ package com.maan.whatsapp.service.wati;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -475,11 +478,9 @@ public class WatiServiceimpl implements WatiService {
 	public WAWatiReq sendSessMsg(WAMessageMaster wamsgM, Long waid) {
 		try {
 
-			String commonurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api");
-			String msgurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.sendSessionMessage");
-			String buttonMsgUrl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
-
-			String auth = cs.getwebserviceurlProperty().getProperty("whatsapp.auth");
+			String url = cs.getwebserviceurlProperty().getProperty("meta.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
 
 			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
 
@@ -487,48 +488,74 @@ public class WatiServiceimpl implements WatiService {
 			
 			String msgEn = StringUtils.isBlank(wamsgM.getMessagedescen()) ? "" : wamsgM.getMessagedescen();
 			String msgAr = StringUtils.isBlank(wamsgM.getMessagedescar()) ? "" : wamsgM.getMessagedescar();
-			String isButtonMsg=StringUtils.isBlank(wamsgM.getIsButtonMsg())?"N":wamsgM.getIsButtonMsg();
-			
-			
+			String interactive_button_yn=StringUtils.isBlank(wamsgM.getInteractiveButtonYn())?"N":wamsgM.getInteractiveButtonYn();
 			String language =contactRepo.getLanguage(waid.toString());
 			String msg ="";
-			if("English".equalsIgnoreCase(language))
-				msg =msgEn;
-			else if("Swahili".equalsIgnoreCase(language))
-				msg =msgAr;
 			
-			String button1 ="",button2="",button3="";
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
 			
-			if("Y".equalsIgnoreCase(isButtonMsg)) {
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =wamsgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(wamsgM.getFlowToken())?"":wamsgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(wamsgM.getRequestdataYn())?"N":wamsgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(wamsgM.getFlowApi())?"":wamsgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(wamsgM.getFlowApiAuth())?"":wamsgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(wamsgM.getFlowApiMethod())?"":wamsgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(wamsgM.getFlowId())?"":wamsgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(wamsgM.getFlow_index_screen_name())?"":wamsgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(wamsgM.getFlowApiRequest())?"":wamsgM.getFlowApiRequest();
+				}
+				
 				if("English".equalsIgnoreCase(language)) {
-					button1=wamsgM.getMsgButton1();
-					button2=StringUtils.isBlank(wamsgM.getMsgButton2())?"":wamsgM.getMsgButton2();
-					button3=StringUtils.isBlank(wamsgM.getMsgButton3())?"":wamsgM.getMsgButton3();
+					button1 =StringUtils.isBlank(wamsgM.getButton_1())?"":wamsgM.getButton_1();
+					button2 =StringUtils.isBlank(wamsgM.getButton_2())?"":wamsgM.getButton_2();
+					button3 =StringUtils.isBlank(wamsgM.getButton_3())?"":wamsgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(wamsgM.getFlowButtonName())?"":wamsgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(wamsgM.getCtaButtonName())?"":wamsgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(wamsgM.getLocButtonName())?"":wamsgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(wamsgM.getMenu_button_name())?"":wamsgM.getMenu_button_name();
 				}else if("Swahili".equalsIgnoreCase(language)) {
-					button1=wamsgM.getMsgButtonSW1();
-					button2=StringUtils.isBlank(wamsgM.getMsgButtonSw2())?"":wamsgM.getMsgButtonSw2();
-					button3=StringUtils.isBlank(wamsgM.getMsgButtonSw3())?"":wamsgM.getMsgButtonSw3();
+					button1 =StringUtils.isBlank(wamsgM.getButton_1_sw())?"":wamsgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(wamsgM.getButton_2_sw())?"":wamsgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(wamsgM.getButton_3_sw())?"":wamsgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(wamsgM.getFlowButtonNameSw())?"":wamsgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(wamsgM.getCtaButtonNameSw())?"":wamsgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(wamsgM.getLocButtonNameSw())?"":wamsgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(wamsgM.getMenu_button_name_sw())?"":wamsgM.getMenu_button_name_sw();
+
 				}						
 			}
 			WAWatiReq waReq = WAWatiReq.builder()
 					.filepath("")
 					.msg(msg)
+					.interactiveYn(interactive_button_yn)
 					.waid(String.valueOf(waid))
-					.isButtonMsg(isButtonMsg)
-					.imageUrl(StringUtils.isBlank(wamsgM.getImageUrl())?"":wamsgM.getImageUrl())
-					.imageName(StringUtils.isBlank(wamsgM.getImageName())?"":wamsgM.getImageName())
-					.button1(button1) 
-					.button2(button2) 
-					.button3(button3) 
-					.msgType(StringUtils.isBlank(wamsgM.getMsgType())?"":wamsgM.getMsgType())
-					.isTemplateMsg("N")
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(wamsgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
 					.build();
 
-			String url="";
-			if("Y".equalsIgnoreCase(isButtonMsg))
-				url = commonurl + buttonMsgUrl;
-			else
-				url = commonurl + msgurl;
 			
 			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
 
@@ -544,22 +571,19 @@ public class WatiServiceimpl implements WatiService {
 		try {
 			log.info("storeWAFile--> wafile: " + wafile);
 
-			String commonurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api");
-			String fileurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.getMedia");
-
-			String auth = cs.getwebserviceurlProperty().getProperty("whatsapp.auth");
-
-			String url = commonurl + fileurl;
-
-			url = url.replace("{data}", wafile);
-			url = url.trim();
-
+			String image_url = cs.getwebserviceurlProperty().getProperty("meta.get.image.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
+	
 			OkHttpClient okhttp = new OkHttpClient.Builder()
-					.readTimeout(30, TimeUnit.SECONDS)
-					.build();
-
+						.readTimeout(30, TimeUnit.SECONDS)
+						.build();
+				
+			image_url = image_url.replace("{IMAGE_ID}", wafile);
+			image_url = image_url.trim();
+		
 			Request request = new Request.Builder()
-					.url(url)
+					.url(image_url)
 					.addHeader("Authorization", auth)
 					.get()
 					.build();
@@ -567,15 +591,29 @@ public class WatiServiceimpl implements WatiService {
 			Response response = okhttp.newCall(request)
 					.execute();
 
-			InputStream is = response.body().byteStream();
+			String imageRes =response.body().string();
+			
+			Map<String,Object> meta_image =objectMapper.readValue(imageRes, Map.class);
+						
+			String image =meta_image.get("url")==null?"":meta_image.get("url").toString();
+			
+			String mime_type =meta_image.get("mime_type")==null?"":meta_image.get("mime_type").toString().split("/")[1];
+			
+			URL url = new URL(image);
+	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+	        connection.setRequestMethod("GET");
+	        connection.setRequestProperty("Authorization", auth);
+	        
+			InputStream is = connection.getInputStream();
+			
 			
 			String path = cs.getwebserviceurlProperty().getProperty("wa.preins.image.path");
 
-			String date = cs.formatdatewithtime3(new Date());
-			String fileName = FilenameUtils.getBaseName(wafile);
-			String extension = FilenameUtils.getExtension(wafile);
-			
-			String name = fileName + "_" + date + "." + extension;
+			String date = cs.formatdatewithtime4(new Date());
+			//String fileName = FilenameUtils.getBaseName(wafile);
+			//String extension = FilenameUtils.getExtension(wafile);
+			 
+			String name =date +"_"+ System.currentTimeMillis() + "." + mime_type.trim();
 			path = path + name;
 
 			log.info("storeWAFile--> path: " + path);

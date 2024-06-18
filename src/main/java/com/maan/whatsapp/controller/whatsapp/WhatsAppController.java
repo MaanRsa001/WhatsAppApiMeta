@@ -1,6 +1,7 @@
 package com.maan.whatsapp.controller.whatsapp;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class WhatsAppController {
 				}else if("image".equalsIgnoreCase(type)) {
 					
 					webhookReq.setImageId(msg.get(0).getImage().getId());
-					webhookReq.setData(msg.get(0).getImage().getSha256());
+					webhookReq.setData(msg.get(0).getImage().getId());
 					webhookReq.setMimeType(msg.get(0).getImage().getMime_type());
 					
 				}else if("interactive".equalsIgnoreCase(type)) {
@@ -125,7 +126,11 @@ public class WhatsAppController {
 						
 					}else if("nfm_reply".equalsIgnoreCase(inteType)) {
 						
-						webhookReq.setText(msg.get(0).getInteractive().getNfm_reply().getResponse_json());
+						String str_json = msg.get(0).getInteractive().getNfm_reply().getResponse_json();
+						//Map<String,Object> map_json =mapper.readValue(str_json, Map.class);
+						//String json_to_str =printReq.toJson(map_json);
+						String encode_str =Base64.getEncoder().encodeToString(str_json.getBytes());
+						webhookReq.setText(encode_str);
 					
 					}else if("list_reply".equalsIgnoreCase(inteType)) {
 						webhookReq.setText(msg.get(0).getInteractive().getList_reply().getId());
@@ -141,11 +146,12 @@ public class WhatsAppController {
 				
 				
 				log.info("Modfied Webhook request || "+printReq.toJson(webhookReq));
-				//sendFlowMessage(from);
+				
+				whatsappSer.webhookRes(webhookReq);
 					
 				res.setStatus(200);
 
-				return new ResponseEntity<String>(printReq.toJson(webhookReq),HttpStatus.OK);
+				return new ResponseEntity<String>("",HttpStatus.OK);
 					
 				
 			}
@@ -154,7 +160,6 @@ public class WhatsAppController {
 		}catch (Exception e) {
 			e.printStackTrace();
 			res.setStatus(200);
-			return new ResponseEntity<String>("",HttpStatus.OK);
 		}
 		res.setStatus(200);
 		return new ResponseEntity<String>("",HttpStatus.OK);

@@ -5,12 +5,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -19,34 +19,25 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpStatusCodeException;
-import org.w3c.dom.stylesheets.MediaList;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.entity.master.QWhatsappTemplateMaster;
 import com.maan.whatsapp.entity.master.QWhatsappTemplateMasterPK;
-import com.maan.whatsapp.entity.master.WAMessageMaster;
+import com.maan.whatsapp.entity.master.WhatsappMessageMenuMaster;
 import com.maan.whatsapp.entity.master.WhatsappTemplateMaster;
-import com.maan.whatsapp.entity.whatsapp.WhatsappContactData;
 import com.maan.whatsapp.entity.whatsapp.WhatsappRequestDetail;
+import com.maan.whatsapp.repository.master.WhatsappMessageMenuMasterRepository;
 import com.maan.whatsapp.repository.whatsapp.WhatsappContactDataRepo;
 import com.maan.whatsapp.repository.whatsapp.WhatsappRequestDetailRepo;
 import com.maan.whatsapp.request.whatsapp.ButtonHeaderReq;
-import com.maan.whatsapp.request.whatsapp.ButtonsNameReq;
 import com.maan.whatsapp.request.whatsapp.WAWatiReq;
-import com.maan.whatsapp.request.whatsapp.WhatsAppButtonReq;
-import com.maan.whatsapp.response.error.Errors;
-import com.maan.whatsapp.response.motor.ButtonMediaReq;
 import com.maan.whatsapp.response.wati.sendsesfile.MessageFileRes;
 import com.maan.whatsapp.response.wati.sendsesfile.SendSessionFile;
-import com.maan.whatsapp.response.wati.sendsesmsg.MessageSendRes;
-import com.maan.whatsapp.response.wati.sendsesmsg.SendSessionMsg;
+import com.maan.whatsapp.response.wati.sendsesmsg.SendMessageResponse;
 import com.maan.whatsapp.service.common.CommonService;
 import com.maan.whatsapp.service.motor.MotorService;
-import com.maan.whatsapp.service.motor.MotorServiceImpl;
-import com.maan.whatsapp.service.whatsapptemplate.WhatsapptemplateServiceImpl;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.vdurmont.emoji.EmojiParser;
 
@@ -78,6 +69,11 @@ public class WatiApiCall {
 	
 	@Autowired
 	private WhatsappContactDataRepo contactDataRepo ;
+	
+	@Autowired
+	private WhatsappMessageMenuMasterRepository wmmmRpo;
+	
+	private static MediaType contentType =MediaType.parse("application/json");;
 
 	@SuppressWarnings("unchecked")
 	@Async
@@ -118,6 +114,7 @@ public class WatiApiCall {
             		detail.setMessage(msg);
             	}
             	
+            	detail.setStatus("D");
             }
             
             else if (apiCall.equalsIgnoreCase("Y") && isValidationApi.equalsIgnoreCase("N") 
@@ -129,47 +126,21 @@ public class WatiApiCall {
 
 				detail.setMessage(apiResp.trim());
 				
-				if("Y".equalsIgnoreCase(isTemplateMsg))
+				detail.setStatus("R");
+				
+				/*if("Y".equalsIgnoreCase(isTemplateMsg))
 					isTemplateMsg=detailRepo.getTemplateStatus(waid,detail.getReqDetPk().getCurrentstage().toString()
-							,detail.getReqDetPk().getCurrentsubstage().toString(),detail.getRemarks());
+							,detail.getReqDetPk().getCurrentsubstage().toString(),detail.getRemarks());*/
 				
-			}/*else if(apiCall.equalsIgnoreCase("N") && isValidationApi.equalsIgnoreCase("N") && "N".equalsIgnoreCase(detail.getIsreplyyn())) {
-				
-				String tran_id =motorServiceImpl.setSaveRequest(detail, waid);	
-				String link =cs.getwebserviceurlProperty().getProperty("wa.preins.screen.link").replace("{TranId}", tran_id);
-				
-				Long stageCode = detail.getReqDetPk().getCurrentstage();
-				Long subStageCode = detail.getReqDetPk().getCurrentsubstage();
-				
-				WhatsappTemplateMaster temp_master =getTempMasterStageContent(detail.getRemarks(), "90016",
-						Long.valueOf(waid), stageCode, subStageCode);
-				
-				String res =StringUtils.isBlank(temp_master.getButtonBody())?"":temp_master.getButtonBody();
-			
-				detail.setMessage(res.replace("{TinyUrl}",tempServiceImpl.getTinyUrl(link)));		
-			} */
+			}
             
-            String msg ="";
-            if("N".equalsIgnoreCase(isTemplateMsg)) {
-            	msg = motSer.getTreeStructMsg(detail);
-    			msg =setEmojiResponse(msg);
-            }else {
-            	msg=detail.getMessage();
-            }
-            
-            if("Y".equalsIgnoreCase(detail.getFormpageYn())) {
-            	String formPageUrl =detail.getFormpageUrl().trim()+waid;
-            	msg = msg.replace("{TinyUrl}",formPageUrl);
-            }
-            	
-            
-            detail.setMessage(msg);
+                       
 			WAWatiReq waReq = WAWatiReq.builder()
 					.filepath(detail.getFile_path())
 					.msg(detail.getMessage())
 					.waid(waid)
-					.isTemplateMsg(isTemplateMsg)
 					.build();
+			
 
 			String url = "";
 
@@ -190,57 +161,104 @@ public class WatiApiCall {
 					detail.setSessionid(waRes.getSessionid());
 				}
 			} else {
-				url = commonurl + msgurl;
 
-				if(StringUtils.isNotBlank(waReq.getMsg()) && "N".equals(isbuttonMsg) 
-						&& "N".equals(isbuttonMsg) && "N".equalsIgnoreCase(isTemplateMsg)) {
+				String status  = StringUtils.isBlank(detail.getStatus())?"Y":detail.getStatus();
+				
+				url=cs.getwebserviceurlProperty().getProperty("meta.message.api");
+				
+				auth=cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
+				
+				if(StringUtils.isNotBlank(waReq.getMsg()) && !"R".equals(status)) {
 
-					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
-
-					detail.setIssent("Y");
-					detail.setRequest_time(reqtime);
-					detail.setResponse_time(new Date());
-					detail.setWa_messageid(waRes.getWamsgId());
-					detail.setWa_response(waRes.getWaresponse());
-					detail.setWa_filepath(waRes.getWafilepath());
-					detail.setSessionid(waRes.getSessionid());
-					
-				}else if (StringUtils.isNotBlank(waReq.getMsg()) && "Y".equals(isbuttonMsg)
-						&& "N".equalsIgnoreCase(isTemplateMsg)) {
-					
-					fileurl=cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
-					url = commonurl + fileurl;
-					
 					Long stageCode = detail.getReqDetPk().getCurrentstage();
 					Long subStageCode = detail.getReqDetPk().getCurrentsubstage();
 					
-					WhatsappTemplateMaster tempM =getTempMasterStageContent(detail.getRemarks(), "90016",
+					WhatsappTemplateMaster wamsgM =getTempMasterStageContent(detail.getRemarks(), "90016",
 							Long.valueOf(waid), stageCode, subStageCode);
 					
-					String language =contactDataRepo.getLanguage(waid);
-					String button1 ="",button2="",button3="";
-					if("Y".equalsIgnoreCase(isbuttonMsg)) {
+					String msgEn = StringUtils.isBlank(wamsgM.getMessage_content_en()) ? "" : wamsgM.getMessage_content_en();
+					String msgAr = StringUtils.isBlank(wamsgM.getMessage_content_ar()) ? "" : wamsgM.getMessage_content_ar();
+					String interactive_button_yn=StringUtils.isBlank(wamsgM.getInteractiveButtonYn())?"N":wamsgM.getInteractiveButtonYn();
+					String isCtaDynamicYn =StringUtils.isBlank(wamsgM.getIsCtaDynamicYn())?"N":wamsgM.getIsCtaDynamicYn();
+					String ctaButtonUrl =StringUtils.isBlank(wamsgM.getCtaButtonUrl())?"N":wamsgM.getCtaButtonUrl();
+					String ctaButtonkeys =StringUtils.isBlank(wamsgM.getCtaButtonKeys())?"N":wamsgM.getCtaButtonKeys();
+					
+					String message_type=StringUtils.isBlank(wamsgM.getMessageType())?"":wamsgM.getMessageType();
+					
+					String language =contactDataRepo.getLanguage(waid.toString());
+					
+					String msg ="D".equals(detail.getStatus())?detail.getMessage():"English".equalsIgnoreCase(language)?msgEn:msgAr;
+					
+					String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+									flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+									location_button_name="",menu_button_name="",flow_index_screen_name="",
+									flow_api_request="";
+					
+					if("Y".equalsIgnoreCase(interactive_button_yn)) {
+						message_type =wamsgM.getMessageType();
+						if("FLOW".equalsIgnoreCase(message_type)) {
+							flow_token =StringUtils.isBlank(wamsgM.getFlowToken())?"":wamsgM.getFlowToken();
+							flowRequestDataYn =StringUtils.isBlank(wamsgM.getRequestdataYn())?"N":wamsgM.getRequestdataYn();
+							flow_api =StringUtils.isBlank(wamsgM.getFlowApi())?"":wamsgM.getFlowApi();
+							flow_api_auth =StringUtils.isBlank(wamsgM.getFlowApiAuth())?"":wamsgM.getFlowApiAuth();
+							flow_api_method =StringUtils.isBlank(wamsgM.getFlowApiMethod())?"":wamsgM.getFlowApiMethod();
+							flow_id =StringUtils.isBlank(wamsgM.getFlowId())?"":wamsgM.getFlowId();
+							flow_index_screen_name=StringUtils.isBlank(wamsgM.getFlow_index_screen_name())?"":wamsgM.getFlow_index_screen_name();
+							flow_api_request =StringUtils.isBlank(wamsgM.getFlowApiRequest())?"":wamsgM.getFlowApiRequest();
+
+						}
+						
 						if("English".equalsIgnoreCase(language)) {
-							button1=tempM.getButton1();
-							button2=tempM.getButton2();
-							button3=StringUtils.isBlank(tempM.getButton3())?"":tempM.getButton3();
+							button1 =StringUtils.isBlank(wamsgM.getButton_1())?"":wamsgM.getButton_1();
+							button2 =StringUtils.isBlank(wamsgM.getButton_2())?"":wamsgM.getButton_2();
+							button3 =StringUtils.isBlank(wamsgM.getButton_3())?"":wamsgM.getButton_3();
+							flow_button_name =StringUtils.isBlank(wamsgM.getFlowButtonName())?"":wamsgM.getFlowButtonName();
+							cta_button_name =StringUtils.isBlank(wamsgM.getCtaButtonName())?"":wamsgM.getCtaButtonName();
+							location_button_name =StringUtils.isBlank(wamsgM.getLocButtonName())?"":wamsgM.getLocButtonName();
+							menu_button_name=StringUtils.isBlank(wamsgM.getMenu_button_name())?"":wamsgM.getMenu_button_name();
+					
 						}else if("Swahili".equalsIgnoreCase(language)) {
-							button1=tempM.getButtonSw1();
-							button2=tempM.getButtonSw2();
-							button3=StringUtils.isBlank(tempM.getButtonSw3())?"":tempM.getButtonSw3();
+							button1 =StringUtils.isBlank(wamsgM.getButton_1_sw())?"":wamsgM.getButton_1_sw();
+							button2 =StringUtils.isBlank(wamsgM.getButton_2_sw())?"":wamsgM.getButton_2_sw();
+							button3 =StringUtils.isBlank(wamsgM.getButton_3_sw())?"":wamsgM.getButton_3_sw();
+							flow_button_name =StringUtils.isBlank(wamsgM.getFlowButtonNameSw())?"":wamsgM.getFlowButtonNameSw();
+							cta_button_name =StringUtils.isBlank(wamsgM.getCtaButtonNameSw())?"":wamsgM.getCtaButtonNameSw();
+							location_button_name =StringUtils.isBlank(wamsgM.getLocButtonNameSw())?"":wamsgM.getLocButtonNameSw();
+							menu_button_name=StringUtils.isBlank(wamsgM.getMenu_button_name_sw())?"":wamsgM.getMenu_button_name_sw();
+
 						}						
 					}
-					waReq.setMsgType(StringUtils.isBlank(tempM.getMsgType())?"":tempM.getMsgType());
-					waReq.setIsButtonMsg(StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg());
-					waReq.setImageUrl(StringUtils.isBlank(tempM.getImageUrl())?"":tempM.getImageUrl());
-					waReq.setImageName(StringUtils.isBlank(tempM.getImageName())?"":tempM.getImageName());
-					waReq.setButton1(button1);
-					waReq.setButton2(button2);
-					waReq.setButton3(button3);
+					WAWatiReq waRequest = WAWatiReq.builder()
+							.filepath("")
+							.msg(msg)
+							.waid(String.valueOf(waid))
+							.button_1(button1) 
+							.button_2(button2) 
+							.button_3(button3) 
+							.messageId(wamsgM.getRemarks())
+							.flow_button_name(flow_button_name)
+							.flowApi(flow_api)
+							.flowId(flow_id)
+							.flowToken(flow_token)
+							.flowApiAuth(flow_api_auth)
+							.flowApiMethod(flow_api_method)
+							.flow_requestdata_yn(flowRequestDataYn)
+							.cta_button_name(cta_button_name)
+							.location_button_name(location_button_name)
+							.messageType(message_type)
+							.menu_button_name(menu_button_name)
+							.flow_index_screen_name(flow_index_screen_name)
+							.flow_api_request(flow_api_request)
+							.interactiveYn(interactive_button_yn)
+							.isCtaDynamicYn(isCtaDynamicYn)
+							.ctaButtonUrl(ctaButtonUrl)
+							.ctaButtonKeys(ctaButtonkeys)
+							.build();
+
 
 				
 					
-					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
+					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waRequest);
 					
 					detail.setIssent("Y");
 					detail.setRequest_time(reqtime);
@@ -249,8 +267,16 @@ public class WatiApiCall {
 					detail.setWa_response(waRes.getWaresponse());
 					detail.setWa_filepath(waRes.getWafilepath());
 					detail.setSessionid(waRes.getSessionid());
+					detail.setStatus("Y");
+					detail.setMessage(waRequest.getMsg());
 					
-				}else if("Y".equalsIgnoreCase(isTemplateMsg)) {
+				}else if(StringUtils.isNotBlank(waReq.getMsg()) && "R".equals(status)) {
+					
+					url=cs.getwebserviceurlProperty().getProperty("meta.message.api");
+					
+					auth=cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
+					
+					waReq =objectMapper.readValue(detail.getMessage(), WAWatiReq.class);
 					
 					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
 
@@ -261,6 +287,8 @@ public class WatiApiCall {
 					detail.setWa_response(waRes.getWaresponse());
 					detail.setWa_filepath(waRes.getWafilepath());
 					detail.setSessionid(waRes.getSessionid());
+					detail.setStatus("Y");
+					detail.setMessage(waReq.getMsg());
 				}
 			}
 
@@ -314,13 +342,13 @@ public class WatiApiCall {
 			String isValid = "N";
 			String isResSaveApi = StringUtils.isBlank(detail.getIsResSaveApi()) ? "N" : detail.getIsResSaveApi();
 			String isResMsg = StringUtils.isBlank(detail.getIsResMsg()) ? "N" : detail.getIsResMsg();
-			String isButtonMsg= StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg();
-			String msgType= StringUtils.isBlank(tempM.getMsgType())?"":tempM.getMsgType();
-			String imageName = StringUtils.isBlank(tempM.getImageName())?"":tempM.getImageName();
-			String imageUrl = StringUtils.isBlank(tempM.getImageUrl())?"":tempM.getImageUrl();
-			String language =contactDataRepo.getLanguage(waid);
-			String button1 ="",button2="",button3="";
-			if("Y".equalsIgnoreCase(isButtonMsg)) {
+			//String isButtonMsg= StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg();
+			//String msgType= StringUtils.isBlank(tempM.getMsgType())?"":tempM.getMsgType();
+			//String imageName = StringUtils.isBlank(tempM.getImageName())?"":tempM.getImageName();
+			//String imageUrl = StringUtils.isBlank(tempM.getImageUrl())?"":tempM.getImageUrl();
+			//String language =contactDataRepo.getLanguage(waid);
+			//String button1 ="",button2="",button3="";
+			/*if("Y".equalsIgnoreCase(isButtonMsg)) {
 				if("English".equalsIgnoreCase(language)) {
 					button1=tempM.getButton1();
 					button2=tempM.getButton2();
@@ -333,7 +361,7 @@ public class WatiApiCall {
 			}
 			String isTemplateMsg =StringUtils.isBlank(detail.getIsTemplateMsg())?"N":detail.getIsTemplateMsg();
 			String buttonUrl=cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
-			msgurl ="Y".equalsIgnoreCase(isButtonMsg)?buttonUrl:msgurl;
+			msgurl ="Y".equalsIgnoreCase(isButtonMsg)?buttonUrl:msgurl;*/
 			if("Y".equalsIgnoreCase(isResSaveApi) && "Y".equalsIgnoreCase(apiCall)) {
 				String apiResp = "";
 				apiResp = motSer.callMotorApi(detail, waid);
@@ -353,14 +381,14 @@ public class WatiApiCall {
 							.filepath(detail.getFile_path())
 							.msg(errorResStr)
 							.waid(waid)
-							.isButtonMsg(isButtonMsg)
-							.msgType(msgType)
-							.imageUrl(imageUrl)
-							.imageName(imageName)
-							.button1(button1)
-							.button2(button2)
-							.button3(button3)
-							.isTemplateMsg(isTemplateMsg)
+							//.isButtonMsg(isButtonMsg)
+							//.msgType(msgType)
+							//.imageUrl(imageUrl)
+							//.imageName(imageName)
+							//.button1(button1)
+							//.button2(button2)
+							//.button3(button3)
+							//.isTemplateMsg(isTemplateMsg)
 							.build();
 
 					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
@@ -384,25 +412,26 @@ public class WatiApiCall {
 
 				apiResp = motSer.callMotorApi(detail, waid);
 
-				detail.setValidationmessage(apiResp.trim());
-
 				String url = commonurl + msgurl;
 
 				if (StringUtils.isNotBlank(apiResp)) {
 
-					WAWatiReq waReq = WAWatiReq.builder()
+					/*WAWatiReq waReq = WAWatiReq.builder()
 							.filepath(detail.getFile_path())
 							.msg(apiResp)
 							.waid(waid)
-							.isButtonMsg(isButtonMsg)
-							.msgType(msgType)
-							.imageUrl(imageUrl)
-							.imageName(imageName)
-							.button1(button1)
-							.button2(button2)
-							.button3(button3)
-							.isTemplateMsg(isTemplateMsg)
-							.build();
+							//.isButtonMsg(isButtonMsg)
+							//.msgType(msgType)
+							//.imageUrl(imageUrl)
+							//.imageName(imageName)
+							//.button1(button1)
+							//.button2(button2)
+							//.button3(button3)
+							//.isTemplateMsg(isTemplateMsg)
+							.build();*/
+					
+					
+					WAWatiReq waReq =objectMapper.readValue(apiResp, WAWatiReq.class);
 
 					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
 
@@ -429,14 +458,14 @@ public class WatiApiCall {
 							.filepath(detail.getFile_path())
 							.msg(apiResp)
 							.waid(waid)
-							.isButtonMsg(isButtonMsg)
-							.msgType(msgType)
-							.imageUrl(imageUrl)
-							.imageName(imageName)
-							.button1(button1)
-							.button2(button2)
-							.button3(button3)
-							.isTemplateMsg(isTemplateMsg)
+							//.isButtonMsg(isButtonMsg)
+							//.msgType(msgType)
+							//.imageUrl(imageUrl)
+							//.imageName(imageName)
+							//.button1(button1)
+							//.button2(button2)
+							//.button3(button3)
+							//.isTemplateMsg(isTemplateMsg)
 							.build();
 
 					WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
@@ -462,7 +491,7 @@ public class WatiApiCall {
 			String fileurl, String auth, WhatsappRequestDetail detail, String waid, Date reqtime, WhatsappTemplateMaster tempM) {
 		try {
 
-			String isButtonMsg= StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg();
+			/*String isButtonMsg= StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg();
 			String msgType= StringUtils.isBlank(tempM.getMsgType())?"":tempM.getMsgType();
 			String imageName = StringUtils.isBlank(tempM.getImageName())?"":tempM.getImageName();
 			String imageUrl = StringUtils.isBlank(tempM.getImageUrl())?"":tempM.getImageUrl();
@@ -481,22 +510,22 @@ public class WatiApiCall {
 			}
 			String buttonUrl=cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
 
-			String url ="Y".equalsIgnoreCase(isButtonMsg)? commonurl + buttonUrl:commonurl + msgurl;
+			String url ="Y".equalsIgnoreCase(isButtonMsg)? commonurl + buttonUrl:commonurl + msgurl; */
 			
 			WAWatiReq waReq = WAWatiReq.builder()
 					.filepath(detail.getFile_path())
 					.msg(StringUtils.isBlank(detail.getValidationmessage())?"":detail.getValidationmessage())
 					.waid(waid)
-					.isButtonMsg(isButtonMsg)
-					.msgType(msgType)
-					.imageUrl(imageUrl)
-					.imageName(imageName)
-					.button1(button1)
-					.button2(button2)
-					.button3(button3)
+					//.isButtonMsg(isButtonMsg)
+					//.msgType(msgType)
+					//.imageUrl(imageUrl)
+					//.imageName(imageName)
+					//.button1(button1)
+					//.button2(button2)
+					//.button3(button3)
 					.build();
 
-			WAWatiReq waRes = callSendSessionMsg(okhttp, body, url, auth, waReq);
+			WAWatiReq waRes = callSendSessionMsg(okhttp, body, "", auth, waReq);
 
 		} catch (Exception e) {
 			log.error(e);
@@ -507,37 +536,42 @@ public class WatiApiCall {
 	public WAWatiReq callSendSessionMsg(OkHttpClient okhttp, RequestBody body, String url, String auth, WAWatiReq req) {
 
 		WAWatiReq detail = new WAWatiReq();
-
 		try {
 			String waid = req.getWaid();
 			String msgs = req.getMsg();
 			msgs=setEmojiResponse(msgs);
-			msgs = URLEncoder.encode(msgs, StandardCharsets.UTF_8.toString());
-
+			req.setMsg(msgs);
 			detail.setWaid(waid);
-			detail.setMsg(req.getMsg());
-
-			if("Y".equalsIgnoreCase(req.getIsButtonMsg()) && "N".equalsIgnoreCase(req.getIsTemplateMsg())) {
-			
-				String message =frameButtonMsg(detail.getMsg(),req);
-			    url = url.replace("{whatsappNumber}", waid);
-				log.info("Button req "+message);
-				MediaType contentType =MediaType.parse("application/json");
-				body =RequestBody.create(message,contentType);
-		
-			}else if("Y".equalsIgnoreCase(req.getIsTemplateMsg())) {
-				MediaType contentType =MediaType.parse("application/json");
-				body =RequestBody.create(req.getMsg(),contentType);
-				url=cs.getwebserviceurlProperty().getProperty("whatsapp.template.msg");
-
+			detail.setMsg(msgs);
+						
+			if("Y".equals(req.getInteractiveYn())) {
+				String message_text =frameWhatsappMetaMsg(req,okhttp,body);
+				body = RequestBody.create(message_text,contentType);
 			}else {
 				
-				url = url.replace("{whatsappNumber}", waid);
-				url = url.replace("{pageSize}", "");
-				url = url.replace("{pageNumber}", "");
-				url = url.replace("{messageText}", msgs);
-				url = url.trim();
+				Map<String,Object> text = new HashMap<String, Object>();
+				text.put("body", req.getMsg());
+				
+				Map<String,Object> sendMsgMap = new HashMap<String, Object>();
+				sendMsgMap.put("messaging_product", "whatsapp");
+				sendMsgMap.put("recipient_type", "individual");
+				sendMsgMap.put("to", req.getWaid());
+				sendMsgMap.put("type", "text");
+				sendMsgMap.put("text", text);
+				
+				String twoSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.two");
+				String oneSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.one");
+			
+				String message_text =cs.reqPrint(sendMsgMap);
+				
+				message_text =message_text.replace(twoSlash, oneSlash);
+				
+				MediaType contentType =MediaType.parse("application/json");
+				body =RequestBody.create(message_text,contentType);
+				
 			}
+			
+			
 			
 			Request request = new Request.Builder()
 					.url(url)
@@ -551,23 +585,19 @@ public class WatiApiCall {
 
 			log.info("callSendSessionMsg--> waid: " + waid + " response: " + responseString);
 
-			SendSessionMsg apiRes = objectMapper.readValue(responseString, SendSessionMsg.class);
+			SendMessageResponse apiRes = objectMapper.readValue(responseString, SendMessageResponse.class);
 
-			String result = StringUtils.isBlank(apiRes.getResult())?"":apiRes.getResult();
+			String result = "success";
 
 			String msgid = "", sessionid = "";
 
 			if (result.equalsIgnoreCase("success") || StringUtils.isEmpty(result)) {
 
-				if (apiRes.getMessage() != null) {
-					MessageSendRes msg = objectMapper.convertValue(apiRes.getMessage(),
-							MessageSendRes.class);
-
-					cs.reqPrint(msg);
+				if (apiRes.getMessages()!= null) {
+										
+					msgid = apiRes.getMessages().get(0).getId();
 					
-					msgid = msg.getId();
-					
-					sessionid = msg.getTicketId();
+					sessionid = apiRes.getMessages().get(0).getId();
 				}
 
 				detail.setIssent("Y");
@@ -576,8 +606,8 @@ public class WatiApiCall {
 				detail.setSessionid(sessionid);
 
 			} else {
-				String msgRes = apiRes.getMessage() == null ? "" : String.valueOf(apiRes.getMessage());
-				String info = StringUtils.isBlank(apiRes.getInfo()) ? "" : apiRes.getInfo();
+				String msgRes = apiRes.getMessages() == null ? "" : String.valueOf(apiRes.getMessages().get(0).getId());
+				String info ="";
 
 				detail.setIssent("N");
 				detail.setWamsgId(msgid);
@@ -601,81 +631,7 @@ public class WatiApiCall {
 		return detail;
 	}
 
-	private String frameButtonMsg(String msg, WAWatiReq req) {
-		String buttonMessage="";
-		String request="";
-		try {
-		
-			if("Image".equalsIgnoreCase(req.getMsgType())) {
-				ButtonMediaReq media =ButtonMediaReq.builder()
-						.url(req.getImageUrl())
-						.fileName(req.getImageName())
-						.build();
-				
-				ButtonHeaderReq header =ButtonHeaderReq.builder()
-						.type("Image")
-						.text(" ")
-						.media(media)
-						.build();
-				List<ButtonsNameReq> buttonList =new ArrayList<ButtonsNameReq>();
-				if(StringUtils.isNotBlank(req.getButton1())) {
-					buttonList.add(new ButtonsNameReq(req.getButton1()));
-					
-				}if(StringUtils.isNotBlank(req.getButton2())) {
-					buttonList.add(new ButtonsNameReq(req.getButton2()));
-
-				}if(StringUtils.isNotBlank(req.getButton3())) {
-					buttonList.add(new ButtonsNameReq(req.getButton3()));
-
-				}
-				WhatsAppButtonReq buttonReq =WhatsAppButtonReq.builder()
-						.header(header)
-						.body(msg)
-						.footer(" ")
-						.buttons(buttonList)
-						.build();
-				request =cs.reqPrint(buttonReq);
-				
-			}else if("Text".equalsIgnoreCase(req.getMsgType())) {
-				
-				ButtonHeaderReq header =ButtonHeaderReq.builder()
-						.type("Text")
-						.text(" ")
-						.media(null)
-						.build();
-				List<ButtonsNameReq> buttonList =new ArrayList<ButtonsNameReq>();
-				if(StringUtils.isNotBlank(req.getButton1())) {
-					buttonList.add(new ButtonsNameReq(req.getButton1()));
-					
-				}if(StringUtils.isNotBlank(req.getButton2())) {
-					buttonList.add(new ButtonsNameReq(req.getButton2()));
-
-				}if(StringUtils.isNotBlank(req.getButton3())) {
-					buttonList.add(new ButtonsNameReq(req.getButton3()));
-
-				}
-				WhatsAppButtonReq buttonReq =WhatsAppButtonReq.builder()
-						.header(header)
-						.body(msg)
-						.footer(" ")
-						.buttons(buttonList)
-						.build();
-				request =cs.reqPrint(buttonReq);
-			}
-			
-
-			String twoSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.two");
-			String oneSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.one");
-			
-			buttonMessage =request.replace(twoSlash, oneSlash);
-
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return buttonMessage;
-		
-	}
+	
 
 	public WAWatiReq callSendSessionFile(OkHttpClient okhttp, String url, String auth, WAWatiReq req) {
 
@@ -859,7 +815,7 @@ public class WatiApiCall {
 				
 				ButtonHeaderReq header=null;
 				
-				if("Image".equalsIgnoreCase(temp.getMsgType())) {
+				/*if("Image".equalsIgnoreCase(temp.getMsgType())) {
 					
 					ButtonMediaReq media =ButtonMediaReq.builder()
 							.fileName(temp.getImageName())
@@ -911,7 +867,7 @@ public class WatiApiCall {
 				
 				reqDet.setIsResponseYnSent("Y");
 				
-				detailRepo.save(reqDet);
+				detailRepo.save(reqDet);*/
 			}
 			
 		}catch (Exception e) {
@@ -940,7 +896,7 @@ public class WatiApiCall {
 			
 			String Isreplyyn =StringUtils.isBlank(temp.getIsreplyyn())?"N":temp.getIsreplyyn();
 			
-			if("Y".equals(isApiCall) || "N".equals(Isreplyyn)) 
+			/*if("Y".equals(isApiCall) || "N".equals(Isreplyyn)) 
 				messageBody =StringUtils.isBlank(waReq.getMsg())?"Something went wrong":waReq.getMsg();
 			else 
 				messageBody =StringUtils.isBlank(temp.getButtonBody())?"Something went wrong":temp.getButtonBody();
@@ -1043,7 +999,7 @@ public class WatiApiCall {
 				detail.setWamsgId(msgid);
 				detail.setWaresponse(StringUtils.isBlank(info) ? msgRes : info);
 				detail.setSessionid(sessionid);
-			}
+			}*/
 
 			
 		}catch (Exception e) {
@@ -1079,6 +1035,269 @@ public class WatiApiCall {
 		return null;
 	}
 	
+	
+	private String frameWhatsappMetaMsg(WAWatiReq req, OkHttpClient okhttp, RequestBody requestBody) {
+		String message ="";
+		try {
+			
+			Map<String,Object> interactive =new HashMap<String, Object>();
+			
+			if("Menu".equalsIgnoreCase(req.getMessageType())) {
+				
+				List<Map<String,Object>> go_back =new ArrayList<>();
+				
+				Map<String,Object> main_menu = new HashMap<>();
+				main_menu.put("id", "Main Menu");
+				main_menu.put("title", "Home");
+				main_menu.put("description", "Main Menu");
+				
+				Map<String,Object> previous_menu = new HashMap<>();
+				previous_menu.put("id", "Previous Menu");
+				previous_menu.put("title", "Back");
+				previous_menu.put("description", "Previous Menu");
+				
+				Map<String,Object> change_lanuage = new HashMap<>();
+				change_lanuage.put("id", "00");
+				change_lanuage.put("title", "Language");
+				change_lanuage.put("description", "Language Change Option");
+				
+				go_back.add(main_menu);
+				go_back.add(previous_menu);
+				go_back.add(change_lanuage);
+				
+				Map<String,Object> goback_section = new HashMap<>();
+				goback_section.put("rows", go_back);
+				goback_section.put("title", "Footer");
+				
+				//=================================
+				
+				List<WhatsappMessageMenuMaster> menuList = wmmmRpo.findByMessageIdAndStatusIgnoreCaseOrderByDisplayOrder(req.getMessageId(),"Y");
+				
+				Map<String,Object> header =new HashMap<String, Object>();
+				Map<String,Object> body =new HashMap<String, Object>();
+				Map<String,Object> footer =new HashMap<String, Object>();
+				Map<String,Object> action =new HashMap<String, Object>();
+				
+				header.put("type", "text");
+				header.put("text", "");
+				
+				body.put("text", req.getMsg());
+				
+				footer.put("text", "");
+				
+				
+				List<Map<String,Object>> rows =menuList.stream().map(p ->{
+					Map<String,Object> map = new HashMap<>();
+					map.put("id", p.getOptionNo());
+					map.put("title", p.getOptionTitle());
+					map.put("description", StringUtils.isBlank(p.getOptionDesc())?"":p.getOptionDesc());
+					return map;
+				}).collect(Collectors.toList());
+				
+				Map<String,Object> section_rows = new HashMap<String, Object>();
+				section_rows.put("rows", rows);
+				section_rows.put("title", "Alliance Products");
+				
+				List<Map<String,Object>> sections =new ArrayList<>();
+				sections.add(section_rows);
+				sections.add(goback_section);
+				
+				action.put("button", req.getMenu_button_name());
+				action.put("sections", sections);
+				
+				interactive.put("type", "list");
+				interactive.put("header", header);
+				interactive.put("body", body);
+				interactive.put("footer", footer);
+				interactive.put("action", action);
+				
+				
+		
+			}else if("flow".equalsIgnoreCase(req.getMessageType())) {
+				
+				Map<String,Object> parameters = new HashMap<String, Object>();
+				parameters.put("flow_message_version", "3");
+				parameters.put("flow_token", req.getFlowToken());
+				parameters.put("flow_id", req.getFlowId());
+				parameters.put("flow_cta", req.getFlow_button_name());
+				parameters.put("flow_action", "navigate");
+				
+				if("Y".equals(req.getFlow_requestdata_yn())) {
+					
+					Map<String,Object> data = new HashMap<String, Object>();
+					
+					if("GET".equalsIgnoreCase(req.getFlowApiMethod())) {
+						
+						Request request = new Request.Builder()
+								.url(req.getFlowApi().trim())
+								.addHeader("Authorization", req.getFlowApiAuth().trim())
+								.get()
+								.build();
+
+						Response response = okhttp.newCall(request).execute();
+
+						String responseString = response.body().string();
+						data = objectMapper.readValue(responseString, Map.class);
+						
+					}else if("POST".equalsIgnoreCase(req.getFlowApiMethod())) {
+						
+						MediaType mediaType = MediaType.parse("application/json");
+						
+						String input_req = StringUtils.isBlank(req.getFlow_api_request())?null:req.getFlow_api_request();
+						
+						requestBody = RequestBody.create(input_req,mediaType);
+						
+						Request request = new Request.Builder()
+								.url(req.getFlowApi().trim())
+								.addHeader("Authorization", req.getFlowApiAuth().trim())
+								.post(requestBody)
+								.build();
+
+						Response response = okhttp.newCall(request).execute();
+
+						String responseString = response.body().string();
+						data = objectMapper.readValue(responseString, Map.class);
+					}
+					
+					parameters.put("flow_action_payload", data);
+					
+				}else {
+					Map<String,Object> flow_action_payload = new HashMap<String, Object>();
+					flow_action_payload.put("screen", req.getFlow_index_screen_name());
+					flow_action_payload.put("data", null);
+					parameters.put("flow_action_payload", flow_action_payload);
+				}
+				
+				Map<String,Object> action = new HashMap<String, Object>();
+				action.put("name", "flow");
+				action.put("parameters", parameters);
+				
+				Map<String,Object> body =new HashMap<String, Object>();
+				body.put("text", req.getMsg());
+				
+				interactive.put("type", "flow");
+				interactive.put("header", "");
+				interactive.put("body", body);
+				interactive.put("footer", "");
+				interactive.put("action", action);
+				
+			}else if("button".equalsIgnoreCase(req.getMessageType())) {
+				
+				List<Map<String,Object>> buttonList =new ArrayList<>();
+			
+				if(StringUtils.isNotBlank(req.getButton_1())) {
+					Map<String,Object> button_text = new HashMap<String, Object>();
+					button_text.put("type", "reply");
+					Map<String,Object> reply = new HashMap<String, Object>();
+					reply.put("id", req.getButton_1());
+					reply.put("title", req.getButton_1());
+					button_text.put("reply", reply);
+					buttonList.add(button_text);
+					
+				}if(StringUtils.isNotBlank(req.getButton_2())) {
+					Map<String,Object> button_text = new HashMap<String, Object>();
+					button_text.put("type", "reply");
+					Map<String,Object> reply = new HashMap<String, Object>();
+					reply.put("id", req.getButton_2());
+					reply.put("title", req.getButton_2());
+					button_text.put("reply", reply);
+					buttonList.add(button_text);
+
+				}if(StringUtils.isNotBlank(req.getButton_3())) {
+					Map<String,Object> button_text = new HashMap<String, Object>();
+					button_text.put("type", "reply");
+					Map<String,Object> reply = new HashMap<String, Object>();
+					reply.put("id", req.getButton_3());
+					reply.put("title", req.getButton_3());
+					button_text.put("reply", reply);
+					buttonList.add(button_text);
+
+				}
+				
+				Map<String,Object> body =new HashMap<String, Object>();
+				body.put("text", req.getMsg());
+				
+				Map<String,Object> actions =new HashMap<String, Object>();
+				actions.put("buttons", buttonList);
+				
+				interactive.put("type", "button");
+				interactive.put("body", body);
+				interactive.put("action", actions);
+				
+			}else if("cta_button".equalsIgnoreCase(req.getMessageType())) {
+				
+				Map<String,Object> cta_data = new HashMap<String, Object>();
+				String responseStr ="";
+				if("Y".equals(req.getIsCtaDynamicYn())) {
+					cta_data = objectMapper.readValue(req.getApiData(), Map.class);
+					responseStr =req.getCtaButtonKeys();
+					for(Map.Entry<String, Object> entry : cta_data.entrySet()) {
+						
+						if(responseStr.contains("{"+entry.getKey()+"}")) {
+							
+							responseStr =responseStr.replace("{"+entry.getKey()+"}", entry.getValue() ==null?"":entry.getValue().toString());
+						
+							break;
+						}
+					}
+				}else if("N".equals(req.getIsCtaDynamicYn())) {
+					
+					responseStr =req.getCtaButtonUrl();
+				}
+				
+				Map<String,Object> body =new HashMap<String, Object>();
+				Map<String,Object> action =new HashMap<String, Object>();
+				Map<String,Object> parameters =new HashMap<String, Object>();
+				
+				parameters.put("display_text", req.getCta_button_name());
+				parameters.put("url", responseStr.trim());
+				
+				body.put("text", req.getMsg());
+				
+				action.put("name", "cta_url");
+				action.put("parameters", parameters);
+				
+				interactive.put("type", "cta_url");
+				interactive.put("body", body);
+				interactive.put("action", action);
+				
+				
+			}else if("template".equalsIgnoreCase(req.getMessageType())) {
+				
+			}else if("location".equalsIgnoreCase(req.getMessageType())) {
+				
+				Map<String,Object> body =new HashMap<String, Object>();
+				Map<String,Object> action =new HashMap<String, Object>();
+				body.put("text", req.getMsg());
+				action.put("name", "send_location");
+				interactive.put("type", "location_request_message");
+				interactive.put("body", body);
+				interactive.put("action", action);
+				
+			}
+			
+			Map<String,Object> map = new HashMap<String, Object>();
+			map.put("messaging_product", "whatsapp");
+			map.put("recipient_type", "individual");
+			map.put("to",req.getWaid() );
+			map.put("type", "interactive");
+			map.put("interactive", interactive);
+			
+			message = cs.reqPrint(map);
+			
+			String twoSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.two");
+			String oneSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.one");
+			
+			message =message.replace(twoSlash, oneSlash);
+			
+			log.info("Whatsapp Flow : "+ message);
+			
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return message;
+	}
 	
 	
 }

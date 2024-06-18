@@ -1,18 +1,12 @@
 package com.maan.whatsapp.claimintimation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Data;
 
 @Data
 public class ClaimRefNoReq {
 
-	private String mobileNo;
+	private String claim_number;
 
-	@JsonProperty("AccidentDate")
-	private String accidentDate;
 	
-	@JsonProperty("ClaimType")
-	private String claimType;
 	
 }

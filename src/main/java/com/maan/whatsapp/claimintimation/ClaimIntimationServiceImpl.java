@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,7 +27,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.config.exception.WhatsAppValidationException;
@@ -253,6 +256,7 @@ public class ClaimIntimationServiceImpl {
 						"CauseOfLoss".toUpperCase(), req.getCauseOfLoss());
 				String policyNo = policyList.get("POLICY_NO") == null ? "" : policyList.get("POLICY_NO").toString();
 				String chassisNo = policyList.get("CHASSIS_NO") == null ? "" : policyList.get("CHASSIS_NO").toString();
+				
 				map.put("Chassissno", StringUtils.isBlank(req.getChassisNo()) ? chassisNo : req.getChassisNo());
 				map.put("PolicyNo", StringUtils.isBlank(req.getPolicyNo()) ? policyNo : req.getPolicyNo());
 				map.put("BranchCode", policyList.get("BRANCH_CODE") == null ? "" : policyList.get("BRANCH_CODE"));
@@ -628,7 +632,7 @@ public class ClaimIntimationServiceImpl {
 					pdd.getTranId().toString());
 			String tinyUrl = insuranceServiceImpl.getTinyUrl(link);
 			response.put("TinyUrl", tinyUrl);
-
+			response.put("RegistrationNo", StringUtils.isBlank(req.getChassisNo())?req.getRegistraionNo():req.getChassisNo());
 			return response;
 
 		} catch (Exception e) {
@@ -724,9 +728,9 @@ public class ClaimIntimationServiceImpl {
 				}).collect(Collectors.joining("\n\n"));
 				Map<String, Object> retRes = new HashMap<String, Object>();
 				retRes.put("Response", message);
-				retRes.put("PolicyNo", policyNo);
+				retRes.put("policy_number", policyNo);
 				retRes.put("ChassisNo", chassisNo);
-				retRes.put("MobileNo", mobileNo);
+				retRes.put("mobileNo", mobileNo);
 
 				return retRes;
 			} else {
@@ -1160,14 +1164,31 @@ public class ClaimIntimationServiceImpl {
 
 	public Object getClaimRefNo(ClaimRefNoReq req) throws WhatsAppValidationException {
 		log.info("Enter into getClaimRefNo");
+		String decodeReq = new String(Base64.getDecoder().decode(req.getClaim_number()));
+		Map<String,Object> reqMap = null;
+		try {
+			 reqMap = mapper.readValue(decodeReq, Map.class);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		} 
+		
+		
+		String claim_number =reqMap.get("claim_no").toString();
 		List<Error> error = new ArrayList<>();
 		Map<String,Object> result = new HashMap<String,Object>();
 		try {
-			LocalDate accDate = LocalDate.parse(req.getAccidentDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-			List<InalipaIntimatedTable> list = inalipaIntiRepo.getClaimUploadDetails(req.getMobileNo(), accDate);
+			List<InalipaIntimatedTable> list = inalipaIntiRepo.getClaimDetailsByClaimNo(claim_number);
+			
 			if(!CollectionUtils.isEmpty(list)) {
-				result.put("Response", list.get(0).getClaimNo());
-				result.put("ErrorMsg", "");
+				InalipaIntimatedTable imt = list.get(0);
+				Map<String,String> response = new HashMap<String, String>();
+				response.put("policy_number", imt.getPolicyNo());
+				response.put("claim_number", imt.getClaimNo());
+				response.put("claim_status", "INTIMATED");
+				response.put("accident_date", cs.formatdatewithouttime(imt.getAccidentDate()));
+				response.put("mobileNo", imt.getIntimatedMobileNo().toString());
+
+				return response;
 			}else {
 				error.add(new Error("*Failed to Receive Claim Intimation? Please Contact Admin*","ErrorMsg","403"));
 			}
@@ -1181,7 +1202,7 @@ public class ClaimIntimationServiceImpl {
 		return result;
 	}
 	
-	@PostConstruct
+	//@PostConstruct
 	private void generateJosn() {
 		try {
 			String json ="{statusString=SENT,waId=919566362141,senderName=Jbaskar96}";
@@ -1198,5 +1219,174 @@ public class ClaimIntimationServiceImpl {
 			e.printStackTrace();
 		}
 	}
+	
+	public String getClaimToken(String url) {
+		String apiReponse = "";
+		try {
+			Response response = null;
+			Map<String, Object> tokReq = new HashMap<String, Object>();
+			tokReq.put("InsuranceId", cs.getwebserviceurlProperty().getProperty("InsuranceId"));
+			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
+			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
+			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+
+			String tokenJsonReq = new Gson().toJson(tokReq);
+			String tokenApi = cs.getwebserviceurlProperty().getProperty("token.api");
+			RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
+			Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
+			response = httpClient.newCall(tokenReq).execute();
+			String obj = response.body().string();
+			TokenResponse tokenRes = mapper.readValue(obj, TokenResponse.class);
+
+			String token = tokenRes.getTokenResponse().getToken();
+
+			apiReponse = "Bearer "+token;
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+		return apiReponse;
+	}
+	
+	public String callClaimApi(String token,String url, String request) {
+		String apiReponse = "";
+		try {
+			RequestBody apiReqBody = RequestBody.create(request, mediaType);
+			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
+					.post(apiReqBody).build();
+			Response response = httpClient.newCall(apiReq).execute();
+			apiReponse = response.body().string();
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+		return apiReponse;
+	}
+
+	public Object intimateNewClaim(IntimateNewClaimReq req) {
+		Map<String,Object> response = new HashMap<String, Object>();
+		try {
+			String claim_form = new String(Base64.getDecoder().decode(req.getClaim_form()));
+			Map<String,Object> map_req = mapper.readValue(claim_form, Map.class);
+			Map<String,String> map = new HashMap<String, String>();
+			
+			Long date_number =map_req.get("accident_date")==null?0L:Long.valueOf(map_req.get("accident_date").toString());
+			Date accident_date =new Date(date_number);
+			String acc_format_date =new SimpleDateFormat("dd/MM/yyyy").format(accident_date);
+			String customer_name =map_req.get("customer_name")==null?"":map_req.get("customer_name").toString().split(":")[1].trim();
+			String policy_no= map_req.get("policyNumber")==null?"":map_req.get("policyNumber").toString();
+			String registration_no =map_req.get("vehicle")==null?"":map_req.get("vehicle").toString();
+			
+			
+			map.put("Chassissno", registration_no);
+			map.put("PolicyNo", policy_no);
+			map.put("BranchCode", map_req.get("branchCode")==null?"":map_req.get("branchCode").toString());
+			map.put("InsuranceId",map_req.get("InsuranceId")==null?"":map_req.get("InsuranceId").toString());
+			map.put("RegionCode",map_req.get("regionCode")==null?"":map_req.get("regionCode").toString());
+			map.put("CustMobCode", req.getWhatsAppCode());
+			map.put("Assuredname",
+					customer_name);
+			map.put("Contactno", map_req.get("contact_no")==null?"":map_req.get("contact_no").toString());
+			map.put("CreatedBy", req.getWhatsAppCode()+" "+req.getWhatsAppNo());
+			map.put("Status", "Y");
+			map.put("Accidentdate", acc_format_date);
+			map.put("Accidenttime", map_req.get("accident_time")==null?"":map_req.get("accident_time").toString());
+			map.put("AccidentPlace",req.getLocation_desc());
+			map.put("Losstypeid", map_req.get("loss_type")==null?"":map_req.get("loss_type").toString());
+			map.put("CauseOfLossCode", map_req.get("cause_of_loss")==null?"":map_req.get("cause_of_loss").toString());
+			map.put("Usesofvehicle", "None");
+			map.put("AccidentDesc",map_req.get("accident_desc")==null?"":map_req.get("accident_desc").toString());
+			map.put("DrivenBy", map_req.get("accident_person")==null?"":map_req.get("accident_person").toString());
+
+			String claimSubmitApi = cs.getwebserviceurlProperty().getProperty("claim.intimation");
+			log.info("Claim Intimation Submit API " + claimSubmitApi);
+			log.info("Claim Intimation Request" + printReq.toJson(map));
+			String request = printReq.toJson(map);
+			String message = callApi(claimSubmitApi, request);
+			log.info("Claim Intimation Request" + message);
+			Map<String,Object> claim_response = mapper.readValue(message, Map.class);
+			
+			response.put("policy_number", policy_no);
+			response.put("claim_number", claim_response.get("Claimrefno")==null?"N/A":claim_response.get("Claimrefno"));
+			response.put("registration", registration_no);
+			response.put("customer_name", customer_name);
+			response.put("claim_status", claim_response.get("Response")==null?"N/A":claim_response.get("Response"));
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return response;
+	}
+
+	public Map<String, String> getClaimDetailsByClaimRefNo(Map<String, String> req) {
+		try {
+			String claim_no =req.get("claim_number");
+			
+			String getClaimDetailsApi =cs.getwebserviceurlProperty().getProperty("get.claim.details");
+			String formatted_api =getClaimDetailsApi.replace("{CLAIM_NO}", claim_no);
+			String api_response =callGetApi(formatted_api);
+			Map<String,Object> map_data =mapper.readValue(api_response, Map.class);
+			Map<String,Object> policy_info =map_data.get("PolicyInfo")==null?null : (Map<String,Object>)map_data.get("PolicyInfo");
+			Map<String,Object> veh_info =map_data.get("VehicleInfo")==null?null : (Map<String,Object>)map_data.get("VehicleInfo");
+			Map<String,Object> claim_info =map_data.get("ClaimInfo")==null?null : (Map<String,Object>)map_data.get("ClaimInfo");
+			
+			Map<String, String> response = new HashMap<String, String>();
+			if(policy_info!=null && veh_info!=null && claim_info!=null) {
+				response.put("customer_name", claim_info.get("AssuredName")==null?"N/A":claim_info.get("AssuredName").toString());
+				response.put("policy_number", policy_info.get("PolicyNo")==null?"N/A":policy_info.get("PolicyNo").toString());
+				response.put("inceptiondate", policy_info.get("PolicyFrom")==null?"N/A":policy_info.get("PolicyFrom").toString());
+				response.put("expirydate", policy_info.get("PolicyTo")==null?"N/A":policy_info.get("PolicyTo").toString());
+				response.put("policy_type", policy_info.get("ProductDesc")==null?"N/A":policy_info.get("ProductDesc").toString());
+				response.put("RegistrationNo", veh_info.get("VechRegNo")==null?"N/A":veh_info.get("VechRegNo").toString());
+				response.put("make", veh_info.get("Vehmake")==null?"N/A":veh_info.get("Vehmake").toString());
+				response.put("model", veh_info.get("Vehmodel")==null?"N/A":veh_info.get("Vehmodel").toString());
+				response.put("manufacture_year", veh_info.get("Manufactureyear")==null?"N/A":veh_info.get("Manufactureyear").toString());
+				response.put("claim_number", claim_info.get("ClaimRefNo")==null?"N/A":claim_info.get("ClaimRefNo").toString());
+				response.put("accident_date",claim_info.get("Accidentdate")==null?"N/A":claim_info.get("Accidentdate").toString());
+				response.put("accident_time", claim_info.get("Accidenttime")==null?"N/A":claim_info.get("Accidenttime").toString());
+				response.put("location_desc", claim_info.get("Accidentplace")==null?"N/A":claim_info.get("Accidentplace").toString());
+				response.put("intimate_date", claim_info.get("ClaimIntimatedDate")==null?"N/A":claim_info.get("ClaimIntimatedDate").toString());
+			}else {
+				response.put("ErrorMessage", "Record not found");
+			}
+			
+			return response;
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public  String callGetApi(String url) {
+		String apiReponse = "";
+		try {
+			Response response = null;
+			Map<String, Object> tokReq = new HashMap<String, Object>();
+			tokReq.put("InsuranceId", cs.getwebserviceurlProperty().getProperty("InsuranceId"));
+			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
+			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
+			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+
+			String tokenJsonReq = new Gson().toJson(tokReq);
+			String tokenApi = cs.getwebserviceurlProperty().getProperty("token.api");
+			RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
+			Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
+			response = httpClient.newCall(tokenReq).execute();
+			String obj = response.body().string();
+			TokenResponse tokenRes = mapper.readValue(obj, TokenResponse.class);
+
+			String token = tokenRes.getTokenResponse().getToken();
+
+			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
+					.get().build();
+			response = httpClient.newCall(apiReq).execute();
+			apiReponse = response.body().string();
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+		return apiReponse;
+	}
+
 
 }

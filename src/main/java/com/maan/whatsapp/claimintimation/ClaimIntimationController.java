@@ -1,6 +1,7 @@
 package com.maan.whatsapp.claimintimation;
 
 import java.text.ParseException;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,12 +48,21 @@ public class ClaimIntimationController {
 	public Object shortTermPolicyResponse(@RequestBody ShortTermPolicyReq req) {
 		return service.shortTermPolicyResponse(req);
 	}
+	
 	@PostMapping("/getClaimRefNo")
 	public Object getClaimRefNo(@RequestBody ClaimRefNoReq req) throws WhatsAppValidationException {
 		return service.getClaimRefNo(req);
 	}
 	
+	@PostMapping("/intimate/new")
+	public Object intimateNewClaim(@RequestBody IntimateNewClaimReq req) {
+		return service.intimateNewClaim(req);
+	}
 	
-	
+	@PostMapping("/getClaimDetailsByClaimRefNo")
+	public Map<String,String> getClaimDetailsByClaimRefNo(@RequestBody Map<String,String> req){
+		return service.getClaimDetailsByClaimRefNo(req);
+	}
 
+	
 }

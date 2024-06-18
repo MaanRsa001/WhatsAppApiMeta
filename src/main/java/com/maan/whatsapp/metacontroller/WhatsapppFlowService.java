@@ -8,4 +8,23 @@ public interface WhatsapppFlowService {
 
 	String createShortTermPolicy(Map<String, Object> data);
 
+	Map<String, Object> quotation_flow_screen_data();
+
+	String createVehicleQuotation(Map<String, Object> request);
+
+	Map<String, Object> stp_flow_screen_data();
+
+	Map<String, Object> claimIntimateScreenData();
+
+	String inalipaClaimIntimation(Map<String, Object> request);
+
+	Object getInalipaClaimTypes();
+
+	Map<String, Object> InalipaIntimateScreenData();
+
+	String decryptMetaImage(Map<String, Object> image);
+
+	Map<String, Object> preinspectionScreenData();
+
+
 }

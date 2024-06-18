@@ -1,4 +1,6 @@
-package com.maan.whatsapp.meta;
+package com.maan.whatsapp.response.wati.sendsesmsg;
+
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -12,13 +14,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Nfm_reply {
+public class SendMessageResponse {
 	
-	private String response_json;
+	private String messaging_product;
 	
-	private String body;
+	private List<MetaSendMsgContacts> contacts;
 	
-	private String name;
-	
-	
+	private List<MetaSendMsgRes> messages;
 }

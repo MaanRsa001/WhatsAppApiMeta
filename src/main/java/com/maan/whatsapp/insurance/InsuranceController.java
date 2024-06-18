@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.maan.whatsapp.config.exception.WhatsAppValidationException;
-
-import okhttp3.Response;
 
 @RestController
 @RequestMapping("/insurance")
@@ -29,7 +29,7 @@ public class InsuranceController {
 	}
 	
 	@PostMapping("/generate/quote")
-	public Object generateQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException {
+	public Object generateQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException {
 		return service.generateQuote(req);
 	}
 
@@ -54,4 +54,10 @@ public class InsuranceController {
 	public Object renewalQuote(@RequestBody B2CQuoteRequest req) throws WhatsAppValidationException {
 		return service.renewalQuote(req);
 	}
+	
+	@PostMapping("/generate/stp/quote")
+	public Object generateStpQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException {
+		return service.generateStpQuote(req);
+	}
+
 }

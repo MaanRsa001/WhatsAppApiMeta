@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -379,8 +381,8 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 					if (list.size() <= 0 || StringUtils.isNotBlank(replyMsgId)) {
 											
 						if (StringUtils.isBlank(replyMsgId) || StringUtils.isBlank(reply) || userButtonReply.replace("\\s", "").equalsIgnoreCase(mainMenu) ||
-								"Swahili".equalsIgnoreCase(reply) || "English".equalsIgnoreCase(reply) || mainMenuSwahili.equalsIgnoreCase(userButtonReply.replaceAll("\\s", ""))
-								) {
+								"Swahili".equalsIgnoreCase(reply) || "English".equalsIgnoreCase(reply) || mainMenuSwahili.equalsIgnoreCase(userButtonReply.replaceAll("\\s", "")))
+								 {
 								
 							nxtMsgId = "COM001";
 						} else {
@@ -555,7 +557,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 	
 								WhatsappTemplateMaster tempM = getTempMasterStageContent(msgid, "90016", waid, stageCode,
 										subStageCode);
-	
+								
 								String isskipped = "N";
 								String isProcessComp = "N";
 	
@@ -566,7 +568,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								
 								reqDet.setWausermessageid(request.getId());
 	
-								if (isSkip.equalsIgnoreCase("Y") && (reply.equals("99") || reply.equalsIgnoreCase("Skip")) && isReply.equalsIgnoreCase("Y")) {
+								if (isSkip.equalsIgnoreCase("Y") && (reply.equals("99") || reply.equalsIgnoreCase("Skip") ||  reply.equalsIgnoreCase("Skip Image")) && isReply.equalsIgnoreCase("Y")) {
 									isskipped = "Y";
 								}
 															
@@ -637,11 +639,11 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								if (isDocUpl.equalsIgnoreCase("Y") && StringUtils.isNotBlank(data) &&isApiCall.equalsIgnoreCase("N")
 										&& type.equalsIgnoreCase("image") && isskipped.equalsIgnoreCase("N")) {
 	
-									String fileurls[] = data.split("fileName=");
+									//String fileurls[] = data.split("fileName=");
 	
-									reqDet.setWa_userfilepath(fileurls[1]);
+									reqDet.setWa_userfilepath(data);
 	
-									String localPath = watiSer.storeWAFile(fileurls[1]);
+									String localPath = watiSer.storeWAFile(data);
 									
 									reqDet.setUserreply(localPath.replace("\\", "//"));
 									reqDet.setLocwa_userfilepath(localPath);
@@ -649,9 +651,10 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								}else if (isDocUpl.equalsIgnoreCase("Y") && StringUtils.isNotBlank(data) &&isApiCall.equalsIgnoreCase("Y")
 										&&(type.equalsIgnoreCase("image") || type.equalsIgnoreCase("document")|| type.equalsIgnoreCase("video"))&&isskipped.equalsIgnoreCase("N")) {
 	
-									String fileurls[] = data.split("fileName=");
-									motorImpl.saveClaimDocument(fileurls[1],tempM,type,waid,reqDet);
+									//String fileurls[] = data.split("fileName=");
+									motorImpl.saveClaimDocument(data,tempM,type,waid,reqDet);
 									reqDet.setIsprocesscompleted("Y");
+									
 									
 								}else if (isDocUpl.equalsIgnoreCase("Y")
 										&& (StringUtils.isBlank(data) || !type.equalsIgnoreCase("image"))
@@ -911,7 +914,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 				String regardsAr = StringUtils.isBlank(tempM.getMessage_regards_ar()) ? ""
 						: tempM.getMessage_regards_ar().trim();
 				
-				String templateMsg =StringUtils.isBlank(tempM.getIsTemplateMsg())?"N":tempM.getIsTemplateMsg();
+				//String templateMsg =StringUtils.isBlank(tempM.getIsTemplateMsg())?"N":tempM.getIsTemplateMsg();
 
 				String imageName =StringUtils.isBlank(tempM.getStage_desc())?"":tempM.getStage_desc();
 
@@ -956,9 +959,9 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 						.isResponseYnSent("N")
 						.isResSaveApi(StringUtils.isBlank(tempM.getIsResSaveApi()) ? "N" : tempM.getIsResSaveApi())
 						.isResMsg(StringUtils.isBlank(tempM.getIsResMsg()) ? "N" : tempM.getIsResMsg())
-						.isButtonMsgYn(StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg())
+						//.isButtonMsgYn(StringUtils.isBlank(tempM.getIsButtonMsg())?"N":tempM.getIsButtonMsg())
 						.isResMsgApi(StringUtils.isBlank(tempM.getIsResMsgApi())?"":tempM.getIsResMsgApi())
-						.isTemplateMsg(templateMsg)
+						//.isTemplateMsg(templateMsg)
 						.formPageUrl(StringUtils.isBlank(tempM.getFormpageUrl())?"":tempM.getFormpageUrl())
 						.formPageYn(StringUtils.isBlank(tempM.getFormpageYn())?"N":tempM.getFormpageYn())
 						.build();
@@ -1155,44 +1158,62 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 		String buttonMessage="";
 		String request="";
 		try {		
-			ButtonHeaderReq header =ButtonHeaderReq.builder()
-					.type("Text")
-					.text(" ")
-					.media(null)
-					.build();
-			List<ButtonsNameReq> buttonList =new ArrayList<ButtonsNameReq>();
-			
-			buttonList.add(new ButtonsNameReq("English"));
-			buttonList.add(new ButtonsNameReq("Swahili"));
 
 			String message ="*Alliance Insurance Corporate Limited*\n\nPlease choose your language";
 				
-			WhatsAppButtonReq buttonReq =WhatsAppButtonReq.builder()
-					.header(header)
-					.body(message)
-					.footer(" ")
-					.buttons(buttonList)
-					.build();
-			request =cs.reqPrint(buttonReq);
-			
-		String commonurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api");
-		String buttonMsgUrl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
-		String auth = cs.getwebserviceurlProperty().getProperty("whatsapp.auth");
+				
+			Map<String,Object> button_req = new HashMap<String, Object>();
+			List<Map<String,Object>> buttonList =new ArrayList<>();
+			Map<String,Object> button_text_1 = new HashMap<String, Object>();
+			button_text_1.put("type", "reply");
 
-		String url =commonurl + buttonMsgUrl;
-		url =url.replace("{whatsappNumber}", req.getWaId());
 		
-		String twoSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.two");
-		String oneSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.one");
+			Map<String,Object> reply_1 = new HashMap<String, Object>();
+			reply_1.put("id", "Swahili");
+			reply_1.put("title", "Swahili");
+			button_text_1.put("reply", reply_1);
+			buttonList.add(button_text_1);
+			
+			Map<String,Object> button_text_2 = new HashMap<String, Object>();
+			button_text_2.put("type", "reply");
+
+			
+			Map<String,Object> reply_2 = new HashMap<String, Object>();
+			reply_2.put("id", "English");
+			reply_2.put("title", "English");
+			button_text_2.put("reply", reply_2);
+			buttonList.add(button_text_2);
+			
 		
-		buttonMessage =request.replace(twoSlash, oneSlash);
+			Map<String,Object> body_text =new HashMap<String, Object>();
+			body_text.put("text", message);
 		
+			Map<String,Object> actions =new HashMap<String, Object>();
+			actions.put("buttons", buttonList);
+		
+			Map<String,Object> button_interactive =new HashMap<String, Object>();
+			button_interactive.put("type", "button");
+			button_interactive.put("body", body_text);
+			button_interactive.put("action", actions);
+		
+		
+		button_req.put("messaging_product", "whatsapp");
+		button_req.put("recipient_type", "individual");
+		button_req.put("to", req.getWaId());
+		button_req.put("type", "interactive");
+		button_req.put("interactive", button_interactive);
+		
+		buttonMessage =cs.reqPrint(button_req);
+		
+		String meta_message_api=cs.getwebserviceurlProperty().getProperty("meta.message.api");
+		String meta_message_api_auth=cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
+	
 		okhttp3.MediaType contentType =okhttp3.MediaType.parse("application/json");
 		RequestBody body =RequestBody.create(buttonMessage,contentType);
 		
 		Request requestBuiler = new Request.Builder()
-				.url(url)
-				.addHeader("Authorization", auth)
+				.url(meta_message_api)
+				.addHeader("Authorization", meta_message_api_auth)
 				.post(body)
 				.build();
 
@@ -1210,5 +1231,8 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 		return buttonMessage;
 		
 	}
+	
+	
+
 
 }

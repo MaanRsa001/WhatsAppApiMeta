@@ -37,10 +37,10 @@ public interface WhatschattemplateRepository extends JpaRepository<WhatsappMessa
 	@Query(value = "SELECT PREFIX_CODE CODE, PREFIX_DESC_EN CODEDESC FROM WHATSAPP_PREFIX_LABEL WHERE STATUS = 'Y' AND PRODUCT_ID = '65'", nativeQuery = true)
 	List<Map<String, Object>> getchatmsgidlist();
 	
-	@Query(value = "SELECT ITEM_CODE CODE, ITEM_DESC CODEDESC FROM LIST_ITEM_VALUE WHERE ITEM_TYPE = 'BROKER_RATING' AND STATUS = 'Y'", nativeQuery = true)
+	@Query(value = "SELECT ITEM_CODE CODE, ITEM_DESC CODEDESC FROM WHATSAPP_LIST_ITEM_VALUE WHERE ITEM_TYPE = 'BROKER_RATING' AND STATUS = 'Y'", nativeQuery = true)
 	List<Map<String, Object>> getuserlist();
 	
-	@Query(value = "SELECT PRODUCT_ID CODE, PRODUCT_NAME CODEDESC FROM PRODUCT_MASTER WHERE STATUS='Y'", nativeQuery = true)
+	@Query(value = "SELECT PRODUCT_ID CODE, PRODUCT_NAME CODEDESC FROM WHATSAPP_PRODUCT_MASTER WHERE STATUS='Y'", nativeQuery = true)
 	List<Map<String, Object>> getproductlist();
 
 }

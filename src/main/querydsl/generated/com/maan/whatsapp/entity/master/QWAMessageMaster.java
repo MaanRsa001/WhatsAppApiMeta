@@ -19,23 +19,57 @@ public class QWAMessageMaster extends EntityPathBase<WAMessageMaster> {
 
     public static final QWAMessageMaster wAMessageMaster = new QWAMessageMaster("wAMessageMaster");
 
-    public final StringPath claimMessage = createString("claimMessage");
+    public final StringPath button_1 = createString("button_1");
 
-    public final StringPath claimMessageYn = createString("claimMessageYn");
+    public final StringPath button_1_sw = createString("button_1_sw");
+
+    public final StringPath button_2 = createString("button_2");
+
+    public final StringPath button_2_sw = createString("button_2_sw");
+
+    public final StringPath button_3 = createString("button_3");
+
+    public final StringPath button_3_sw = createString("button_3_sw");
 
     public final StringPath commonmsgid = createString("commonmsgid");
+
+    public final StringPath ctaButtonName = createString("ctaButtonName");
+
+    public final StringPath ctaButtonNameSw = createString("ctaButtonNameSw");
 
     public final DateTimePath<java.util.Date> effectivedate = createDateTime("effectivedate", java.util.Date.class);
 
     public final DateTimePath<java.util.Date> entrydate = createDateTime("entrydate", java.util.Date.class);
 
-    public final StringPath imageName = createString("imageName");
+    public final StringPath flow_index_screen_name = createString("flow_index_screen_name");
 
-    public final StringPath imageUrl = createString("imageUrl");
+    public final StringPath flowApi = createString("flowApi");
 
-    public final StringPath isButtonMsg = createString("isButtonMsg");
+    public final StringPath flowApiAuth = createString("flowApiAuth");
+
+    public final StringPath flowApiMethod = createString("flowApiMethod");
+
+    public final StringPath flowApiRequest = createString("flowApiRequest");
+
+    public final StringPath flowButtonName = createString("flowButtonName");
+
+    public final StringPath flowButtonNameSw = createString("flowButtonNameSw");
+
+    public final StringPath flowId = createString("flowId");
+
+    public final StringPath flowToken = createString("flowToken");
+
+    public final StringPath interactiveButtonYn = createString("interactiveButtonYn");
 
     public final StringPath iscommonmsg = createString("iscommonmsg");
+
+    public final StringPath locButtonName = createString("locButtonName");
+
+    public final StringPath locButtonNameSw = createString("locButtonNameSw");
+
+    public final StringPath menu_button_name = createString("menu_button_name");
+
+    public final StringPath menu_button_name_sw = createString("menu_button_name_sw");
 
     public final StringPath messagedescar = createString("messagedescar");
 
@@ -43,25 +77,11 @@ public class QWAMessageMaster extends EntityPathBase<WAMessageMaster> {
 
     public final StringPath messageid = createString("messageid");
 
-    public final StringPath msgButton1 = createString("msgButton1");
-
-    public final StringPath msgButton2 = createString("msgButton2");
-
-    public final StringPath msgButton3 = createString("msgButton3");
-
-    public final StringPath msgButtonSW1 = createString("msgButtonSW1");
-
-    public final StringPath msgButtonSw2 = createString("msgButtonSw2");
-
-    public final StringPath msgButtonSw3 = createString("msgButtonSw3");
-
-    public final StringPath msgFooter = createString("msgFooter");
-
-    public final StringPath msgHeader = createString("msgHeader");
-
-    public final StringPath msgType = createString("msgType");
+    public final StringPath messageType = createString("messageType");
 
     public final StringPath remarks = createString("remarks");
+
+    public final StringPath requestdataYn = createString("requestdataYn");
 
     public final StringPath status = createString("status");
 
