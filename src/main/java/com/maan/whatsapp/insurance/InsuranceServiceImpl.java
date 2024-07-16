@@ -1,9 +1,7 @@
 package com.maan.whatsapp.insurance;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -43,13 +39,14 @@ import com.maan.whatsapp.claimintimation.ClaimIntimationEntity;
 import com.maan.whatsapp.claimintimation.ClaimIntimationRepository;
 import com.maan.whatsapp.claimintimation.ClaimIntimationServiceImpl;
 import com.maan.whatsapp.config.exception.WhatsAppValidationException;
+import com.maan.whatsapp.entity.master.PreinspectionImageDetail;
 import com.maan.whatsapp.meta.FlowCreateQuoteReq;
+import com.maan.whatsapp.repository.whatsapp.PreInspectionDataImageRepo;
 import com.maan.whatsapp.response.error.Error;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 @Service
 @PropertySource("classpath:WebServiceUrl.properties")
@@ -67,6 +64,9 @@ public class InsuranceServiceImpl implements InsuranceService{
 	
 	@Autowired
 	private ObjectMapper mapper;
+	
+	@Autowired
+	private PreInspectionDataImageRepo pdiRepo;
 	
 	@Autowired
 	private Gson objectPrint;
@@ -117,6 +117,9 @@ public class InsuranceServiceImpl implements InsuranceService{
 	private String whatsappApiSendSessionMessage;
 	@Value("${tira.post.api}")						
 	private String tiraPostApi;
+	@Value("${wh.get.ewaydata.api}")
+	private String wh_get_ewaydata_api;
+	
 	
 	@Value("${turl.api}")						
 	private String turlApi;
@@ -3101,20 +3104,45 @@ public class InsuranceServiceImpl implements InsuranceService{
 		
 		String customerRefNo = cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString();
 		
+		
+		String isBroker =stp_req.get("isbroker")==null?"":stp_req.get("isbroker").toString();
+		String agency_code="",bdm_code="",broker_branchcode="",login_id="",subusertype ="",usertype="",
+		source_typeid ="",source_type="",branch_code="",broker_code=""		;
+		if("1".equals(isBroker)) {
+			String broker_loginid =stp_req.get("broker_loginid")==null?"":stp_req.get("broker_loginid").toString();
+			Map<String,Object> loginReq =new HashMap<String, Object>();
+			loginReq.put("Type", "LOGIN_ID_DATA");
+			loginReq.put("LoginId", broker_loginid);
+			api_response =serviceImpl.callEwayApi(wh_get_ewaydata_api, mapper.writeValueAsString(loginReq));
+			Map<String,Object> map =mapper.readValue(api_response, Map.class);
+			Map<String,Object> result = (Map<String,Object>) map.get("Result");
+			
+			agency_code = result.get("AgencyCode")==null?"": result.get("AgencyCode").toString();
+			bdm_code = result.get("BdmCode")==null?"": result.get("BdmCode").toString();
+			broker_branchcode = result.get("BrokerBranchCode")==null?"": result.get("BrokerBranchCode").toString();
+			login_id = result.get("LoginId")==null?"": result.get("LoginId").toString();
+			subusertype = result.get("SubUserType")==null?"": result.get("SubUserType").toString();
+			usertype = result.get("UserType")==null?"": result.get("UserType").toString();
+			source_typeid = result.get("SourceTypeId")==null?"": result.get("SourceTypeId").toString();
+			source_type = result.get("SourceType")==null?"": result.get("SourceType").toString();
+			branch_code = result.get("BranchCode")==null?"": result.get("BranchCode").toString();
+			broker_code = result.get("BrokerCode")==null?"": result.get("BrokerCode").toString();
+		}
+		
 		Map<String,Object> stpReq = new HashMap<String, Object>();
 		stpReq.put("AcccessoriesSumInsured", "0");
-		stpReq.put("AgencyCode", "10303");
+		stpReq.put("AgencyCode", StringUtils.isBlank(agency_code)?"10303":agency_code);
 		stpReq.put("ApplicationId", "1");
 		stpReq.put("AxelDistance", "01");
-		stpReq.put("BdmCode", "620499");
-		stpReq.put("BranchCode", "02");
-		stpReq.put("BrokerBranchCode", "1");
-		stpReq.put("BrokerCode", "10303");
+		stpReq.put("BdmCode", StringUtils.isBlank(bdm_code)?"620499":bdm_code);
+		stpReq.put("BranchCode", StringUtils.isBlank(bdm_code)?"02":branch_code);
+		stpReq.put("BrokerBranchCode", StringUtils.isBlank(bdm_code)?"1":broker_branchcode);
+		stpReq.put("BrokerCode", StringUtils.isBlank(broker_code)?"10303":broker_code);
 		stpReq.put("Chassisnumber", stp_req.get("chassis_no")==null?"":stp_req.get("chassis_no").toString());
 		stpReq.put("CollateralYn", "N");
 		stpReq.put("Color", stp_req.get("vehicle_color")==null?"":stp_req.get("vehicle_color").toString());
 		stpReq.put("ColorDesc", "");
-		stpReq.put("CreatedBy","guest");
+		stpReq.put("CreatedBy",StringUtils.isBlank(login_id)?"guest":login_id);
 		stpReq.put("CubicCapacity", "100");
 		stpReq.put("Currency", "TZS");
 		stpReq.put("CustomerCode", "620499");
@@ -3155,13 +3183,14 @@ public class InsuranceServiceImpl implements InsuranceService{
 		stpReq.put("SearchFromApi", false);
 		stpReq.put("SeatingCapacity", stp_req.get("seating_capacity")==null?"":stp_req.get("seating_capacity").toString());
 		stpReq.put("SectionId", "73");
-		stpReq.put("SourceTypeId", "b2c");
+		stpReq.put("SourceTypeId", StringUtils.isBlank(source_typeid)?"b2c":source_typeid);
+		stpReq.put("SourceType", StringUtils.isBlank(source_type)?"b2c":source_type);
 		stpReq.put("Status", "Y");
-		stpReq.put("SubUserType", "b2c");
+		stpReq.put("SubUserType", StringUtils.isBlank(subusertype)?"b2c":subusertype);
 		stpReq.put("SumInsured", "0");
 		stpReq.put("Tareweight", "100");
 		stpReq.put("TppdIncreaeLimit", "0");
-		stpReq.put("UserType", "Broker");
+		stpReq.put("UserType", StringUtils.isBlank(usertype)?"Broker":usertype);
 		stpReq.put("Vehcilemodel", "");
 		stpReq.put("VehcilemodelId", stp_req.get("model")==null?"":stp_req.get("model").toString());
 		stpReq.put("VehicleId", "1");
@@ -3174,7 +3203,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 		stpReq.put("periodOfInsurance", "30");
 		stpReq.put("EngineNumber", "");
 
-		 api_request =mapper.writeValueAsString(stpReq);
+		api_request =mapper.writeValueAsString(stpReq);
 		
 		log.info("STP Save Motor Request : "+api_request);
 
@@ -3250,24 +3279,27 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 			// user creation block
 			
-			log.info("USER CREATION BLOCK START : "+new Date());
-									
-			Map<String,Object> userCreateMap =new HashMap<>();
-			userCreateMap.put("CompanyId", "100002");
-			userCreateMap.put("CustomerId", customerRefNo);
-			userCreateMap.put("ProductId", "46");
-			userCreateMap.put("ReferenceNo", refNo);
-			userCreateMap.put("UserMobileNo", req.getWhatsAppNo());
-			userCreateMap.put("UserMobileCode", req.getWhatsAppCode());
-			userCreateMap.put("AgencyCode", "10303");
-			
-			String userCreationReq =objectPrint.toJson(userCreateMap);
-			
-			log.info("User Creation Request || "+userCreationReq);
-			response =serviceImpl.callEwayApi(this.ewayLoginCreateApi, userCreationReq);
-			log.info("User Creation Response || "+response);
-
-			log.info("USER CREATION BLOCK END : "+new Date());
+			if("2".equals(isBroker)) {
+				log.info("USER CREATION BLOCK START : "+new Date());
+										
+				Map<String,Object> userCreateMap =new HashMap<>();
+				userCreateMap.put("CompanyId", "100002");
+				userCreateMap.put("CustomerId", customerRefNo);
+				userCreateMap.put("ProductId", "46");
+				userCreateMap.put("ReferenceNo", refNo);
+				userCreateMap.put("UserMobileNo", req.getWhatsAppNo());
+				userCreateMap.put("UserMobileCode", req.getWhatsAppCode());
+				userCreateMap.put("AgencyCode", "10303");
+				
+				
+				String userCreationReq =objectPrint.toJson(userCreateMap);
+				
+				log.info("User Creation Request || "+userCreationReq);
+				response =serviceImpl.callEwayApi(this.ewayLoginCreateApi, userCreationReq);
+				log.info("User Creation Response || "+response);
+	
+				log.info("USER CREATION BLOCK END : "+new Date());
+			}
 
 			String exception="";
 			
@@ -3473,6 +3505,28 @@ public class InsuranceServiceImpl implements InsuranceService{
 		
 		return bot_response_data;
 		
+	}
+
+	@Override
+	public Object getPreinspectionDetails(UploadPreinspectionReq req) {
+		try {
+			String decode_str = new String(Base64.getDecoder().decode(req.getClaim_form()));
+			Map<String,Object> req_map = mapper.readValue(decode_str, Map.class);
+			String upload_transaction_no =req_map.get("upload_transaction_no")==null?"":req_map.get("upload_transaction_no").toString();
+			Map<String,String> response = new HashMap<String, String>();
+			List<Map<String,Object>> list = pdiRepo.getPreinspectionDetailsByTranId(upload_transaction_no);
+			Map<String,Object> map = list.get(0);
+			response.put("registration",map.get("REGISTRAIONNO")==null?"N/A":map.get("REGISTRAIONNO").toString());
+			response.put("total_count",map.get("TOTAL_IMAGES")==null?"":map.get("TOTAL_IMAGES").toString());
+			response.put("mobile_no",map.get("MOBILENO")==null?"":map.get("MOBILENO").toString());
+			response.put("referenceno",map.get("TRANID")==null?"":map.get("TRANID").toString());
+			response.put("ChassisNo",map.get("CHASSISNO")==null?"N/A":map.get("CHASSISNO").toString());
+			
+			return response;
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 }

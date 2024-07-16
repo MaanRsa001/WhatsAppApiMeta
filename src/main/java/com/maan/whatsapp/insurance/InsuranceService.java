@@ -19,5 +19,7 @@ public interface InsuranceService {
 	Object renewalQuote(B2CQuoteRequest req)throws WhatsAppValidationException ;
 
 	Object generateStpQuote(InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException ;
+
+	Object getPreinspectionDetails(UploadPreinspectionReq req);
 	
 }

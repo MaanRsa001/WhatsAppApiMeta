@@ -743,8 +743,8 @@ public class AsyncProcessThread {
 	public CompletableFuture<List<Map<String, String>>> getSTPModel(String bodyType,String make,String token) {
 		try {
 			
-			String api =this.stpRegion;
-			
+			String api =this.stpMakeModel;
+	
 			Map<String,Object> model_req =new HashMap<String, Object>();
 			model_req.put("BodyId", bodyType);
 			model_req.put("InsuranceId", "100002");

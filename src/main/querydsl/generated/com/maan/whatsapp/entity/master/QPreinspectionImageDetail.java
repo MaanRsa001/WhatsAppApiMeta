@@ -19,11 +19,19 @@ public class QPreinspectionImageDetail extends EntityPathBase<PreinspectionImage
 
     public static final QPreinspectionImageDetail preinspectionImageDetail = new QPreinspectionImageDetail("preinspectionImageDetail");
 
+    public final NumberPath<Integer> docId = createNumber("docId", Integer.class);
+
     public final DateTimePath<java.util.Date> entry_date = createDateTime("entry_date", java.util.Date.class);
+
+    public final StringPath exifImageStatus = createString("exifImageStatus");
 
     public final StringPath imageFilePath = createString("imageFilePath");
 
     public final StringPath imageName = createString("imageName");
+
+    public final StringPath originalFileName = createString("originalFileName");
+
+    public final NumberPath<Long> sno = createNumber("sno", Long.class);
 
     public final StringPath status = createString("status");
 

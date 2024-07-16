@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.maan.whatsapp.auth.basic.WhatsappEncryptionDecryption;
@@ -127,9 +130,10 @@ public class WhatsAppController {
 					}else if("nfm_reply".equalsIgnoreCase(inteType)) {
 						
 						String str_json = msg.get(0).getInteractive().getNfm_reply().getResponse_json();
-						//Map<String,Object> map_json =mapper.readValue(str_json, Map.class);
-						//String json_to_str =printReq.toJson(map_json);
-						String encode_str =Base64.getEncoder().encodeToString(str_json.getBytes());
+						Map<String,Object> map = mapper.readValue(str_json, Map.class);
+						map.remove("wa_flow_response_params");
+						String json_as_string =mapper.writeValueAsString(map);
+						String encode_str =Base64.getEncoder().encodeToString(json_as_string.getBytes());
 						webhookReq.setText(encode_str);
 					
 					}else if("list_reply".equalsIgnoreCase(inteType)) {
@@ -617,6 +621,21 @@ public class WhatsAppController {
 		
 		return new ResponseEntity<Object>(healthCheckReq,HttpStatus.OK);
 		
+	}
+	
+	
+	//@PostConstruct
+	public void convertto_base64() throws JsonMappingException, JsonProcessingException {
+		
+		
+		String str ="{\"vehicle_color\":\"1\",\"address\":\"Chennai\",\"fuel_used\":\"1\",\"mobile_no\":\"123456789\",\"title\":\"1\",\"country_code\":\"255\",\"seating_capacity\":\"4\",\"flow_token\":\"0251a97e-bd67-494f-9f93-83fef81b912c\",\"chassis_no\":\"13267\",\"body_type\":\"1\",\"manufacture_year\":\"2020\",\"broker_loginid\":\"\",\"model\":\"102103\",\"customer_name\":\"Joy\",\"region\":\"23000\",\"make\":\"21\",\"engine_capacity\":\"1000\",\"isbroker\":\"2\",\"email\":\"joy@123.com\",\"vehicle_usage\":\"17\",\"wa_flow_response_params\":{\"title\":\"STP QUOTE\",\"flow_id\":\"985913242664526\",\"flow_name\":\"STP_POLICY_22_05_2024_02\",\"response_message\":\"{\\\"screens\\\":[{\\\"id\\\":\\\"CUSTOMER_DETAILS\\\",\\\"title\\\":\\\"Customer Information\\\",\\\"components\\\":[{\\\"name\\\":\\\"title\\\",\\\"label\\\":\\\"Title\\\"},{\\\"name\\\":\\\"customer_name\\\",\\\"label\\\":\\\"Customer Name\\\"},{\\\"name\\\":\\\"country_code\\\",\\\"label\\\":\\\"Country Code\\\"},{\\\"name\\\":\\\"mobile_no\\\",\\\"label\\\":\\\"Mobile No\\\"},{\\\"name\\\":\\\"email\\\",\\\"label\\\":\\\"Email ID\\\"},{\\\"name\\\":\\\"address\\\",\\\"label\\\":\\\"Address\\\"},{\\\"name\\\":\\\"region\\\",\\\"label\\\":\\\"Region\\\"}]},{\\\"id\\\":\\\"VEHICLE_DETAILS\\\",\\\"title\\\":\\\"Vehicle Information\\\",\\\"components\\\":[{\\\"name\\\":\\\"isbroker\\\",\\\"label\\\":\\\"Who is creating quotation?\\\"},{\\\"name\\\":\\\"broker_loginid\\\",\\\"label\\\":\\\"Broker LoginId\\\"},{\\\"name\\\":\\\"chassis_no\\\",\\\"label\\\":\\\"Chassis Number\\\"},{\\\"name\\\":\\\"body_type\\\",\\\"label\\\":\\\"Body Type\\\"},{\\\"name\\\":\\\"make\\\",\\\"label\\\":\\\"Make\\\"},{\\\"name\\\":\\\"model\\\",\\\"label\\\":\\\"Model\\\"},{\\\"name\\\":\\\"engine_capacity\\\",\\\"label\\\":\\\"Engine Capacity\\\"},{\\\"name\\\":\\\"manufacture_year\\\",\\\"label\\\":\\\"Manufacture Year\\\"},{\\\"name\\\":\\\"fuel_used\\\",\\\"label\\\":\\\"Fuel Used\\\"},{\\\"name\\\":\\\"vehicle_color\\\",\\\"label\\\":\\\"Vehicle Color\\\"},{\\\"name\\\":\\\"vehicle_usage\\\",\\\"label\\\":\\\"Vehicle Usage\\\"},{\\\"name\\\":\\\"seating_capacity\\\",\\\"label\\\":\\\"Seating Capacity\\\"}]}],\\\"response\\\":[{\\\"id\\\":\\\"CUSTOMER_DETAILS\\\",\\\"title\\\":\\\"Customer Information\\\",\\\"components\\\":[{\\\"name\\\":\\\"title\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Title\\\",\\\"value\\\":\\\"Mr\\\"},{\\\"name\\\":\\\"customer_name\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Customer Name\\\",\\\"value\\\":\\\"Joy\\\"},{\\\"name\\\":\\\"country_code\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Country Code\\\",\\\"value\\\":\\\"255\\\"},{\\\"name\\\":\\\"mobile_no\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Mobile No\\\",\\\"value\\\":\\\"123456789\\\"},{\\\"name\\\":\\\"email\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Email ID\\\",\\\"value\\\":\\\"joy@123.com\\\"},{\\\"name\\\":\\\"address\\\",\\\"type\\\":\\\"TextArea\\\",\\\"label\\\":\\\"Address\\\",\\\"value\\\":\\\"Chennai\\\"},{\\\"name\\\":\\\"region\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Region\\\",\\\"value\\\":\\\"Arusha\\\"}]},{\\\"id\\\":\\\"VEHICLE_DETAILS\\\",\\\"title\\\":\\\"Vehicle Information\\\",\\\"components\\\":[{\\\"name\\\":\\\"isbroker\\\",\\\"type\\\":\\\"RadioButtonsGroup\\\",\\\"label\\\":\\\"Who is creating quotation?\\\",\\\"value\\\":\\\"Self\\\"},{\\\"name\\\":\\\"chassis_no\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Chassis Number\\\",\\\"value\\\":\\\"13267\\\"},{\\\"name\\\":\\\"body_type\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Body Type\\\",\\\"value\\\":\\\"SALOON\\\"},{\\\"name\\\":\\\"make\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Make\\\",\\\"value\\\":\\\"AUDI\\\"},{\\\"name\\\":\\\"model\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Model\\\",\\\"value\\\":\\\"100\\\"},{\\\"name\\\":\\\"engine_capacity\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Engine Capacity\\\",\\\"value\\\":\\\"1000\\\"},{\\\"name\\\":\\\"manufacture_year\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Manufacture Year\\\",\\\"value\\\":\\\"2020\\\"},{\\\"name\\\":\\\"fuel_used\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Fuel Used\\\",\\\"value\\\":\\\"Diesel\\\"},{\\\"name\\\":\\\"vehicle_color\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Vehicle Color\\\",\\\"value\\\":\\\"Tektite Grey\\\"},{\\\"name\\\":\\\"vehicle_usage\\\",\\\"type\\\":\\\"Dropdown\\\",\\\"label\\\":\\\"Vehicle Usage\\\",\\\"value\\\":\\\"Private\\\"},{\\\"name\\\":\\\"seating_capacity\\\",\\\"type\\\":\\\"TextInput\\\",\\\"label\\\":\\\"Seating Capacity\\\",\\\"value\\\":\\\"4\\\"}]}]}\"}}";
+
+	
+		Map<String,Object> map = mapper.readValue(str, Map.class);
+		
+		map.remove("wa_flow_response_params");
+		
+		System.out.println(map);
 	}
 
 }

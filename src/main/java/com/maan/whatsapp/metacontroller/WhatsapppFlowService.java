@@ -22,9 +22,10 @@ public interface WhatsapppFlowService {
 
 	Map<String, Object> InalipaIntimateScreenData();
 
-	String decryptMetaImage(Map<String, Object> image);
+	String preinspectionUpload(Map<String, Object> image);
 
-	Map<String, Object> preinspectionScreenData();
+	Map<String, Object> preinspectionScreenData(String mobile_no);
+
 
 
 }

@@ -59,5 +59,9 @@ public class InsuranceController {
 	public Object generateStpQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException {
 		return service.generateStpQuote(req);
 	}
-
+	
+	@PostMapping("/get/preinspection/details")
+    public Object getPreinspectionDetails(@RequestBody UploadPreinspectionReq req) {
+		return service.getPreinspectionDetails(req);
+	}
 }

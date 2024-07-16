@@ -1128,8 +1128,10 @@ public class WatiApiCall {
 					
 					if("GET".equalsIgnoreCase(req.getFlowApiMethod())) {
 						
+						String url =req.getFlowApi().replace("{mobile_no}", req.getWaid());
+						
 						Request request = new Request.Builder()
-								.url(req.getFlowApi().trim())
+								.url(url.trim())
 								.addHeader("Authorization", req.getFlowApiAuth().trim())
 								.get()
 								.build();
@@ -1290,7 +1292,7 @@ public class WatiApiCall {
 			
 			message =message.replace(twoSlash, oneSlash);
 			
-			log.info("Whatsapp Flow : "+ message);
+			//log.info("Whatsapp Flow : "+ message);
 			
 		}catch (Exception e) {
 			log.error(e);

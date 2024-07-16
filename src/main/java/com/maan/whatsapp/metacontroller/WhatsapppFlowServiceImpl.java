@@ -35,11 +35,13 @@ import com.maan.whatsapp.claimintimation.ClaimIntimationRepository;
 import com.maan.whatsapp.claimintimation.ClaimIntimationServiceImpl;
 import com.maan.whatsapp.claimintimation.InalipaIntimatedTable;
 import com.maan.whatsapp.claimintimation.InalipaIntimatedTableRepository;
+import com.maan.whatsapp.entity.master.PreinspectionDataDetail;
+import com.maan.whatsapp.entity.master.PreinspectionImageDetail;
 import com.maan.whatsapp.insurance.AsyncProcessThread;
 import com.maan.whatsapp.insurance.InsuranceServiceImpl;
 import com.maan.whatsapp.repository.whatsapp.PreInspectionDataDetailRepo;
+import com.maan.whatsapp.repository.whatsapp.PreInspectionDataImageRepo;
 import com.maan.whatsapp.service.common.CommonService;
-import com.maan.whatsapp.service.whatsapptemplate.WhatsapptemplateServiceImpl;
 
 @Service
 @PropertySource("classpath:WebServiceUrl.properties")
@@ -68,9 +70,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 
 	@Autowired
 	private PreInspectionDataDetailRepo preInsDataRepo;
-
+	
 	@Autowired
-	private WhatsapptemplateServiceImpl tempServiceImpl;
+	private PreInspectionDataImageRepo pidiRepo;
 	
 	@Autowired
 	private InalipaIntimatedTableRepository inalipaIntiRepo;
@@ -87,6 +89,37 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	
 	@Value("${wh.stp.region}")
 	private String stpRegion;
+	
+	@Value("${wh.get.ewaydata.api}")
+	private String wh_get_ewaydata_api;
+	
+	private static List<Map<String,String>> IMAGE_SKIP_OPTION = new ArrayList<>();
+	
+	private static List<Map<String,String>> PRE_DROPDOWN_DATA = new ArrayList<>();
+
+	private static List<Map<String,String>> SAMPLE_DATA = new ArrayList<>();
+	
+	static{
+		Map<String,String> object_1 = new HashMap<String, String>();
+		object_1.put("id", "Y");
+		object_1.put("title", "Skip");
+		IMAGE_SKIP_OPTION.add(object_1);
+		
+		Map<String,String> object_2 = new HashMap<String, String>();
+		object_2.put("id", "1");
+		object_2.put("title", "Registration Number");
+		PRE_DROPDOWN_DATA.add(object_2);
+		
+		Map<String,String> object_3 = new HashMap<String, String>();
+		object_3.put("id", "2");
+		object_3.put("title", "Chassis Number");
+		PRE_DROPDOWN_DATA.add(object_3);
+		
+		Map<String,String> object_4 = new HashMap<String, String>();
+		object_4.put("id", "00000");
+		object_4.put("title", "--No Record Found--");
+		SAMPLE_DATA.add(object_4);
+	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -126,7 +159,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				String reg_request = printReq.toJson(map);
 				
 				response =apicall.callApi(api, reg_request);
-				//log.info("Claim Intimation response " + response);
+				log.info("Claim Intimation response " + response);
 	
 				mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 				List<Map<String, Object>> claimList = mapper.readValue(response, List.class);
@@ -381,10 +414,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			
 			String sample_data ="[ {\"id\": \"0\", \"title\": \"--SELECT--\"}]";
 			String error_messages_1 =" {\"id\": \"\", \"\": \"\"}";
-
 			List<Map<String,Object>> list =mapper.readValue(sample_data, List.class);
 			
-			
+			String token =this.thread.getEwayToken();
 			
 			Map<String,String> input_validation =new HashMap<>();
 			if("VEHILCE_VALIDATION".equalsIgnoreCase(component_action)) {
@@ -409,27 +441,62 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				String region =data.get("region")==null?"":data.get("region").toString();
 				String country_code =data.get("country_code")==null?"":data.get("country_code").toString();
 
-				// validation message text should be not graterthan 30 characters.
+				 //validation message text should be not graterthan 30 characters.
 				
-				if(!chassis_no.matches("[a-zA-Z0-9]+")) {
+				if(chassis_no.length()<5) {
+					input_validation.put("chassis_no", "Minimum 5 characters required");
+				}
+				else if(!chassis_no.matches("[a-zA-Z0-9]+")) {
 					input_validation.put("chassis_no", "Special characters not allowed");
-				}if(!engine_capacity.matches("[0-9]+")) {
+				}
+				
+				if(!engine_capacity.matches("[0-9]+")) {
 					input_validation.put("engine_capacity", "digits only are allowed");
-				}if(!seating_capacity.matches("[0-9]+")) {
+				}if("1".equalsIgnoreCase(isbroker)) {					
+					
+					Map<String,String> request_map = new HashMap<String, String>();
+					request_map.put("Type", "LOGIN_ID_CHECK");
+					request_map.put("LoginId",broker_loginid);
+					String ewayValidationApi =wh_get_ewaydata_api;
+					
+					api_response =thread.callEwayApi(ewayValidationApi, mapper.writeValueAsString(request_map),token);
+					Map<String,Object> map =mapper.readValue(api_response, Map.class);
+					Boolean status =(Boolean)map.get("IsError");
+					
+					if(status)
+						input_validation.put("broker_loginid", "broker loginid not found");
+				}
+				
+				// seating capacity input validation
+				if(!seating_capacity.matches("[0-9]+")) {
 					input_validation.put("seating_capacity", "Only digits are allowed");
-				}else if(Long.valueOf(seating_capacity)>20) {
-					input_validation.put("seating_capacity", "Maximum seats is 20");
-				}if("1".equalsIgnoreCase(isbroker)) {
-					input_validation.put("broker_loginid","LoginId  is not found");
+				}else {
+					Map<String,String> request_map = new HashMap<String, String>();
+					request_map.put("Type", "SEAT_CAPACITY");
+					request_map.put("SeatingCapacity",seating_capacity);
+					request_map.put("InsuranceId", "100002");
+					request_map.put("BranchCode",broker_loginid);
+					request_map.put("BodyType",body_type);
+					String ewayValidationApi =wh_get_ewaydata_api;					
+					api_response =thread.callEwayApi(ewayValidationApi,mapper.writeValueAsString(request_map),token);
+					
+					Map<String,Object> validation_map =mapper.readValue(api_response, Map.class);				
+					Boolean status =(Boolean)validation_map.get("IsError");					
+					if(status) {
+						Map<String,Object> seat_map =(Map<String,Object>) validation_map.get("Result");
+						String seats =seat_map.get("SeatingCapacity").toString();
+						input_validation.put("seating_capacity", "should be under "+seats+" or equal ");
+					}
 				}
 			
 				// checking validation data
 				if(!input_validation.isEmpty() && input_validation.size()>0) {
 					
-					String token =this.thread.getEwayToken();
 					Map<String,String> request_map = new HashMap<String, String>();
 					request_map.put("BranchCode", "01");
 					request_map.put("InsuranceId", "100002");
+					request_map.put("BodyId", body_type);
+					request_map.put("MakeId", make);
 					
 					String request_1 =printReq.toJson(request_map);
 					
@@ -447,13 +514,13 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 					Map<String,Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
-					error_messages.put("body_type", body_type_e.get().isEmpty()?list:body_type_e.get());
-					error_messages.put("make", make_e.get().isEmpty()?list:make_e.get());
-					error_messages.put("model", color_e.get().isEmpty()?list:color_e.get());
+					error_messages.put("body_type", body_type_e.get().isEmpty()?SAMPLE_DATA:body_type_e.get());
+					error_messages.put("make", make_e.get().isEmpty()?SAMPLE_DATA:make_e.get());
+					error_messages.put("model", model_e.get().isEmpty()?SAMPLE_DATA:model_e.get());
 					error_messages.put("manufacture_year", manufacture_year_e.get().isEmpty()?list:manufacture_year_e.get());
-					error_messages.put("fuel_used", fuel_type_e.get().isEmpty()?list:fuel_type_e.get());
-					error_messages.put("vehicle_color", color_e.get().isEmpty()?list:color_e.get());
-					error_messages.put("vehicle_usage", vehicle_usage_e.get().isEmpty()?list:vehicle_usage_e.get());
+					error_messages.put("fuel_used", fuel_type_e.get().isEmpty()?SAMPLE_DATA:fuel_type_e.get());
+					error_messages.put("vehicle_color", color_e.get().isEmpty()?SAMPLE_DATA:color_e.get());
+					error_messages.put("vehicle_usage", vehicle_usage_e.get().isEmpty()?SAMPLE_DATA:vehicle_usage_e.get());
 					
 					error_messages.put("title", title);
 					error_messages.put("customer_name", customer_name);
@@ -525,31 +592,34 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				}else if ("MAKE".equalsIgnoreCase(component_action)) {
 					
-					String token =this.thread.getEwayToken();
 					String body_type =data.get("body_type")==null?"":data.get("body_type").toString().trim();
-
-					String api =this.stpMake;
+					List<Map<String,String>> data_list = new ArrayList<Map<String,String>>();
 					
-					Map<String,Object> region_req =new HashMap<String, Object>();
-					region_req.put("BodyId", body_type);
-					region_req.put("InsuranceId", "100002");
-					region_req.put("BranchCode", "01");
+					if(StringUtils.isNotBlank(body_type)) {
+						String api =this.stpMake;
+						
+						Map<String,Object> region_req =new HashMap<String, Object>();
+						region_req.put("BodyId", body_type);
+						region_req.put("InsuranceId", "100002");
+						region_req.put("BranchCode", "01");
+						
+						api_request =printReq.toJson(region_req);
+						
+						api_response =thread.callEwayApi(api, api_request,token);
+						
+						Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
+						List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
+						
+						data_list= result.stream().map(p ->{
+							Map<String,String> map = new HashMap<>();
+							map.put("id", p.get("Code")==null?"":p.get("Code").toString());
+							map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
+							return map;
+						}).collect(Collectors.toList());
 					
-					api_request =printReq.toJson(region_req);
-					
-					api_response =thread.callEwayApi(api, api_request,token);
-					
-					Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
-					List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
-					
-					List<Map<String,String>> data_list= result.stream().map(p ->{
-						Map<String,String> map = new HashMap<>();
-						map.put("id", p.get("Code")==null?"":p.get("Code").toString());
-						map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
-						return map;
-					}).collect(Collectors.toList());
-					
-					
+					}else {
+						data_list =SAMPLE_DATA;
+					}
 					Map<String,Object> make_list =new HashMap<String, Object>();
 					make_list.put("make", data_list);
 					
@@ -559,31 +629,36 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 		
 				}else if("MODEL".equalsIgnoreCase(component_action)) {
 					
-					String token =this.thread.getEwayToken();
 					String body_type =data.get("body_type")==null?"":data.get("body_type").toString().trim();
 					String make =data.get("make")==null?"":data.get("make").toString().trim();
-
-					String api =this.stpMakeModel;
+					List<Map<String,String>> data_list = new ArrayList<Map<String,String>>();
 					
-					Map<String,Object> region_req =new HashMap<String, Object>();
-					region_req.put("BodyId", body_type);
-					region_req.put("InsuranceId", "100002");
-					region_req.put("BranchCode", "01");
-					region_req.put("MakeId", make);
+					if(!"00000".equals(make) && StringUtils.isNotBlank(make) ) {
 					
-					api_request =printReq.toJson(region_req);
-					
-					api_response =thread.callEwayApi(api, api_request,token);
-					
-					Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
-					List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
-					
-					List<Map<String,String>> data_list= result.stream().map(p ->{
-						Map<String,String> map = new HashMap<>();
-						map.put("id", p.get("Code")==null?"":p.get("Code").toString());
-						map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
-						return map;
-					}).collect(Collectors.toList());
+						String api =this.stpMakeModel;
+						
+						Map<String,Object> region_req =new HashMap<String, Object>();
+						region_req.put("BodyId", body_type);
+						region_req.put("InsuranceId", "100002");
+						region_req.put("BranchCode", "01");
+						region_req.put("MakeId", make);
+						
+						api_request =printReq.toJson(region_req);
+						
+						api_response =thread.callEwayApi(api, api_request,token);
+						
+						Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
+						List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
+						
+						data_list= result.stream().map(p ->{
+							Map<String,String> map = new HashMap<>();
+							map.put("id", p.get("Code")==null?"":p.get("Code").toString());
+							map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
+							return map;
+						}).collect(Collectors.toList());
+					}else {
+						data_list=SAMPLE_DATA;
+					}
 					
 					Map<String,Object> make_list =new HashMap<String, Object>();
 					make_list.put("model", data_list);
@@ -616,7 +691,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			
 			if(input_validation.size()>0) {
 				
-				String token =this.thread.getEwayToken();
 				Map<String,String> request_map = new HashMap<String, String>();
 				request_map.put("BranchCode", "01");
 				request_map.put("InsuranceId", "100002");
@@ -632,9 +706,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				Map<String,Object> error_messages = new HashMap<String, Object>();
 				error_messages.put("error_messages", input_validation);
-				error_messages.put("title", title_1.get().isEmpty()?list:title_1.get());
-				error_messages.put("countryCode", country_code_1.get().isEmpty()?list:country_code_1.get());
-				error_messages.put("region", region_1.get().isEmpty()?list:region_1.get());
+				error_messages.put("title", title_1.get().isEmpty()?SAMPLE_DATA:title_1.get());
+				error_messages.put("countryCode", country_code_1.get().isEmpty()?SAMPLE_DATA:country_code_1.get());
+				error_messages.put("region", region_1.get().isEmpty()?SAMPLE_DATA:region_1.get());
 				return_res.put("action", "data_exchange");
 				return_res.put("data", error_messages);
 				
@@ -642,8 +716,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 			}else {
 				
-
-				String token =this.thread.getEwayToken();
 				Map<String,String> request_map = new HashMap<String, String>();
 				request_map.put("BranchCode", "01");
 				request_map.put("InsuranceId", "100002");
@@ -655,7 +727,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				CompletableFuture<List<Map<String,String>>> manufacture_year =thread.getManuFactureYear();
 				CompletableFuture<List<Map<String,String>>> body_type =thread.getSTPBodyType(request_1,token);
 				CompletableFuture<List<Map<String,String>>> vehicle_usage =thread.getSTPVehicleUsage(request_1,token);
-				//CompletableFuture<List<Map<String,String>>> motor_category =thread.getMotorCategory(request_1,token);
+				CompletableFuture<List<Map<String,String>>> motor_category =thread.getMotorCategory(request_1,token);
 			
 
 				CompletableFuture.allOf(fuel_type,color,manufacture_year,
@@ -830,15 +902,19 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			}else if("VEHICLE_USAGE".equalsIgnoreCase(component_action)) {
 				
 				String sectionId =data.get("sectionName")==null?"":data.get("sectionName").toString().trim();
-				String token =thread.getEwayToken();
-				List<Map<String,String>> vehiUsage =thread.getVehicleUsage(token, sectionId);
-				
-				Map<String,Object> vehicle_usage =new HashMap<String, Object>();
-				vehicle_usage.put("vehicleUsage", vehiUsage);
-				
-				return_res.put("data", vehicle_usage);
-				
-				response =printReq.toJson(return_res);
+				if(StringUtils.isBlank(sectionId)) {
+					String token =thread.getEwayToken();
+					List<Map<String,String>> vehiUsage =thread.getVehicleUsage(token, sectionId);
+					
+					Map<String,Object> vehicle_usage =new HashMap<String, Object>();
+					vehicle_usage.put("vehicleUsage", vehiUsage);
+					
+					return_res.put("data", vehicle_usage);
+					
+					response =printReq.toJson(return_res);
+				}else {
+					response =printReq.toJson(SAMPLE_DATA);
+				}
 				return response;
 				
 			}else if("INPUT_VALIDATION".equals(component_action)) {
@@ -948,13 +1024,12 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			CompletableFuture<List<Map<String,String>>> region =thread.getCustomerRegion(token);
 		
 			
-			//CompletableFuture.allOf(,color,manufacture_year,
-					//body_type,vehicle_usage,motor_category,title,country_code,region).join();
+		//	CompletableFuture.allOf(,color,manufacture_year,
+				//	body_type,vehicle_usage,motor_category,title,country_code,region).join();
 			
 			CompletableFuture.allOf(title,country_code,region).join();
 			
 			
-			List<Map<String,Object>> make =mapper.readValue("[ {\"id\": \"00\", \"title\": \"--SELECT--\"}]",List.class);
 			
 			Map<String,String> error_message =new HashMap<String, String>();
 			error_message.put("", "");
@@ -967,7 +1042,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			log.info("Vehicle api End time is : "+mapper.writeValueAsString(data));	
 			
 			Map<String,Object> flow_action_payload =new HashMap<String, Object>();
-			//flow_action_payload.put("version", "3.1");
 			flow_action_payload.put("screen", "CUSTOMER_DETAILS");
 			flow_action_payload.put("data", data);
 
@@ -1054,7 +1128,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
             	 String format_date =this.cs.formatdatewithouttime(accident_date);
             	 LocalDate local_date = accident_date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-            	 // validate existing claim are there or not
+            	//  validate existing claim are there or not
             	 
             	  
 	            Map<String,Object> validation = new HashMap<String, Object>();
@@ -1215,25 +1289,93 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public String decryptMetaImage(Map<String, Object> request) {
+	public String preinspectionUpload(Map<String, Object> request) {
 		String response ="";
 		try {
 			
 			String screen_name =request.get("screen").toString();
 			String version =request.get("version")==null?"":request.get("version").toString();
 			Map<String,Object> map = new HashMap<String,Object>();
-			if("REGISTRATION_CARD".equalsIgnoreCase(screen_name)) {
+			Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
+			String component_action=data.get("component_action")==null?"":data.get("component_action").toString();
+			String upload_type=data.get("upload_type")==null?"image":data.get("upload_type").toString();
+
+			if("WELCOME_SCREEN".equalsIgnoreCase(component_action)) {
 				
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
-				String image_skip =data.get("image_skip")==null?"N":data.get("image_skip").toString().trim();
+				String mobile_no=data.get("mobile_no")==null?"":data.get("mobile_no").toString().trim();
+				String inputdata=data.get("inputdata")==null?"":data.get("inputdata").toString().trim();
+				String input_type=data.get("input_type")==null?"":data.get("input_type").toString().trim();
+
+				Map<String,String> validation = new HashMap<>();
+				if("1".equals(input_type)) {
+					if(inputdata.length()<5) {
+						validation.put("inputdata", "Minimum 5 characters required");
+					}else if(!StringUtils.isAlphanumeric(inputdata)) {
+						validation.put("inputdata", "Special characters not allowed");
+					}
+				}else if("2".equals(input_type)) {
+					if(inputdata.length()<5) {
+						validation.put("inputdata", "Minimum 5 characters required");
+					}else if(inputdata.matches("^[a-zA-Z0-9]+")) {
+							validation.put("inputdata", "Special characters not allowed");
+					}
+				}
+				Map<String,Object> flow_data = new HashMap<String, Object>();
+
+				if(validation.size()>0) {
+					flow_data.put("error_messages", validation);						
+					map.put("screen", screen_name);
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+				}else {
+					
+					if("image".equalsIgnoreCase(upload_type)) {
+						
+						PreinspectionDataDetail pdd =insertPreinspectionData(input_type,inputdata,mobile_no,"VEHICLE_IMAGES");
+						flow_data.put("title", "Upload Registration Card Image");
+						flow_data.put("label", "Upload Registration Card Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", pdd.getTranId().toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+						
+							
+						map.put("screen", "REGISTRATION_CARD");
+						map.put("version", version);
+						map.put("data", flow_data);
+					}else if("document".equalsIgnoreCase(upload_type)) {
+						
+						PreinspectionDataDetail pdd =insertPreinspectionData(input_type,inputdata,mobile_no,"KYC_DOCUMENTS");
+						flow_data.put("title", "Upload KYC Documents");
+						flow_data.put("label", "Upload KYC Documents");
+						flow_data.put("description", "Please browse your document from folder and upload it");
+						flow_data.put("upload_transaction_no", pdd.getTranId().toString());
+						flow_data.put("footer_label", "Upload");
+						
+							
+						map.put("screen", "KYC_DOCUMENT_UPLOAD");
+						map.put("version", version);
+						map.put("data", flow_data);
+					}
+				}
+					
+				return response = mapper.writeValueAsString(map);
+				
+			}else if("REGISTRATION_CARD".equalsIgnoreCase(screen_name)) {
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				String image_skip =data.get("skip_image")==null?"N":data.get("skip_image").toString().trim();
 				if("Y".equals(image_skip)) {
 					
+					insertPreinspectionData(upload_transaction_no,"Skip","Registration Card","Skip",101);
+
 					Map<String,Object> flow_data = new HashMap<String, Object>();
 					flow_data.put("title", "Upload Speedo Meter Image");
 					flow_data.put("label", "Upload Speedo Meter Image");
-					flow_data.put("description", "Please take photo or browse from folder as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
+					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 					flow_data.put("footer_label", "Upload");
+					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
 					
 					map.put("screen", "SPEEDO_METER");
 					map.put("version", version);
@@ -1243,8 +1385,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 				}else if("N".equals(image_skip)) {
 				
-					List<Map<String,Object>> listImage =data.get("vehicle_front")==null?Collections.EMPTY_LIST:
-						(List<Map<String,Object>>)data.get("vehicle_front");			
+					List<Map<String,Object>> listImage =data.get("registration_card_image")==null?Collections.EMPTY_LIST:
+						(List<Map<String,Object>>)data.get("registration_card_image");			
 				
 					Map<String,Object> image = listImage.get(0);
 				
@@ -1259,12 +1401,16 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 					FileUtils.writeByteArrayToFile(file, imageArray);
 					
+					insertPreinspectionData(upload_transaction_no,file_path,"Registration Card",file_name,101);
+
+					
 					Map<String,Object> flow_data = new HashMap<String, Object>();
 					flow_data.put("title", "Upload Speedo Meter Image");
 					flow_data.put("label", "Upload Speedo Meter Image");
-					flow_data.put("description", "Please take photo or browse from folder as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
+					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 					flow_data.put("footer_label", "Upload");
+					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
 					
 					map.put("screen", "SPEEDO_METER");
 					map.put("version", version);
@@ -1275,19 +1421,21 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				}
 				
 			}if("SPEEDO_METER".equalsIgnoreCase(screen_name)) {
-			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
-				String image_skip =data.get("image_skip")==null?"N":data.get("image_skip").toString().trim();
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				String image_skip =data.get("skip_image")==null?"N":data.get("skip_image").toString().trim();
 				if("Y".equals(image_skip)) {
 					
+					insertPreinspectionData(upload_transaction_no,"Skip","Speedo Meter Image","Skip",102);
+
 					Map<String,Object> flow_data = new HashMap<String, Object>();
 					flow_data.put("title", "Upload Chassis Number Image");
 					flow_data.put("label", "Upload Chassis Number Image");
-					flow_data.put("description", "Please take photo or browse from folder as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
+					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+					flow_data.put("upload_transaction_no",upload_transaction_no.toString());
 					flow_data.put("footer_label", "Upload");
+					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
 					
-					map.put("screen", "SPEEDO_METER");
+					map.put("screen", "CHASSIS_NUMBER");
 					map.put("version", version);
 					map.put("data", flow_data);
 					
@@ -1295,8 +1443,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 				}else if("N".equals(image_skip)) {
 			
-					List<Map<String,Object>> listImage =data.get("vehicle_front")==null?Collections.EMPTY_LIST:
-						(List<Map<String,Object>>)data.get("vehicle_front");			
+					List<Map<String,Object>> listImage =data.get("speedo_meter_image")==null?Collections.EMPTY_LIST:
+						(List<Map<String,Object>>)data.get("speedo_meter_image");			
 				
 					Map<String,Object> image = listImage.get(0);
 				
@@ -1311,12 +1459,16 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 					FileUtils.writeByteArrayToFile(file, imageArray);
 					
+					insertPreinspectionData(upload_transaction_no,file_path,"Speedo Meter Image",file_name,102);
+
+					
 					Map<String,Object> flow_data = new HashMap<String, Object>();
 					flow_data.put("title", "Upload Chassis Number Image");
 					flow_data.put("label", "Upload Chassis Number Image");
-					flow_data.put("description", "Please take photo or browse from folder as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
+					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 					flow_data.put("footer_label", "Upload");
+					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
 					
 					map.put("screen", "CHASSIS_NUMBER");
 					map.put("version", version);
@@ -1326,21 +1478,24 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					return response = mapper.writeValueAsString(map);
 				}
 				
-			}if("CHASSIS_NUMBER".equalsIgnoreCase(screen_name)) {
+			}else if("CHASSIS_NUMBER".equalsIgnoreCase(screen_name)) {
 			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
-				String image_skip =data.get("image_skip")==null?"N":data.get("image_skip").toString().trim();
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				String image_skip =data.get("skip_image")==null?"N":data.get("skip_image").toString().trim();
 				if("Y".equals(image_skip)) {
 					
+					
+					insertPreinspectionData(upload_transaction_no,"Skip","Chassis Number Image","Skip",103);
+
+					
 					Map<String,Object> flow_data = new HashMap<String, Object>();
-					flow_data.put("title", "Upload Vehicle Right Image");
-					flow_data.put("label", "Upload Vehicle Right Image");
-					flow_data.put("description", "Please take photo as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
+					flow_data.put("title", "Vehicle Front Side Image");
+					flow_data.put("label", "Upload Vehicle Front Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 					flow_data.put("footer_label", "Upload");
 					
-					
-					map.put("screen", "SPEEDO_METER");
+					map.put("screen", "VEHICLE_FRONT");
 					map.put("version", version);
 					map.put("data", flow_data);
 					
@@ -1348,8 +1503,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 				}else if("N".equals(image_skip)) {
 			
-					List<Map<String,Object>> listImage =data.get("vehicle_front")==null?Collections.EMPTY_LIST:
-						(List<Map<String,Object>>)data.get("vehicle_front");			
+					List<Map<String,Object>> listImage =data.get("chassis_number_image")==null?Collections.EMPTY_LIST:
+						(List<Map<String,Object>>)data.get("chassis_number_image");			
 				
 					Map<String,Object> image = listImage.get(0);
 				
@@ -1364,13 +1519,15 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					
 					FileUtils.writeByteArrayToFile(file, imageArray);
 					
-					Map<String,Object> flow_data = new HashMap<String, Object>();
-					flow_data.put("title", "Upload Vehicle Right Image");
-					flow_data.put("label", "Upload Vehicle Right Image");
-					flow_data.put("description", "Please take photo as well and upload it");
-					flow_data.put("upload_transaction_no", "108");
-					flow_data.put("footer_label", "Upload");
+					insertPreinspectionData(upload_transaction_no,file_path,"Chassis Number Image",file_name,103);
+
 					
+					Map<String,Object> flow_data = new HashMap<String, Object>();
+					flow_data.put("title", "Vehicle Front Side Image");
+					flow_data.put("label", "Upload Vehicle Front Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");
 					
 					map.put("screen", "VEHICLE_FRONT");
 					map.put("version", version);
@@ -1381,9 +1538,10 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				}
 				
 			}
-			if("VEHICLE_FRONT".equalsIgnoreCase(screen_name)) {
+			else if("VEHICLE_FRONT".equalsIgnoreCase(screen_name)) {
 			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+
 				List<Map<String,Object>> listImage =data.get("vehicle_front")==null?Collections.EMPTY_LIST:
 					(List<Map<String,Object>>)data.get("vehicle_front");			
 			
@@ -1400,11 +1558,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				FileUtils.writeByteArrayToFile(file, imageArray);
 				
+				insertPreinspectionData(upload_transaction_no,file_path,"Front Vehicle Image",file_name,104);
+
+				
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Upload Vehicle Left Image");
-				flow_data.put("label", "Upload Vehicle Left Image");
-				flow_data.put("description", "Please take photo as well and upload it");
-				flow_data.put("upload_transaction_no", "108");
+				flow_data.put("title", "Vehicle Back Side Image");
+				flow_data.put("label", "Upload Vehicle Back Side Image");
+				flow_data.put("description", "Please take a photo to upload an image");
+				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 				flow_data.put("footer_label", "Upload");
 				
 				map.put("screen", "VEHICLE_BACK");
@@ -1416,7 +1577,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 			}else if("VEHICLE_BACK".equalsIgnoreCase(screen_name)) {
 			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+
 				List<Map<String,Object>> listImage =data.get("vehicle_back")==null?Collections.EMPTY_LIST:
 					(List<Map<String,Object>>)data.get("vehicle_back");			
 			
@@ -1433,11 +1595,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				FileUtils.writeByteArrayToFile(file, imageArray);
 				
+				insertPreinspectionData(upload_transaction_no,file_path,"Back Vehicle Image",file_name,105);
+
+				
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Upload Vehicle Right Image");
-				flow_data.put("label", "Upload Vehicle Right Image");
-				flow_data.put("description", "Please take photo as well and upload it");
-				flow_data.put("upload_transaction_no", "108");
+				flow_data.put("title", "Vehicle Right Side Image");
+				flow_data.put("label", "Upload Vehicle Right Side Image");
+				flow_data.put("description", "Please take a photo to upload an image");
+				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 				flow_data.put("footer_label", "Upload");
 				
 				map.put("screen", "VEHICLE_RIGHT");
@@ -1451,7 +1616,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 
 			}else if("VEHICLE_RIGHT".equalsIgnoreCase(screen_name)) {
 			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				
 				List<Map<String,Object>> listImage =data.get("vehicle_right")==null?Collections.EMPTY_LIST:
 					(List<Map<String,Object>>)data.get("vehicle_right");			
 			
@@ -1468,11 +1634,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				FileUtils.writeByteArrayToFile(file, imageArray);
 				
+				insertPreinspectionData(upload_transaction_no,file_path,"Side Vehicle Image",file_name,106);
+
+				
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Upload Vehicle Left Image");
-				flow_data.put("label", "Upload Vehicle Left Image");
-				flow_data.put("description", "Please take photo as well and upload it");
-				flow_data.put("upload_transaction_no", "108");
+				flow_data.put("title", "Vehicle Left Side Image");
+				flow_data.put("label", "Upload Vehicle Left Side Image");
+				flow_data.put("description", "Please take a photo to upload an image");
+				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
 				flow_data.put("footer_label", "Upload");
 				
 				map.put("screen", "VEHICLE_LEFT");
@@ -1486,7 +1655,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 			}else if("VEHICLE_LEFT".equalsIgnoreCase(screen_name)) {
 			
-				Map<String,Object> data =request.get("data")==null?null:(Map<String,Object>)request.get("data");
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				
 				List<Map<String,Object>> listImage =data.get("vehicle_left")==null?Collections.EMPTY_LIST:
 					(List<Map<String,Object>>)data.get("vehicle_left");			
 			
@@ -1503,11 +1673,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				FileUtils.writeByteArrayToFile(file, imageArray);
 				
+				insertPreinspectionData(upload_transaction_no,file_path,"Bottom Vehicle Image",file_name,107);
+				
 				Map<String,Object> flow_data = new HashMap<String, Object>();
 				flow_data.put("header", "Alliance Insurance Corportation Limted");
-				flow_data.put("response_text", "Your docuemts has been received. Thank your for using alliance bot");
+				flow_data.put("response_text", "Your documents has been received. Thank your for using alliance bot");
 				flow_data.put("title", "Thank you....!");
-				
+				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+
 				log.info("Vehicle Right :: "+file_path);
 
 				
@@ -1518,7 +1691,68 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				return response = mapper.writeValueAsString(map);
 				
 
+			}else if("INPUT_TYPE".equalsIgnoreCase(component_action)) {
+				
+				String inputType =data.get("input_type")==null?"":data.get("input_type").toString();
+				Map<String,Object> inputTypeRes =new HashMap<String, Object>();
+				inputTypeRes.put("isInputDataReq", true);
+				inputTypeRes.put("isVisibleInputData", true);
+				if("1".equals(inputType)) 
+					inputTypeRes.put("inputdata_lable_name", "Registration Number");
+				else if("2".equals(inputType)) 
+					inputTypeRes.put("inputdata_lable_name", "Chassis Number");
+					
+						
+				map.put("screen", screen_name);
+				map.put("version", version);
+				map.put("data", inputTypeRes);
+								
+				response =this.mapper.writeValueAsString(map);
+				
+				return response;
+			}else if("KYC_DOCUMENT_UPLOAD".equalsIgnoreCase(component_action)) {
+				
+				Long upload_transaction_no =data.get("upload_transaction_no")==null?null:Long.valueOf(data.get("upload_transaction_no").toString());
+				
+				List<Map<String,Object>> listImage =data.get("kyc_documents")==null?Collections.EMPTY_LIST:
+					(List<Map<String,Object>>)data.get("kyc_documents");			
+			
+				log.info("KYC_DOCUMENT_UPLOAD document count is "+listImage.size()+"");
+				
+				for(Map<String,Object> image : listImage) {
+					
+					String file_name =image.get("file_name")==null?"":image.get("file_name").toString().trim();
+					String media_id =image.get("media_id")==null?"":image.get("media_id").toString();
+						
+					String file_path =cs.getwebserviceurlProperty().getProperty("meta.image.store.path");
+					file_path=file_path+file_name;					
+					
+					byte imageArray[] = imageDecrypt.decryptMedia(image);
+					File file = new File(file_path);
+					
+					FileUtils.writeByteArrayToFile(file, imageArray);
+					
+					insertPreinspectionData(upload_transaction_no,file_path,file_name,file_name,500);
+				}
+				
+				Map<String,Object> flow_data = new HashMap<String, Object>();
+				flow_data.put("header", "Alliance Insurance Corportation Limted");
+				flow_data.put("response_text", "Your documents has been received. Thank your for using alliance bot");
+				flow_data.put("title", "Thank you....!");
+				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+
+
+				
+				map.put("screen", "END_SCREEN");
+				map.put("version", version);
+				map.put("data", flow_data);
+				
+				return response = mapper.writeValueAsString(map);
+				
+				
 			}
+
+			
 			
 		}catch (Exception e) {
 			log.error(e);
@@ -1529,17 +1763,22 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 
 
 	@Override
-	public Map<String, Object> preinspectionScreenData() {
+	public Map<String, Object> preinspectionScreenData(String mobile_no) {
 		try {
 			Map<String,Object> flow_data = new HashMap<String, Object>();
-			flow_data.put("title", "Upload Vehicle Front Image");
+			flow_data.put("title", "Welcome");
 			flow_data.put("label", "Upload Vehicle Front Image");
-			flow_data.put("description", "Please take photo as well and upload it");
-			flow_data.put("upload_transaction_no", "108");
-			flow_data.put("footer_label", "Upload");
+			flow_data.put("input_type", PRE_DROPDOWN_DATA);
+			flow_data.put("mobile_no", mobile_no);
+			flow_data.put("isVisibleInputData",false);
+			flow_data.put("isInputDataReq", false);
+			flow_data.put("inputdata_lable_name", "Testing");
+
 			Map<String,Object> flow_action_payload =new HashMap<String, Object>();
-			flow_action_payload.put("screen", "VEHICLE_FRONT");
+			flow_action_payload.put("screen", "WELCOME_SCREEN");
 			flow_action_payload.put("data", flow_data);
+			
+			System.out.println(mapper.writeValueAsString(flow_action_payload));
 			
 			return flow_action_payload;
 			
@@ -1549,5 +1788,49 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 		}
 		return null;
 	}
+	
+	private PreinspectionDataDetail insertPreinspectionData(String input_type,String input_data,String mobile_no,String docType) {
+		try {
+			Long tranId =preInsDataRepo.getTranId();
+			PreinspectionDataDetail pdd =PreinspectionDataDetail.builder()
+					.registrationNo("1".equals(input_type)?input_data:null)
+					.chassisNo("2".equals(input_type)?input_data:null)
+					.entry_date(new Date())
+					.status("Y")
+					.tranId(tranId)
+					.mobileNo(mobile_no)
+					.documnetType(docType)
+					.build();
+			
+			PreinspectionDataDetail pddsave=preInsDataRepo.save(pdd);
+			return pddsave;
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private void insertPreinspectionData(Long tran_id,String file_path,String image_name,String file_name,Integer doc_id) {
+		try {
+			PreinspectionImageDetail pmd =PreinspectionImageDetail.builder()
+					.tranId(tran_id)
+					.imageFilePath(file_path)
+					.imageName(image_name)
+					.entry_date(new Date())
+					.status("Y")
+					.originalFileName(file_name)
+					.exifImageStatus("VALID")
+					.docId(doc_id)
+					.build();
+			
+			pidiRepo.save(pmd);
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+	}
+	
+	
 
 }

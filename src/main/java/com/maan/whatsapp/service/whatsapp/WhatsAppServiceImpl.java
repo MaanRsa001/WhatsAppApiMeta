@@ -512,7 +512,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								insertReqDet(reqList);
 							}
 						}else if((isJob.equalsIgnoreCase("Y")) && 
-								(userButtonReply.replace("\\s", "").equalsIgnoreCase(previousMenu) || preMenuSwahili.equalsIgnoreCase(userButtonReply))) {
+								(userButtonReply.replace("\\s", "").equalsIgnoreCase(previousMenu) || preMenuSwahili.equalsIgnoreCase(userButtonReply) || "9".equals(userButtonReply))) {
 							  
 							WAMessageMaster msgM  = getMsgMasterContent(wdd.getParentmessageid());
 													  

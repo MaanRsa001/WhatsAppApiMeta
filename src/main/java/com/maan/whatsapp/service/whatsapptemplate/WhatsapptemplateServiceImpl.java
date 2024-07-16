@@ -939,7 +939,7 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 					exifDate=fsd.getDate(3);
 					
 				}
-			preInsImgRepo.insertImageDetails(req.getTranId(),req.getFileName(),file_path,exifDate,exif_status,req.getOriginalFileName(),isCamera);			
+			preInsImgRepo.insertImageDetails(req.getTranId(),req.getFileName(),file_path,exifDate,exif_status,array[1],isCamera);			
 			response.setResponse("SUCCESS");
 			
 		}catch (Exception e) {

@@ -21,6 +21,8 @@ public class QPreinspectionDataDetail extends EntityPathBase<PreinspectionDataDe
 
     public final StringPath chassisNo = createString("chassisNo");
 
+    public final StringPath documnetType = createString("documnetType");
+
     public final DateTimePath<java.util.Date> entry_date = createDateTime("entry_date", java.util.Date.class);
 
     public final StringPath mobileNo = createString("mobileNo");

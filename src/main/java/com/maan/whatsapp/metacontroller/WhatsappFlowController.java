@@ -1,7 +1,11 @@
 package com.maan.whatsapp.metacontroller;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.PathParam;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -135,9 +140,9 @@ public class WhatsappFlowController {
 		return service.InalipaIntimateScreenData();
 	}
 	
-	@GetMapping("/preinspection/screen/data")
-	public Map<String,Object> preinspectionScreenData(){
-		return service.preinspectionScreenData();
+	@GetMapping("/preinspection/screen/data/{mobile_no}")
+	public Map<String,Object> preinspectionScreenData(@PathVariable("mobile_no") String mobile_no){
+		return service.preinspectionScreenData(mobile_no);
 	}
 	
 	@PostMapping("/create/vehicle/quotation")
@@ -227,11 +232,11 @@ public class WhatsappFlowController {
 	}
 	
 	@PostMapping("/preinspection/image/upload")
-    public ResponseEntity<Object> decryptMetaImage(@RequestBody Map<String,Object> req) throws Exception {
-		log.info("/decrypt/meta/images || encrypt request : "+printReq.toJson(req));
+    public ResponseEntity<Object> preinspectionUpload(@RequestBody Map<String,Object> req) throws Exception {
+		log.info("/preinspection/image/upload || encrypt request : "+printReq.toJson(req));
 		MetaEncryptDecryptRes dcryptData =WhatsappEncryptionDecryption.metaDecryption(req);
 		Map<String,Object> request =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
-		log.info("/decrypt/meta/images || decrypt request :"+printReq.toJson(request));
+		log.info("/preinspection/image/upload || decrypt request :"+printReq.toJson(request));
 
 		String action =request.get("action")==null?"":request.get("action").toString();
 		
@@ -256,7 +261,7 @@ public class WhatsappFlowController {
 			
 			Map<String,Object> data =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
 				
-			String response =service.decryptMetaImage(data);
+			String response =service.preinspectionUpload(data);
 						
 			dcryptData.setEncrypted_flow_data(response);
 			
@@ -266,6 +271,13 @@ public class WhatsappFlowController {
 			
 		}
 		
+	}
+	
+	@GetMapping("/download")
+	private void download(HttpServletResponse res) throws IOException {
+		String base64 ="https://www.cricbuzz.com/live-cricket-scores/87871/ind-vs-eng-semi-final-2-icc-mens-t20-world-cup-2024";
+		res.sendRedirect(base64);
+	
 	}
 	
 }
