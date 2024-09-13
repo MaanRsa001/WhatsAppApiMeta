@@ -1172,7 +1172,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 			reply_1.put("id", "Swahili");
 			reply_1.put("title", "Swahili");
 			button_text_1.put("reply", reply_1);
-			buttonList.add(button_text_1);
+			//buttonList.add(button_text_1);
 			
 			Map<String,Object> button_text_2 = new HashMap<String, Object>();
 			button_text_2.put("type", "reply");

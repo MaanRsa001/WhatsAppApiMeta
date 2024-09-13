@@ -5,14 +5,14 @@ import static com.querydsl.core.types.PathMetadataFactory.*;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
-import javax.annotation.Generated;
+import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
 
 /**
  * QWhatsappMessageMenuMaster is a Querydsl query type for WhatsappMessageMenuMaster
  */
-@Generated("com.querydsl.codegen.EntitySerializer")
+@Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QWhatsappMessageMenuMaster extends EntityPathBase<WhatsappMessageMenuMaster> {
 
     private static final long serialVersionUID = -121652967L;

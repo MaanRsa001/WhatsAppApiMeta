@@ -2,8 +2,7 @@ package com.maan.whatsapp.entity.whatsapptemplate;
 
 import java.io.Serializable;
 
-import javax.persistence.Embeddable;
-
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

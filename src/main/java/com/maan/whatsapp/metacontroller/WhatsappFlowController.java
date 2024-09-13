@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.websocket.server.PathParam;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +23,8 @@ import com.google.gson.Gson;
 import com.maan.whatsapp.auth.basic.ImageDecryptionService;
 import com.maan.whatsapp.auth.basic.WhatsappEncryptionDecryption;
 import com.maan.whatsapp.meta.MetaEncryptDecryptRes;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/whatsappflow")

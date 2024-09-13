@@ -5,14 +5,14 @@ import static com.querydsl.core.types.PathMetadataFactory.*;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
-import javax.annotation.Generated;
+import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
 
 /**
  * QWhatsappRequestDataPK is a Querydsl query type for WhatsappRequestDataPK
  */
-@Generated("com.querydsl.codegen.EmbeddableSerializer")
+@Generated("com.querydsl.codegen.DefaultEmbeddableSerializer")
 public class QWhatsappRequestDataPK extends BeanPath<WhatsappRequestDataPK> {
 
     private static final long serialVersionUID = -211797099L;

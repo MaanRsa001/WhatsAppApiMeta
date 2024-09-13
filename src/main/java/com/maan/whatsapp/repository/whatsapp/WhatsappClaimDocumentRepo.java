@@ -29,7 +29,7 @@ public interface WhatsappClaimDocumentRepo extends JpaRepository<WhatsappClaimDo
 	
 	//List<WhatsappClaimDocumentSetup> findByClaimPkMobNoOrderByCreatedDateDesc(String mobileNo);
 	
-	WhatsappClaimDocumentSetup findByClaimPkMobNoAndSentYnAndFileYnAndProcessYn(Object mobileNo,Object isSent,Object fileYn,Object processYn);
+	WhatsappClaimDocumentSetup findByClaimPkMobNoAndSentYnAndFileYnAndProcessYn(Long mobileNo,String isSent,String fileYn,String processYn);
 	
 	List<WhatsappClaimDocumentSetup> findByClaimPkMobNoAndFileYnAndProcessYnOrderByEntryDateDesc(Long mobileNo,String fileyn,String procYn);
 

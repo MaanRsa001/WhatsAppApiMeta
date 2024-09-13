@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +37,7 @@ import com.maan.whatsapp.request.whatsapp.WhatsAppReq;
 import com.maan.whatsapp.response.motor.WAQuoteRes;
 import com.maan.whatsapp.service.whatsapp.WhatsAppService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

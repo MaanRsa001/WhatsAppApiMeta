@@ -2,7 +2,6 @@
 package com.maan.whatsapp.auth.basic;
 
 import java.security.MessageDigest;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
@@ -22,9 +21,6 @@ import org.springframework.web.client.RestTemplate;
 public class ImageDecryptionService {
 
 	    
-	    static {
-	        Security.addProvider(new BouncyCastleProvider());
-	    }
 	
 	    public byte[] decryptMedia(Map<String, Object> image) throws Exception {
 	    	
@@ -78,7 +74,7 @@ public class ImageDecryptionService {
 	        }
 	
 	        public static boolean validateHMAC(byte[] data, byte[] hmacKey, byte[] iv, byte[] expectedHmac) throws Exception {
-	            Mac mac = Mac.getInstance("HmacSHA256", "BC");
+	            Mac mac = Mac.getInstance("HmacSHA256", new BouncyCastleProvider());
 	            SecretKeySpec keySpec = new SecretKeySpec(hmacKey, "HmacSHA256");
 	            mac.init(keySpec);
 	            mac.update(iv);
@@ -88,7 +84,7 @@ public class ImageDecryptionService {
 	        }
 	
 	        public static byte[] decrypt(byte[] ciphertext, byte[] key, byte[] iv) throws Exception {
-	            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+	            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", new BouncyCastleProvider());
 	            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 	            IvParameterSpec ivSpec = new IvParameterSpec(iv);
 	            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);

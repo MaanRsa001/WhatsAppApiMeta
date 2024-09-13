@@ -5,14 +5,14 @@ import static com.querydsl.core.types.PathMetadataFactory.*;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
-import javax.annotation.Generated;
+import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
 
 /**
  * QInalipaIntimatedTable is a Querydsl query type for InalipaIntimatedTable
  */
-@Generated("com.querydsl.codegen.EntitySerializer")
+@Generated("com.querydsl.codegen.DefaultEntitySerializer")
 public class QInalipaIntimatedTable extends EntityPathBase<InalipaIntimatedTable> {
 
     private static final long serialVersionUID = -1150730809L;

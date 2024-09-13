@@ -4,13 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import javax.activation.FileTypeMap;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.activation.FileTypeMap;
 
 @RestController
 public class WhatsappLogoController {

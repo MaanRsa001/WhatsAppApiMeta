@@ -4,15 +4,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Temporal;
 import org.springframework.stereotype.Repository;
 
 import com.maan.whatsapp.entity.master.PreinspectionDataDetail;
+
+import jakarta.transaction.Transactional;
 
 @Repository
 public interface PreInspectionDataDetailRepo extends JpaRepository<PreinspectionDataDetail, Long> {
@@ -23,7 +22,7 @@ public interface PreInspectionDataDetailRepo extends JpaRepository<Preinspection
 	@Modifying
 	@Transactional
 	@Query(value ="insert into WH_PREINSPECTION_IMAGE_DETAIL(TRANID,IMAGENAME,IMAGEFILEPATH,ENTRY_DATE,STATUS,EXIF_IMAGE_DATE,EXIF_IMAGE_STATUS,ORIGINAL_FILE_NAME,IS_CAPTURE_UPLOAD) VALUES (?1,?2,?3,sysdate,'Y',?4,?5,?6,?7)",nativeQuery=true)
-	int insertImageDetails(String tranId,String imageName,String imagePath, @Temporal Date exifDate,String exifStatus,String orginalFileName,String isCaptureUpload);
+	int insertImageDetails(String tranId,String imageName,String imagePath, Date exifDate,String exifStatus,String orginalFileName,String isCaptureUpload);
 
 	@Query(value = "select trunc(entry_date) as ENTRY_DATE,count(*)as TOTAL_COUNT from wh_PreInspection_Data_Detail group by trunc(entry_date) order by entry_date desc",nativeQuery=true)
 	List<Map<String,Object>> getPreInspectionImage();

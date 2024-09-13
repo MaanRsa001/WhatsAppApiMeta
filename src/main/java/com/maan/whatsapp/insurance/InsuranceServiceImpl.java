@@ -12,6 +12,8 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -39,7 +41,6 @@ import com.maan.whatsapp.claimintimation.ClaimIntimationEntity;
 import com.maan.whatsapp.claimintimation.ClaimIntimationRepository;
 import com.maan.whatsapp.claimintimation.ClaimIntimationServiceImpl;
 import com.maan.whatsapp.config.exception.WhatsAppValidationException;
-import com.maan.whatsapp.entity.master.PreinspectionImageDetail;
 import com.maan.whatsapp.meta.FlowCreateQuoteReq;
 import com.maan.whatsapp.repository.whatsapp.PreInspectionDataImageRepo;
 import com.maan.whatsapp.response.error.Error;
@@ -3108,23 +3109,36 @@ public class InsuranceServiceImpl implements InsuranceService{
 		String isBroker =stp_req.get("isbroker")==null?"":stp_req.get("isbroker").toString();
 		String agency_code="",bdm_code="",broker_branchcode="",login_id="",subusertype ="",usertype="",
 		source_typeid ="",source_type="",branch_code="",broker_code=""		;
+		
 		if("1".equals(isBroker)) {
 			String broker_loginid =stp_req.get("broker_loginid")==null?"":stp_req.get("broker_loginid").toString();
 			Map<String,Object> loginReq =new HashMap<String, Object>();
 			loginReq.put("Type", "LOGIN_ID_DATA");
 			loginReq.put("LoginId", broker_loginid);
 			api_response =serviceImpl.callEwayApi(wh_get_ewaydata_api, mapper.writeValueAsString(loginReq));
+			log.info("B2B Broker details response : "+api_response);
 			Map<String,Object> map =mapper.readValue(api_response, Map.class);
 			Map<String,Object> result = (Map<String,Object>) map.get("Result");
+			Map<String,Object> source =result.get("Source")==null?null: (Map<String,Object>)result.get("Source");
+			source.put("8", "Whatsapp");
+			Set<Map.Entry<String, Object>> set =source.entrySet();
+			for(Entry<String, Object> entry : set) {
+				if("8".equals(entry.getKey())) {
+					source_typeid = entry.getKey();
+					source_type = entry.getValue().toString();
+					break;
+				}
+
+			}
+			
+			List<String> broker_branches = result.get("BrokerBranchCode")==null?null: (List<String>) result.get("BrokerBranchCode");
+			broker_branchcode=broker_branches.get(0);
 			
 			agency_code = result.get("AgencyCode")==null?"": result.get("AgencyCode").toString();
 			bdm_code = result.get("BdmCode")==null?"": result.get("BdmCode").toString();
-			broker_branchcode = result.get("BrokerBranchCode")==null?"": result.get("BrokerBranchCode").toString();
 			login_id = result.get("LoginId")==null?"": result.get("LoginId").toString();
 			subusertype = result.get("SubUserType")==null?"": result.get("SubUserType").toString();
 			usertype = result.get("UserType")==null?"": result.get("UserType").toString();
-			source_typeid = result.get("SourceTypeId")==null?"": result.get("SourceTypeId").toString();
-			source_type = result.get("SourceType")==null?"": result.get("SourceType").toString();
 			branch_code = result.get("BranchCode")==null?"": result.get("BranchCode").toString();
 			broker_code = result.get("BrokerCode")==null?"": result.get("BrokerCode").toString();
 		}
@@ -3135,8 +3149,8 @@ public class InsuranceServiceImpl implements InsuranceService{
 		stpReq.put("ApplicationId", "1");
 		stpReq.put("AxelDistance", "01");
 		stpReq.put("BdmCode", StringUtils.isBlank(bdm_code)?"620499":bdm_code);
-		stpReq.put("BranchCode", StringUtils.isBlank(bdm_code)?"02":branch_code);
-		stpReq.put("BrokerBranchCode", StringUtils.isBlank(bdm_code)?"1":broker_branchcode);
+		stpReq.put("BranchCode", "02");
+		stpReq.put("BrokerBranchCode", StringUtils.isBlank(broker_branchcode)?"1":broker_branchcode);
 		stpReq.put("BrokerCode", StringUtils.isBlank(broker_code)?"10303":broker_code);
 		stpReq.put("Chassisnumber", stp_req.get("chassis_no")==null?"":stp_req.get("chassis_no").toString());
 		stpReq.put("CollateralYn", "N");

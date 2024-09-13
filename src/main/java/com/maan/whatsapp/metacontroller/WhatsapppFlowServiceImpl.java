@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -42,6 +43,14 @@ import com.maan.whatsapp.insurance.InsuranceServiceImpl;
 import com.maan.whatsapp.repository.whatsapp.PreInspectionDataDetailRepo;
 import com.maan.whatsapp.repository.whatsapp.PreInspectionDataImageRepo;
 import com.maan.whatsapp.service.common.CommonService;
+
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Service
 @PropertySource("classpath:WebServiceUrl.properties")
@@ -80,6 +89,11 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	@Autowired
 	private ImageDecryptionService imageDecrypt;
 	
+	private static OkHttpClient okhttp = new OkHttpClient.Builder()
+			.readTimeout(30, TimeUnit.SECONDS)
+			.build();
+
+	
 	
 	@Value("${wh.stp.make}")
 	private String stpMake;
@@ -93,6 +107,18 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	@Value("${wh.get.ewaydata.api}")
 	private String wh_get_ewaydata_api;
 	
+	@Value("${python.image.token.api}")
+	private String python_image_token_api;
+	
+	@Value("${python.image.validate.api}")
+	private String python_image_validate_api;
+	
+	@Value("${python.image.token.username}")
+	private String python_image_token_username;
+	
+	@Value("${python.image.token.password}")
+	private String python_image_token_password;
+		
 	private static List<Map<String,String>> IMAGE_SKIP_OPTION = new ArrayList<>();
 	
 	private static List<Map<String,String>> PRE_DROPDOWN_DATA = new ArrayList<>();
@@ -457,8 +483,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					Map<String,String> request_map = new HashMap<String, String>();
 					request_map.put("Type", "LOGIN_ID_CHECK");
 					request_map.put("LoginId",broker_loginid);
-					String ewayValidationApi =wh_get_ewaydata_api;
-					
+					String ewayValidationApi =wh_get_ewaydata_api;					
 					api_response =thread.callEwayApi(ewayValidationApi, mapper.writeValueAsString(request_map),token);
 					Map<String,Object> map =mapper.readValue(api_response, Map.class);
 					Boolean status =(Boolean)map.get("IsError");
@@ -475,7 +500,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					request_map.put("Type", "SEAT_CAPACITY");
 					request_map.put("SeatingCapacity",seating_capacity);
 					request_map.put("InsuranceId", "100002");
-					request_map.put("BranchCode",broker_loginid);
+					request_map.put("BranchCode","01");
 					request_map.put("BodyType",body_type);
 					String ewayValidationApi =wh_get_ewaydata_api;					
 					api_response =thread.callEwayApi(ewayValidationApi,mapper.writeValueAsString(request_map),token);
@@ -484,7 +509,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					Boolean status =(Boolean)validation_map.get("IsError");					
 					if(status) {
 						Map<String,Object> seat_map =(Map<String,Object>) validation_map.get("Result");
-						String seats =seat_map.get("SeatingCapacity").toString();
+						String seats =seat_map.get("Seating Capacity").toString();
 						input_validation.put("seating_capacity", "should be under "+seats+" or equal ");
 					}
 				}
@@ -902,7 +927,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			}else if("VEHICLE_USAGE".equalsIgnoreCase(component_action)) {
 				
 				String sectionId =data.get("sectionName")==null?"":data.get("sectionName").toString().trim();
-				if(StringUtils.isBlank(sectionId)) {
+				if(StringUtils.isNotBlank(sectionId)) {
 					String token =thread.getEwayToken();
 					List<Map<String,String>> vehiUsage =thread.getVehicleUsage(token, sectionId);
 					
@@ -1397,26 +1422,46 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					file_path=file_path+file_name;					
 					
 					byte imageArray[] = imageDecrypt.decryptMedia(image);
-					File file = new File(file_path);
-					
+					File file = new File(file_path);					
 					FileUtils.writeByteArrayToFile(file, imageArray);
-					
-					insertPreinspectionData(upload_transaction_no,file_path,"Registration Card",file_name,101);
-
-					
 					Map<String,Object> flow_data = new HashMap<String, Object>();
-					flow_data.put("title", "Upload Speedo Meter Image");
-					flow_data.put("label", "Upload Speedo Meter Image");
-					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
-					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-					flow_data.put("footer_label", "Upload");
-					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+				
+					Boolean validation_status =false;//validateImageFile("vehicle_exterior",file);
+					if(validation_status) {
+						flow_data.put("title", "Upload Registration Card Image");
+						flow_data.put("label", "Upload Registration Card Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+				
+						Map<String,String> validation = new HashMap<String, String>();
+						validation.put("registration_card_image", "Not Acceptable : The uploaded image is not a registration card.");
+						flow_data.put("error_messages", validation);
+						
+						map.put("screen", screen_name);
+						map.put("version", version);
+						map.put("data", flow_data);
+						
+						if(file.exists())
+							file.delete();
+					}else {	
+						
+						insertPreinspectionData(upload_transaction_no,file_path,"Registration Card",file_name,101);
+						flow_data.put("title", "Upload Speedo Meter Image");
+						flow_data.put("label", "Upload Speedo Meter Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+											
+						map.put("screen", "SPEEDO_METER");
+						map.put("version", version);
+						map.put("data", flow_data);
+					}
 					
-					map.put("screen", "SPEEDO_METER");
-					map.put("version", version);
-					map.put("data", flow_data);
 					
-					log.info("Vehicle front :: "+file_path);
+					//log.info("Vehicle front :: "+file_path);
 					return response = mapper.writeValueAsString(map);
 				}
 				
@@ -1455,26 +1500,46 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					file_path=file_path+file_name;					
 					
 					byte imageArray[] = imageDecrypt.decryptMedia(image);
-					File file = new File(file_path);
-					
-					FileUtils.writeByteArrayToFile(file, imageArray);
-					
-					insertPreinspectionData(upload_transaction_no,file_path,"Speedo Meter Image",file_name,102);
-
-					
+					File file = new File(file_path);					
+					FileUtils.writeByteArrayToFile(file, imageArray);		
 					Map<String,Object> flow_data = new HashMap<String, Object>();
-					flow_data.put("title", "Upload Chassis Number Image");
-					flow_data.put("label", "Upload Chassis Number Image");
-					flow_data.put("description", "Please take a photo or browse your folder to upload an image");
-					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-					flow_data.put("footer_label", "Upload");
-					flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+										
+					Boolean validation_status =false;//validateImageFile("speedometer",file);
+					if(validation_status) {
+						Map<String,String> validation = new HashMap<String, String>();
+						validation.put("speedo_meter_image", "Not Acceptable : The uploaded image is not a speedometer.");
+						
+						flow_data.put("error_messages", validation);
+						flow_data.put("title", "Upload Speedo Meter Image");
+						flow_data.put("label", "Upload Speedo Meter Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+							
+						map.put("screen", screen_name);
+						map.put("version", version);
+						map.put("data", flow_data);
+						
+						if(file.exists())
+							file.delete();
+						
+					}else {	
+									
+						insertPreinspectionData(upload_transaction_no,file_path,"Speedo Meter Image",file_name,102);
+						flow_data.put("title", "Upload Chassis Number Image");
+						flow_data.put("label", "Upload Chassis Number Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+						map.put("screen", "CHASSIS_NUMBER");
+						map.put("version", version);
+						map.put("data", flow_data);
+					}
+							
 					
-					map.put("screen", "CHASSIS_NUMBER");
-					map.put("version", version);
-					map.put("data", flow_data);
-					
-					log.info("Vehicle front :: "+file_path);
+					//log.info("Vehicle front :: "+file_path);
 					return response = mapper.writeValueAsString(map);
 				}
 				
@@ -1514,26 +1579,48 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					String file_path =cs.getwebserviceurlProperty().getProperty("meta.image.store.path");
 					file_path=file_path+file_name;					
 					
-					byte imageArray[] = imageDecrypt.decryptMedia(image);
-					File file = new File(file_path);
+					byte imageArray[] = imageDecrypt.decryptMedia(image);					
+					File file = new File(file_path);						
+					FileUtils.writeByteArrayToFile(file, imageArray);						
+				
+					Map<String,Object> flow_data = new HashMap<String, Object>();
 					
-					FileUtils.writeByteArrayToFile(file, imageArray);
-					
-					insertPreinspectionData(upload_transaction_no,file_path,"Chassis Number Image",file_name,103);
+					Boolean validation_status =false;//validateImageFile("vehicle_exterior",file);
 
 					
-					Map<String,Object> flow_data = new HashMap<String, Object>();
-					flow_data.put("title", "Vehicle Front Side Image");
-					flow_data.put("label", "Upload Vehicle Front Side Image");
-					flow_data.put("description", "Please take a photo to upload an image");
-					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-					flow_data.put("footer_label", "Upload");
+					if(validation_status) {
+						Map<String,String> validation = new HashMap<String, String>();
+						validation.put("chassis_number_image", "Not Acceptable : The uploaded image is not a chassisnumber.");
+						
+						flow_data.put("error_messages", validation);
+						flow_data.put("title", "Upload Chassis Number Image");
+						flow_data.put("label", "Upload Chassis Number Image");
+						flow_data.put("description", "Please take a photo or browse your folder to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");
+						flow_data.put("skip_image", IMAGE_SKIP_OPTION);
+						map.put("screen", screen_name);
+						map.put("version", version);
+						map.put("data", flow_data);
+						
+						if(file.exists())
+							file.delete();
+					}else {	
+						
+						insertPreinspectionData(upload_transaction_no,file_path,"Chassis Number Image",file_name,103);
+						flow_data.put("title", "Vehicle Front Side Image");
+						flow_data.put("label", "Upload Vehicle Front Side Image");
+						flow_data.put("description", "Please take a photo to upload an image");
+						flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+						flow_data.put("footer_label", "Upload");											
+						map.put("screen", "VEHICLE_FRONT");
+						map.put("version", version);
+						map.put("data", flow_data);
+						
+					}
 					
-					map.put("screen", "VEHICLE_FRONT");
-					map.put("version", version);
-					map.put("data", flow_data);
-					
-					log.info("Vehicle front :: "+file_path);
+						
+					//log.info("Vehicle front :: "+file_path);
 					return response = mapper.writeValueAsString(map);
 				}
 				
@@ -1553,26 +1640,44 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				String file_path =cs.getwebserviceurlProperty().getProperty("meta.image.store.path");
 				file_path=file_path+file_name;					
 				
-				byte imageArray[] = imageDecrypt.decryptMedia(image);
-				File file = new File(file_path);
-				
-				FileUtils.writeByteArrayToFile(file, imageArray);
-				
-				insertPreinspectionData(upload_transaction_no,file_path,"Front Vehicle Image",file_name,104);
-
-				
+				byte imageArray[] = imageDecrypt.decryptMedia(image);				
+				File file = new File(file_path);					
+				FileUtils.writeByteArrayToFile(file, imageArray);	
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Vehicle Back Side Image");
-				flow_data.put("label", "Upload Vehicle Back Side Image");
-				flow_data.put("description", "Please take a photo to upload an image");
-				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-				flow_data.put("footer_label", "Upload");
-				
-				map.put("screen", "VEHICLE_BACK");
-				map.put("version", version);
-				map.put("data", flow_data);
-				
-				log.info("Vehicle front :: "+file_path);
+								
+				Boolean validation_status = false;//validateImageFile("vehicle_exterior",file);
+				if(validation_status) {
+					Map<String,String> validation = new HashMap<String, String>();
+					validation.put("vehicle_front", "Not Acceptable : The uploaded image is not a vehicle image.");
+					flow_data.put("error_messages", validation);
+					
+					flow_data.put("title", "Vehicle Front Side Image");
+					flow_data.put("label", "Upload Vehicle Front Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");	
+					map.put("screen", screen_name);
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+					if(file.exists())
+						file.delete();
+				}else {	
+									
+					insertPreinspectionData(upload_transaction_no,file_path,"Front Vehicle Image",file_name,104);
+					flow_data.put("title", "Vehicle Back Side Image");
+					flow_data.put("label", "Upload Vehicle Back Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");
+					
+					map.put("screen", "VEHICLE_BACK");
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+				}
+									
+				//log.info("Vehicle front :: "+file_path);
 				return response = mapper.writeValueAsString(map);
 				
 			}else if("VEHICLE_BACK".equalsIgnoreCase(screen_name)) {
@@ -1591,25 +1696,46 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				file_path=file_path+file_name;					
 				
 				byte imageArray[] = imageDecrypt.decryptMedia(image);
-				File file = new File(file_path);
-				
-				FileUtils.writeByteArrayToFile(file, imageArray);
-				
-				insertPreinspectionData(upload_transaction_no,file_path,"Back Vehicle Image",file_name,105);
-
-				
+				File file = new File(file_path);					
+				FileUtils.writeByteArrayToFile(file, imageArray);					
+			
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Vehicle Right Side Image");
-				flow_data.put("label", "Upload Vehicle Right Side Image");
-				flow_data.put("description", "Please take a photo to upload an image");
-				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-				flow_data.put("footer_label", "Upload");
+							
+				Boolean validation_status = false;//validateImageFile("vehicle_exterior",file);
+				if(validation_status) {
+					Map<String,String> validation = new HashMap<String, String>();
+					validation.put("vehicle_back", "Not Acceptable : The uploaded image is not a vehicle image.");
+					
+					flow_data.put("error_messages", validation);
+					flow_data.put("title", "Vehicle Back Side Image");
+					flow_data.put("label", "Upload Vehicle Back Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");
 				
-				map.put("screen", "VEHICLE_RIGHT");
-				map.put("version", version);
-				map.put("data", flow_data);
+					map.put("screen", screen_name);
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+					if(file.exists())
+						file.delete();
+				}else {	
+					
+					insertPreinspectionData(upload_transaction_no,file_path,"Back Vehicle Image",file_name,105);
+					flow_data.put("title", "Vehicle Right Side Image");
+					flow_data.put("label", "Upload Vehicle Right Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");
+					
+					map.put("screen", "VEHICLE_RIGHT");
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+				}
 				
-				log.info("Vehicle Back :: "+file_path);
+						
+				//log.info("Vehicle Back :: "+file_path);
 				
 				return response = mapper.writeValueAsString(map);
 				
@@ -1630,25 +1756,45 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				file_path=file_path+file_name;					
 				
 				byte imageArray[] = imageDecrypt.decryptMedia(image);
-				File file = new File(file_path);
-				
-				FileUtils.writeByteArrayToFile(file, imageArray);
-				
-				insertPreinspectionData(upload_transaction_no,file_path,"Side Vehicle Image",file_name,106);
-
-				
+				File file = new File(file_path);					
+				FileUtils.writeByteArrayToFile(file, imageArray);					
+						
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("title", "Vehicle Left Side Image");
-				flow_data.put("label", "Upload Vehicle Left Side Image");
-				flow_data.put("description", "Please take a photo to upload an image");
-				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-				flow_data.put("footer_label", "Upload");
+					
+				Boolean validation_status = false;//validateImageFile("vehicle_exterior",file);
+				if(validation_status) {
+					Map<String,String> validation = new HashMap<String, String>();
+					validation.put("vehicle_right", "Not Acceptable : The uploaded image is not a vehicle image.");
+					
+					flow_data.put("error_messages", validation);
+					flow_data.put("title", "Vehicle Right Side Image");
+					flow_data.put("label", "Upload Vehicle Right Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");
+					
+					map.put("screen", screen_name);
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+					if(file.exists())
+						file.delete();
+				}else {	
+					
+					insertPreinspectionData(upload_transaction_no,file_path,"Side Vehicle Image",file_name,106);
+					flow_data.put("title", "Vehicle Left Side Image");
+					flow_data.put("label", "Upload Vehicle Left Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");				
 				
-				map.put("screen", "VEHICLE_LEFT");
-				map.put("version", version);
-				map.put("data", flow_data);
+					map.put("screen", "VEHICLE_LEFT");
+					map.put("version", version);
+					map.put("data", flow_data);				
+					
+				}
 				
-				log.info("Vehicle Right :: "+file_path);
+				//log.info("Vehicle Right :: "+file_path);
 
 				return response = mapper.writeValueAsString(map);
 				
@@ -1669,25 +1815,46 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				file_path=file_path+file_name;					
 				
 				byte imageArray[] = imageDecrypt.decryptMedia(image);
-				File file = new File(file_path);
-				
-				FileUtils.writeByteArrayToFile(file, imageArray);
-				
-				insertPreinspectionData(upload_transaction_no,file_path,"Bottom Vehicle Image",file_name,107);
-				
+				File file = new File(file_path);				
+				FileUtils.writeByteArrayToFile(file, imageArray);					
+			
 				Map<String,Object> flow_data = new HashMap<String, Object>();
-				flow_data.put("header", "Alliance Insurance Corportation Limted");
-				flow_data.put("response_text", "Your documents has been received. Thank your for using alliance bot");
-				flow_data.put("title", "Thank you....!");
-				flow_data.put("upload_transaction_no", upload_transaction_no.toString());
-
-				log.info("Vehicle Right :: "+file_path);
-
 				
-				map.put("screen", "END_SCREEN");
-				map.put("version", version);
-				map.put("data", flow_data);
+				//log.info("Vehicle Right :: "+file_path);
+				Boolean validation_status = false;//validateImageFile("vehicle_exterior",file);
+				if(validation_status) {
+					Map<String,String> validation = new HashMap<String, String>();
+					validation.put("vehicle_right", "Not Acceptable : The uploaded image is not a vehicle image.");
+					
+					flow_data.put("error_messages", validation);
+					flow_data.put("title", "Vehicle Left Side Image");
+					flow_data.put("label", "Upload Vehicle Left Side Image");
+					flow_data.put("description", "Please take a photo to upload an image");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+					flow_data.put("footer_label", "Upload");				
 				
+					map.put("screen", screen_name);
+					map.put("version", version);
+					map.put("data", flow_data);
+					
+					if(file.exists())
+						file.delete();
+				}else {	
+					
+					insertPreinspectionData(upload_transaction_no,file_path,"Bottom Vehicle Image",file_name,107);
+					flow_data.put("header", "Alliance Insurance Corportation Limted");
+					flow_data.put("response_text", "Your documents has been received. Thank your for using alliance bot");
+					flow_data.put("title", "Thank you....!");
+					flow_data.put("upload_transaction_no", upload_transaction_no.toString());
+
+					map.put("screen", "END_SCREEN");
+					map.put("version", version);
+					map.put("data", flow_data);	
+					
+				}
+				
+				
+														
 				return response = mapper.writeValueAsString(map);
 				
 
@@ -1761,7 +1928,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 		return null;
 	}
 
-
 	@Override
 	public Map<String, Object> preinspectionScreenData(String mobile_no) {
 		try {
@@ -1832,5 +1998,62 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	}
 	
 	
+	public Boolean validateImageFile(String file_type,File file) {
+		try {					
+			String responseString ="";
+			Response response =null;		
+			
+			// for geting bearer token		
+		    RequestBody token_body = new FormBody.Builder()
+		            .add("username", python_image_token_username)
+		            .add("password", python_image_token_password)
+		            .build();
+			
+			Request token_request = new Request.Builder()
+					.url(python_image_token_api)
+	                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+					.post(token_body)
+					.build();
+			
+			response = okhttp.newCall(token_request).execute();
+			responseString = response.body().string();	
+			
+			@SuppressWarnings("unchecked")
+			Map<String,Object> token_result =mapper.readValue(responseString, Map.class);
+			String authorization ="Bearer "+token_result.get("access_token").toString();
+					
+	        // Create multipart body
+	        MultipartBody requestBody = new MultipartBody.Builder()
+	                .setType(MultipartBody.FORM)
+	                .addFormDataPart("file_type", file_type)
+	                .addFormDataPart("file", file.getName(), RequestBody.create(file, MediaType.parse("image/jpeg")))
+	                .build();
+
+	        // Create request
+	        Request image_request = new Request.Builder()
+	                .url(python_image_validate_api)
+	                .post(requestBody)
+	                .addHeader("Authorization",authorization)
+	                .build();
+			
+	        response = okhttp.newCall(image_request).execute();
+			responseString = response.body().string();
+			
+			@SuppressWarnings("unchecked")
+			Map<String,Object> image_result = mapper.readValue(responseString, Map.class);
+			String response_code =image_result.get("Status").toString();
+			System.out.println(mapper.writeValueAsString(image_result));
+
+			if("200".equals(response_code)) {
+				return false;
+			}else {
+				return true;
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 }

@@ -5,14 +5,14 @@ import static com.querydsl.core.types.PathMetadataFactory.*;
 import com.querydsl.core.types.dsl.*;
 
 import com.querydsl.core.types.PathMetadata;
-import javax.annotation.Generated;
+import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 
 
 /**
  * QWADataDetailPK is a Querydsl query type for WADataDetailPK
  */
-@Generated("com.querydsl.codegen.EmbeddableSerializer")
+@Generated("com.querydsl.codegen.DefaultEmbeddableSerializer")
 public class QWADataDetailPK extends BeanPath<WADataDetailPK> {
 
     private static final long serialVersionUID = -1493905011L;
