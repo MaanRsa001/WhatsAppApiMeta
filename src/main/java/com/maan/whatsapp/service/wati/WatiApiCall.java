@@ -1287,12 +1287,14 @@ public class WatiApiCall {
 			
 			message = cs.reqPrint(map);
 			
+			log.info("Whatsapp Flow Message Req : "+ message);
+
+			
 			String twoSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.two");
 			String oneSlash=cs.getwebserviceurlProperty().getProperty("wa.hit.slash.one");
 			
 			message =message.replace(twoSlash, oneSlash);
 			
-			//log.info("Whatsapp Flow : "+ message);
 			
 		}catch (Exception e) {
 			log.error(e);
