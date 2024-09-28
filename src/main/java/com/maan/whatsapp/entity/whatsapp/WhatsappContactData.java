@@ -44,7 +44,7 @@ public class WhatsappContactData {
 	private String sendername;
 	
 	@Column(name = "LANGUAGE")
-	private String language;
+	private String language;	
 
 
 }

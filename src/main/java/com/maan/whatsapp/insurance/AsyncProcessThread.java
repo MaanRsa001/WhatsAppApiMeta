@@ -105,6 +105,11 @@ public class AsyncProcessThread {
 	@Value("${wh.stp.region}")
 	private String stpRegion;
 	
+	@Value("${wh.get.reg_no.api}")
+	private String wh_get_reg_no_api;
+	
+	
+	
 	@Autowired
 	private ClaimIntimationServiceImpl claimIntimation;
 	

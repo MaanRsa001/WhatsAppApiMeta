@@ -25,6 +25,8 @@ public interface WhatsapppFlowService {
 	String preinspectionUpload(Map<String, Object> image);
 
 	Map<String, Object> preinspectionScreenData(String mobile_no);
+	
+	String shortTermPolicy(Map<String, Object> request);
 
 
 

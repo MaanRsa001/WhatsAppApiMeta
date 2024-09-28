@@ -343,7 +343,7 @@ public class ClaimIntimationServiceImpl {
 			RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
 			Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
 			response = httpClient.newCall(tokenReq).execute();
-			String obj = response.body().string();
+			String obj = response.body().string();	
 			Map<String, Object> tokenRes = mapper.readValue(obj, Map.class);
 			Map<String, Object> tokenObj = tokenRes.get("Result") == null ? null
 					: (Map<String, Object>) tokenRes.get("Result");

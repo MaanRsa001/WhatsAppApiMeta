@@ -280,9 +280,10 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 						.whatsappid(waid)
 						.remarks("")
 						.sendername(StringUtils.isBlank(request.getSenderName()) ? "" : request.getSenderName())
-						.language("English".equalsIgnoreCase(request.getText())?
-								"English":"Swahili".equalsIgnoreCase(request.getText())?"Swahili":
-								StringUtils.isBlank(contactRepo.getLanguage(waid.toString()))?"English":contactRepo.getLanguage(waid.toString()))
+						.language("English".equalsIgnoreCase(request.getText())?"English"
+								:"Swahili".equalsIgnoreCase(request.getText())?"Swahili"
+								:StringUtils.isBlank(contactRepo.getLanguage(waid.toString()))?"English"
+								:contactRepo.getLanguage(waid.toString()))
 						.build();
 	
 				contactRepo.save(data);

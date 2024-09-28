@@ -86,8 +86,10 @@ public class WhatsAppController {
 		try {	
 		 if(req!=null) {
 			 
-			List<Messages> msg =req.getEntry()==null?null:req.getEntry().get(0).getChanges()==null?
-					null:req.getEntry().get(0).getChanges().get(0).getValue().getMessages()==null?null:req.getEntry().get(0).getChanges().get(0).getValue().getMessages();
+			List<Messages> msg =req.getEntry()==null?null
+					:req.getEntry().get(0).getChanges()==null?null
+					:req.getEntry().get(0).getChanges().get(0).getValue().getMessages()==null?null
+					:req.getEntry().get(0).getChanges().get(0).getValue().getMessages();
 			
 			if(msg!=null) {
 				log.info("meta/Webhook request ==>"+printReq.toJson(req));

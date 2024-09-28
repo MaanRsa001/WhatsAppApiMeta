@@ -118,6 +118,11 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 	
 	@Value("${python.image.token.password}")
 	private String python_image_token_password;
+	
+	@Value("${wh.get.reg_no.api}")
+	private String wh_get_reg_no_api;
+	
+	
 		
 	private static List<Map<String,String>> IMAGE_SKIP_OPTION = new ArrayList<>();
 	
@@ -2056,4 +2061,483 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 		return null;
 	}
 
+
+	@Override
+	public String shortTermPolicy(Map<String, Object> request) {
+		String response = "";
+		String api_request = "";
+		String api_response = "";
+		
+		try {
+			Map<String,Object> data = (Map<String, Object>) request.get("data");
+			String version = request.get("version")== null ? "" : request.get("version").toString();
+			String screen = request.get("screen")==null ? "" : request.get("screen").toString();
+			String component_action = data.get("component_action")==null ? "" : data.get("component_action").toString();
+			String flow_token = request.get("flow_token")==null ? "" : request.get("flow_token").toString();
+			
+			Map<String,Object> return_response = new HashMap<String, Object>();
+			return_response.put("version", version);
+			return_response.put("screen", screen);
+			
+			String sample_data = "[ {\"id\": \"1\", \"title\": \"--SELECT--\"} ]";
+			String error_messages_1 =" {\"id\": \"\", \"\": \"\"}";
+			List<Map<String,Object>> list = mapper.readValue(sample_data, List.class);
+			
+			String token =this.thread.getEwayToken();
+			
+			Map<String,String> input_validation = new HashMap<>();
+			if("VEHILCE_VALIDATION".equalsIgnoreCase(component_action)) {
+				String chassis_number = data.get("chassis_number")==null ? "" : data.get("chassis_number").toString().trim();
+				String body_type = data.get("body_type")==null ? "" : data.get("body_type").toString().trim();
+				String registration_number = data.get("registration_number")==null ? "" : data.get("registration_number").toString().trim();
+				String engine_number = data.get("engine_number")==null ? "" : data.get("engine_number").toString().trim();
+				String body_make = data.get("body_make")==null ? "" : data.get("body_make").toString().trim();
+				String vehicle_model = data.get("vehicle_model")==null ? "" : data.get("vehicle_model").toString().trim();
+				String engine_capacity = data.get("engine_capacity")==null ? "" : data.get("engine_capacity").toString().trim();
+				String manufacture_year = data.get("manufacture_year")==null ? "" : data.get("manufacture_year").toString().trim();
+				String fuel_used = data.get("fuel_used")==null ? "" : data.get("fuel_used").toString().trim();
+				String motor_category = data.get("motor_category")==null ? "" : data.get("motor_category").toString().trim();
+				String vehicle_color = data.get("vehicle_color")==null ? "" : data.get("vehicle_color").toString().trim();
+				String vehicle_usage = data.get("vehicle_usage")==null ? "" : data.get("vehicle_usage").toString().trim();
+				String seating_capacity = data.get("seating_capacity")==null ? "" : data.get("seating_capacity").toString().trim();
+				String tare_weight = data.get("tare_weight")==null ? "" : data.get("tare_weight").toString().trim();
+				String gross_weight = data.get("gross_weight")==null ? "" : data.get("gross_weight").toString().trim();
+				String no_of_axle = data.get("no_of_axle")==null ? "" : data.get("no_of_axle").toString().trim();
+				String axle_distance = data.get("axle_distance")==null ? "" : data.get("axle_distance").toString().trim();
+				
+				
+				String title =data.get("title")==null?"":data.get("title").toString().trim();
+				String customer_name = data.get("customer_name")==null ? "" : data.get("customer_name").toString().trim();
+				String country_code = data.get("country_code")==null ? "" : data.get("country_code").toString().trim();
+				String mobile_number = data.get("mobile_number")==null ? "" : data.get("mobile_number").toString().trim();
+				String email_id = data.get("email_id")==null ? "" : data.get("email_id").toString().trim();
+				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
+				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
+				
+				// validation message must not greater than 30 characters.
+				
+				if(chassis_number.length()>5) {
+					input_validation.put("chassis_number", "Minimum characters required.");
+				}else if(!chassis_number.matches("[a-zA-Z0-9]+")) {
+					input_validation.put("chassis_number", "Special characters not allowed.");
+				}
+				if(!registration_number.matches("[a-zA-Z0-9]+")) {
+					input_validation.put("registration_number", "Special characters not allowed.");
+				}
+				if(!engine_capacity.matches("[0-9]+")) {
+					input_validation.put("engine_capacity", "digits only allowed");
+				}
+				if(!engine_number.matches("[0-9]+")) {
+					input_validation.put("engine_number", "digits only allowed");
+				}
+				if(!tare_weight.matches("[0-9]+")) {
+					input_validation.put("tare_weight", "digits only allowed");
+				}
+				else if(!tare_weight.matches("[0-9]+")) {
+					input_validation.put("tare_weight", "digits only allowed");
+				}
+				if(!gross_weight.matches("[0-9]+")) {
+					input_validation.put("gross_weight", "digits only allowed");
+				}
+				else if(!gross_weight.matches("[0-9]+")) {
+					input_validation.put("gross_weight", "digits only allowed");
+				}
+				if(!no_of_axle.matches("[0-9]+")) {
+					input_validation.put("no_of_axle", "digits only allowed");
+				}
+				if(!axle_distance.matches("[0-9]+")) {
+					input_validation.put("axle_distance", "digits only allowed");
+				}
+				if(!seating_capacity.matches("[0-9]+")) {
+					input_validation.put("seating_capacity", "digits only allowed");
+				}else {
+					Map<String,String> request_map = new HashMap<String, String>();
+					request_map.put("Type", "SEAT_CAPACITY");
+					request_map.put("SeatingCapacity", seating_capacity );
+					request_map.put("InsuranceId", "100002");
+					request_map.put("BranchCode", "01");
+					request_map.put("BodyType",body_type );
+					String ewayValidation=wh_get_ewaydata_api;
+					api_response=thread.callEwayApi(ewayValidation, mapper.writeValueAsString(request_map), token);
+					Map<String,Object> map = mapper.readValue(api_response, Map.class);
+					Boolean status = (Boolean) map.get("IsError");
+					if(status) {
+						Map<String,Object> seat_map =(Map<String,Object>) map.get("Result");
+						String seats =seat_map.get("Seating Capacity").toString();
+						input_validation.put("seating_capacity", "should be under "+seats+" or equal ");
+					}
+				}
+				
+				// checking validation data
+				if(!input_validation.isEmpty() && input_validation.size()>0) {
+					Map<String,String> request_map= new HashMap<String,String>();
+					request_map.put("BranchCode", "01");
+					request_map.put("InsuranceId", "100002");
+					request_map.put("BodyId", body_type);
+					request_map.put("MakeId", body_make);
+					
+					String request_1 = printReq.toJson(request_map);
+					
+					CompletableFuture<List<Map<String,String>>> fuel_type_e =thread.getFuelType(request_1,token);
+					CompletableFuture<List<Map<String,String>>> color_e =thread.getColor(request_1,token);
+					CompletableFuture<List<Map<String,String>>> manufacture_year_e =thread.getManuFactureYear();
+					CompletableFuture<List<Map<String,String>>> body_type_e =thread.getSTPBodyType(request_1,token);
+					CompletableFuture<List<Map<String,String>>> vehicle_usage_e =thread.getSTPVehicleUsage(request_1,token);
+					CompletableFuture<List<Map<String,String>>> make_e =thread.getStpMake(token, body_type);
+					CompletableFuture<List<Map<String,String>>> model_e =thread.getSTPModel(body_type,body_make,token);
+					
+					CompletableFuture.allOf(fuel_type_e,color_e,manufacture_year_e,
+							body_type_e,vehicle_usage_e,make_e,model_e).join();
+					
+					Map<String,Object> error_messages = new HashMap<String, Object>();
+					error_messages.put("error_messages", input_validation);
+					error_messages.put("body_type", body_type_e.get().isEmpty() ? SAMPLE_DATA : body_type_e.get());
+					error_messages.put("body_make", make_e.get().isEmpty() ? SAMPLE_DATA : make_e.get());
+					error_messages.put("vehicle_model", model_e.get().isEmpty() ? SAMPLE_DATA : model_e.get());
+					error_messages.put("manufacture_year", manufacture_year_e.get().isEmpty() ? SAMPLE_DATA : manufacture_year_e.get());
+					error_messages.put("fuel_used", fuel_type_e.get().isEmpty() ? SAMPLE_DATA : fuel_type_e.get());
+					error_messages.put("vehicle_usage", vehicle_usage_e.get().isEmpty() ? SAMPLE_DATA : vehicle_usage_e.get());
+					error_messages.put("vehicle_color", color_e.get().isEmpty() ? SAMPLE_DATA : color_e.get());
+					
+					error_messages.put("title", title);
+					error_messages.put("customer_name", customer_name);
+					error_messages.put("country_code", country_code);
+					error_messages.put("mobile_number", mobile_number);
+					error_messages.put("email_id", email_id);
+					error_messages.put("address", address);
+					error_messages.put("region", region);
+					error_messages.put("axle_distance", axle_distance);
+					error_messages.put("no_of_axle", no_of_axle);
+					error_messages.put("gross_weight", gross_weight);
+					error_messages.put("tare_weight", tare_weight);
+					error_messages.put("registration_number", registration_number);
+					error_messages.put("engine_number", engine_number);
+					error_messages.put("chassis_number", chassis_number);
+					error_messages.put("engine_capacity", engine_capacity);
+					
+					return_response.put("data", error_messages);
+					response=printReq.toJson(return_response);
+					return response;
+				}
+				else {
+					Map<String,Object> extension_message_response =new HashMap<String, Object>();
+					Map<String,Object> params =new HashMap<String, Object>();
+					Map<String,Object> param_map =new HashMap<String, Object>();
+					
+					params.put("chassis_number", chassis_number);
+					params.put("body_type", body_type);
+					params.put("registration_number", registration_number);
+					params.put("engine_number", engine_number);
+					params.put("body_make", body_make);
+					params.put("engine_capacity", engine_capacity);
+					params.put("manufacture_year", manufacture_year);
+					params.put("fuel_used", fuel_used);
+					params.put("vehicle_model", vehicle_model);
+					params.put("motor_category", motor_category);
+					params.put("vehicle_color", vehicle_color);
+					params.put("vehicle_usage", vehicle_usage);
+					params.put("seating_capacity", seating_capacity);
+					params.put("tare_weight", tare_weight);
+					params.put("gross_weight", gross_weight);
+					params.put("no_of_axle", no_of_axle);
+					params.put("axle_distance", axle_distance);
+					params.put("flow_token", flow_token);
+					
+					params.put("title", title);
+					params.put("customer_name", customer_name);
+					params.put("country_code", country_code);
+					params.put("mobile_number", mobile_number);
+					params.put("email_id", email_id);
+					params.put("address", address);
+					params.put("region", region);
+					
+					param_map.put("params", params);
+					extension_message_response.put("extension_message_response", param_map);
+					
+					return_response.put("screen", "SUCCESS");
+					return_response.put("data", extension_message_response);
+					response =printReq.toJson(return_response);
+					
+				}
+			}
+			if("VEHILCE_REG_VALIDATION".equalsIgnoreCase(component_action)) {
+				
+				String reg_no= data.get("reg_no")==null?"":data.get("reg_no").toString().trim();
+				String insurance_type = data.get("insurance_type")==null?"":data.get("insurance_type").toString().trim();
+				String insurance_class = data.get("insurance_class")==null?"":data.get("insurance_class").toString().trim();
+				String body_type_policy = data.get("body_type_policy")==null?"":data.get("body_type_policy").toString().trim();
+				String vehicle_usage_policy = data.get("vehicle_usage_policy")==null?"":data.get("vehicle_usage_policy").toString().trim();
+				String gps = data.get("gps")==null?"":data.get("gps").toString().trim();
+				String car_alarm = data.get("car_alarm")==null?"":data.get("car_alarm").toString().trim();
+				String insurance_claim = data.get("insurance_claim")==null?"":data.get("insurance_claim").toString().trim();
+				String quatation_creator = data.get("quatation_creator")==null?"":data.get("quatation_creator").toString().trim();
+				String broker_loginid = data.get("broker_loginid")==null?"":data.get("broker_loginid").toString().trim();
+				
+				
+				String title =data.get("title")==null?"":data.get("title").toString().trim();
+				String customer_name = data.get("customer_name")==null ? "" : data.get("customer_name").toString().trim();
+				String country_code = data.get("country_code")==null ? "" : data.get("country_code").toString().trim();
+				String mobile_number = data.get("mobile_number")==null ? "" : data.get("mobile_number").toString().trim();
+				String email_id = data.get("email_id")==null ? "" : data.get("email_id").toString().trim();
+				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
+				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
+				
+				if(!reg_no.matches("[a-zA-Z0-9]+")) {
+					input_validation.put("reg_no", "Special characters not allowed.");
+				}
+				if("1".equalsIgnoreCase(quatation_creator)) {
+					Map<String,String> request_map = new HashMap<String,String>();
+					request_map.put("Type", "LOGIN_ID_CHECK");
+					request_map.put("LoginId", broker_loginid);
+					String ewayValidation=wh_get_ewaydata_api;
+					api_response=thread.callEwayApi(ewayValidation, mapper.writeValueAsString(request_map), token);
+					Map<String,Object> map = mapper.readValue(api_response, Map.class);
+					Boolean status = (Boolean) map.get("IsError");
+					
+					if(status) {
+						input_validation.put("broker_loginid", "Broker Login Id not valid");
+					}
+				}
+				
+				Map<String,String> reg_validatation = new HashMap<String,String>();
+				reg_validatation.put("InsuranceId", "100019");
+				reg_validatation.put("BranchCode", "55");
+				reg_validatation.put("BrokerBranchCode", "1");
+				reg_validatation.put("ProductId", "5");
+				reg_validatation.put("CreatedBy", "ugandabroker3");
+				reg_validatation.put("SavedFrom", "API");
+				reg_validatation.put("ReqRegNumber", reg_no);
+				reg_validatation.put("ReqChassisNumber", "");
+				
+				String reg_noValidationApi =wh_get_reg_no_api;					
+				api_response =thread.callEwayApi(reg_noValidationApi, mapper.writeValueAsString(reg_validatation),token);
+				Map<String,Object> map =mapper.readValue(api_response, Map.class);
+				Boolean status =(Boolean)map.get("IsError");
+				
+				if(status) {
+					input_validation.put("ReqRegNumber", "reg no not found");
+				}else {
+					Map<String,Object> map_vehicle = new HashMap<String, Object>();
+					
+					map_vehicle.put("title", title);
+					map_vehicle.put("customer_name", customer_name);
+					map_vehicle.put("mobile_number", mobile_number);
+					map_vehicle.put("email_id", email_id);
+					map_vehicle.put("address", address);
+					map_vehicle.put("region", region);
+					map_vehicle.put("country_code", country_code);
+					Map<String,String> errorMap = new HashMap<>();
+					map_vehicle.put("error_messages", errorMap);
+					
+					return_response.put("data", map_vehicle);
+					return_response.put("screen", "VEHICLE_DETAILS");
+					response =printReq.toJson(return_response);
+
+					log.info("response"+ response);
+
+				}
+			
+			}
+			if("quotation_creator".equalsIgnoreCase(component_action)) {
+				String is_broker = data.get("quotation_creator")==null ? "" : data.get("quotation_creator").toString().trim();
+				Map<String,Boolean> enableLogin =new HashMap<String, Boolean>();
+				if("1".equalsIgnoreCase(is_broker)) {
+					enableLogin.put("isVisibleBrokerLoginId", true);
+					enableLogin.put("isMandatoryBrokerLoginId", true);
+				}else if("2".equalsIgnoreCase(is_broker)){
+					enableLogin.put("isVisibleBrokerLoginId", false);
+					enableLogin.put("isMandatoryBrokerLoginId", false);
+				}
+				
+				return_response.put("data", enableLogin);
+				response =printReq.toJson(return_response);
+				return response;
+			}
+			else if ("MAKE".equalsIgnoreCase(component_action)) {
+				
+				String body_type =data.get("body_type")==null?"":data.get("body_type").toString().trim();
+				List<Map<String,String>> data_list = new ArrayList<Map<String,String>>();
+				
+				if(StringUtils.isNotBlank(body_type)) {
+					String api =this.stpMake;
+					
+					Map<String,Object> region_req =new HashMap<String, Object>();
+					region_req.put("BodyId", body_type);
+					region_req.put("InsuranceId", "100002");
+					region_req.put("BranchCode", "01");
+					
+					api_request =printReq.toJson(region_req);
+					
+					api_response =thread.callEwayApi(api, api_request,token);
+					
+					Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
+					List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
+					
+					data_list = result.stream().map(p->{
+						Map<String,String> map = new HashMap<>();
+						map.put("id", p.get("Code")==null?"":p.get("Code").toString());
+						map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
+						return map;
+					}).collect(Collectors.toList());
+				}
+				else {
+					data_list =SAMPLE_DATA;
+				}
+				Map<String,Object> make_list = new HashMap<String, Object>();
+				make_list.put("make", data_list);
+				return_response.put("data", make_list);
+				response =printReq.toJson(return_response);
+				return response;
+			}
+			else if("MODEL".equalsIgnoreCase(component_action)) {
+				String body_type =data.get("body_type")==null?"":data.get("body_type").toString().trim();
+				String make =data.get("body_make")==null?"":data.get("body_make").toString().trim();
+				List<Map<String,String>> data_list = new ArrayList<Map<String,String>>();
+				
+				if(!"00000".equals(make) && StringUtils.isNotBlank(make) ) {
+					String api =this.stpMakeModel;
+					
+					Map<String,Object> region_req =new HashMap<String, Object>();
+					region_req.put("BodyId", body_type);
+					region_req.put("InsuranceId", "100002");
+					region_req.put("BranchCode", "01");
+					region_req.put("MakeId", make);
+					
+					api_request =printReq.toJson(region_req);
+					
+					api_response =thread.callEwayApi(api, api_request,token);
+					
+					Map<String,Object> region_obj =mapper.readValue(api_response, Map.class);
+					List<Map<String,Object>> result =(List<Map<String,Object>>)region_obj.get("Result");
+					
+					data_list = result.stream().map(p->{
+						Map<String,String> map = new HashMap<>();
+						map.put("id", p.get("Code")==null?"":p.get("Code").toString());
+						map.put("title", p.get("CodeDesc")==null?"":p.get("CodeDesc").toString());
+						return map;
+					}).collect(Collectors.toList());
+				}else {
+					data_list =SAMPLE_DATA;
+				}
+				Map<String,Object> make_list = new HashMap<String, Object>();
+				make_list.put("make", data_list);
+				return_response.put("data", make_list);
+				response =printReq.toJson(return_response);
+				return response;
+			}
+			else if("CUSTOMER_SCREEN".equalsIgnoreCase(component_action)) {
+				String title =data.get("title")==null?"":data.get("title").toString().trim();
+				String customer_name = data.get("customer_name")==null ? "" : data.get("customer_name").toString().trim();
+				String country_code = data.get("country_code")==null ? "" : data.get("country_code").toString().trim();
+				String mobile_number = data.get("mobile_number")==null ? "" : data.get("mobile_number").toString().trim();
+				String email_id = data.get("email_id")==null ? "" : data.get("email_id").toString().trim();
+				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
+				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
+				
+				if(!customer_name.matches("[a-zA-Z]+")) {
+					input_validation.put("customer_name", "Please enter valid name");
+				}
+				if(!mobile_number.matches("[0-9]+")) {
+					input_validation.put("mobile_number", "Please enter valid mobile number");
+				}else if(!mobile_number.matches("0?[0-9]{9}")) {
+					input_validation.put("mobile_number", "MobileNo should be 9 digits");
+				}
+				if(!email_id.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+					input_validation.put("email_id", "Please enter valid email format");
+				}
+				
+				if(input_validation.size()>0) {
+					Map<String,String> request_map = new HashMap<String, String>();
+					request_map.put("BranchCode", "01");
+					request_map.put("InsuranceId", "100002");
+					
+					String request_1 =printReq.toJson(request_map);
+					
+					CompletableFuture<List<Map<String,String>>> title_1 =thread.getCustomerTitle(request_1,token);
+					CompletableFuture<List<Map<String,String>>> country_code_1 =thread.getCustomerCountryCode(request_1,token);
+					CompletableFuture<List<Map<String,String>>> region_1 =thread.getCustomerRegion(token);
+					
+					CompletableFuture.allOf(title_1,country_code_1,region_1).join();
+					
+					Map<String,Object> error_messages = new HashMap<String, Object>();
+					error_messages.put("error_messages", input_validation);
+					error_messages.put("title", title_1.get().isEmpty()?SAMPLE_DATA:title_1.get());
+					error_messages.put("country_code", country_code_1.get().isEmpty()?SAMPLE_DATA:country_code_1.get());
+					error_messages.put("region", region_1.get().isEmpty()?SAMPLE_DATA:region_1.get());
+					return_response.put("action", "data_exchange");
+					return_response.put("data", error_messages);
+					
+					response =printReq.toJson(return_response);
+				}
+				else {
+					/*Map<String,String> request_map = new HashMap<String, String>();
+					request_map.put("BranchCode", "01");
+					request_map.put("InsuranceId", "100002");
+					
+					String request_1 =printReq.toJson(request_map);
+					
+					CompletableFuture<List<Map<String,String>>> fuel_type =thread.getFuelType(request_1,token);
+					CompletableFuture<List<Map<String,String>>> color =thread.getColor(request_1,token);
+					CompletableFuture<List<Map<String,String>>> manufacture_year =thread.getManuFactureYear();
+					CompletableFuture<List<Map<String,String>>> body_type =thread.getSTPBodyType(request_1,token);
+					CompletableFuture<List<Map<String,String>>> vehicle_usage =thread.getSTPVehicleUsage(request_1,token);
+					CompletableFuture<List<Map<String,String>>> motor_category =thread.getMotorCategory(request_1,token);
+				
+
+					CompletableFuture.allOf(fuel_type,color,manufacture_year,
+							body_type,vehicle_usage).join();*/
+					
+					Map<String,Object> map_vehicle = new HashMap<String, Object>();
+					
+					
+					map_vehicle.put("new_registration", "create new vehicle");
+					map_vehicle.put("search_heading", "Search for your vehicle by Registration Number here.");
+					
+					map_vehicle.put("title", title);
+					map_vehicle.put("customer_name", customer_name);
+					map_vehicle.put("mobile_number", mobile_number);
+					map_vehicle.put("email_id", email_id);
+					map_vehicle.put("address", address);
+					map_vehicle.put("region", region);
+					map_vehicle.put("country_code", country_code);
+					//map_vehicle.put("fuel_used", fuel_type.get().isEmpty()?list:fuel_type.get());
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("body_type", body_type.get().isEmpty()?list:body_type.get());
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("body_make", list);
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("vehicle_model", list);
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("manufacture_year", manufacture_year.get().isEmpty()?list:manufacture_year.get());
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("vehicle_color", color.get().isEmpty()?list:color.get());
+					///System.out.println(map_vehicle);
+					////map_vehicle.put("vehicle_usage", vehicle_usage.get().isEmpty()?list:vehicle_usage.get());
+					//System.out.println(map_vehicle);
+				///	map_vehicle.put("motor_category", motor_category.get().isEmpty()?list:motor_category.get());
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("isVisibleBrokerLoginId", false);
+					//System.out.println(map_vehicle);
+					//map_vehicle.put("isMandatoryBrokerLoginId", false);
+					//System.out.println(map_vehicle)
+					Map<String,String> map = new HashMap<>();
+					map_vehicle.put("error_messages", map);
+					//System.out.println(map_vehicle);
+					
+					return_response.put("data", map_vehicle);
+					return_response.put("screen", "VEHICLE_DETAILS");
+					response =printReq.toJson(return_response);
+
+					log.info("response"+ response);
+				}
+				return response;
+			}
+		}
+		catch(Exception ex) {
+			log.error(ex);
+			ex.printStackTrace();
+		}
+		return response;
+	}
+			
 }
