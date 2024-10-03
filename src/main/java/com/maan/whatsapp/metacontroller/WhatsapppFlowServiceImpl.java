@@ -789,7 +789,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				map_vehicle.put("isVisibleBrokerLoginId", false);
 				map_vehicle.put("isMandatoryBrokerLoginId", false);
 				map_vehicle.put("error_messages", mapper.readValue(error_messages_1, Map.class));
-				
 				return_res.put("data", map_vehicle);
 				return_res.put("screen", "VEHICLE_DETAILS");
 				response =printReq.toJson(return_res);
@@ -2092,14 +2091,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 			List<Map<String,Object>> list = mapper.readValue(sample_data, List.class);
 			
 			String token =this.thread.getEwayToken();
-			
+
 			Map<String,String> input_validation = new HashMap<>();
 			if("VEHILCE_VALIDATION".equalsIgnoreCase(component_action)) {
 				String chassis_number = data.get("chassis_number")==null ? "" : data.get("chassis_number").toString().trim();
 				String body_type = data.get("body_type")==null ? "" : data.get("body_type").toString().trim();
 				String registration_number = data.get("registration_number")==null ? "" : data.get("registration_number").toString().trim();
 				String engine_number = data.get("engine_number")==null ? "" : data.get("engine_number").toString().trim();
-				String body_make = data.get("body_make")==null ? "" : data.get("body_make").toString().trim();
+				String vehicle_make = data.get("vehicle_make")==null ? "" : data.get("vehicle_make").toString().trim();
 				String vehicle_model = data.get("vehicle_model")==null ? "" : data.get("vehicle_model").toString().trim();
 				String engine_capacity = data.get("engine_capacity")==null ? "" : data.get("engine_capacity").toString().trim();
 				String manufacture_year = data.get("manufacture_year")==null ? "" : data.get("manufacture_year").toString().trim();
@@ -2124,7 +2123,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				
 				// validation message must not greater than 30 characters.
 				
-				if(chassis_number.length()>5) {
+				if(chassis_number.length()<5) {
 					input_validation.put("chassis_number", "Minimum characters required.");
 				}else if(!chassis_number.matches("[a-zA-Z0-9]+")) {
 					input_validation.put("chassis_number", "Special characters not allowed.");
@@ -2158,9 +2157,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				}
 				if(!seating_capacity.matches("[0-9]+")) {
 					input_validation.put("seating_capacity", "digits only allowed");
-				}else {
+				}/*else {
 					Map<String,String> request_map = new HashMap<String, String>();
-					request_map.put("Type", "SEAT_CAPACITY");
+					request_map.put("Type", "SeatingCapacity");
 					request_map.put("SeatingCapacity", seating_capacity );
 					request_map.put("InsuranceId", "100019");
 					request_map.put("BranchCode", "55");
@@ -2171,10 +2170,10 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					Boolean status = (Boolean) map.get("IsError");
 					if(status) {
 						Map<String,Object> seat_map =(Map<String,Object>) map.get("Result");
-						String seats =seat_map.get("Seating Capacity").toString();
+						String seats =seat_map.get("SeatingCapacity").toString();
 						input_validation.put("seating_capacity", "should be under "+seats+" or equal ");
 					}
-				}
+				*/
 				
 				// checking validation data
 				if(!input_validation.isEmpty() && input_validation.size()>0) {
@@ -2182,7 +2181,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					request_map.put("BranchCode", "55");
 					request_map.put("InsuranceId", "100019");
 					request_map.put("BodyId", body_type);
-					request_map.put("MakeId", body_make);
+					request_map.put("MakeId", vehicle_make);
 					
 					String request_1 = printReq.toJson(request_map);
 					
@@ -2192,16 +2191,16 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					CompletableFuture<List<Map<String,String>>> body_type_e =thread.getSTPBodyType(request_1,token);
 					CompletableFuture<List<Map<String,String>>> vehicle_usage_e =thread.getSTPVehicleUsage(request_1,token);
 					CompletableFuture<List<Map<String,String>>> make_e =thread.getStpMake(token, body_type);
-					CompletableFuture<List<Map<String,String>>> model_e =thread.getSTPModel(body_type,body_make,token);
+					//CompletableFuture<List<Map<String,String>>> model_e =thread.getSTPModel(body_type,vehicle_make,token);
 					
 					CompletableFuture.allOf(fuel_type_e,color_e,manufacture_year_e,
-							body_type_e,vehicle_usage_e,make_e,model_e).join();
+							body_type_e,vehicle_usage_e,make_e).join();
 					
 					Map<String,Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
 					error_messages.put("body_type", body_type_e.get().isEmpty() ? SAMPLE_DATA : body_type_e.get());
 					error_messages.put("body_make", make_e.get().isEmpty() ? SAMPLE_DATA : make_e.get());
-					error_messages.put("vehicle_model", model_e.get().isEmpty() ? SAMPLE_DATA : model_e.get());
+					error_messages.put("vehicle_model", vehicle_model);
 					error_messages.put("manufacture_year", manufacture_year_e.get().isEmpty() ? SAMPLE_DATA : manufacture_year_e.get());
 					error_messages.put("fuel_used", fuel_type_e.get().isEmpty() ? SAMPLE_DATA : fuel_type_e.get());
 					error_messages.put("vehicle_usage", vehicle_usage_e.get().isEmpty() ? SAMPLE_DATA : vehicle_usage_e.get());
@@ -2231,6 +2230,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					Map<String,Object> map_policy = new HashMap<String, Object>();
 					Map<String,String> save_details =new HashMap<String, String>();
 					
+                   
+					
 					save_details.put("Insuranceid", "100019");
 					save_details.put("BranchCode", "55");
 					save_details.put("AxelDistance", axle_distance);
@@ -2244,7 +2245,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					save_details.put("MotorCategory", motor_category);
 					save_details.put("Motorusage", vehicle_usage);
 					save_details.put("NumberOfAxels", no_of_axle);
-					save_details.put("OwnerCategory", "");
+					save_details.put("OwnerCategory", "1");
 					save_details.put("Registrationnumber", registration_number);
 					save_details.put("ResEngineCapacity", engine_capacity);
 					save_details.put("ResOwnerName", "Testing");
@@ -2254,21 +2255,36 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					save_details.put("Tareweight", tare_weight);
 					save_details.put("Vehcilemodel", vehicle_model);
 					save_details.put("VehicleType", body_type);
-					save_details.put("Vehiclemake", body_make);
-					save_details.put("RegistrationDate", body_make);
+					save_details.put("Vehiclemake", vehicle_make);
+					save_details.put("RegistrationDate", new Date().toString());
 					
 					
 					
-					String saveVehicle=wh_save_motor_details_api;
+					String saveVehicle=wh_save_vehicle_info_api;
 					api_response=thread.callEwayApi(saveVehicle, mapper.writeValueAsString(save_details), token);
 					Map<String,Object> map = mapper.readValue(api_response, Map.class);
-					Boolean status = (Boolean) map.get("true");
-					if(status) {
-						map_policy.put("chassis_number", chassis_number);
+					String status = map.get("Message").toString();
+					if("Success".equalsIgnoreCase(status)) {
+						
+						Map<String,String> request_map= new HashMap<String,String>();
+						request_map.put("BranchCode", "55");
+						request_map.put("InsuranceId", "100019");
+						
+						String request_1 = printReq.toJson(request_map);
+						
+						CompletableFuture<List<Map<String,String>>> insurance_type_1 =thread.getInsuranceType(body_type,vehicle_make,token);
+						CompletableFuture<List<Map<String,String>>> insurance_class_1 =thread.getInsuranceClass(token);
+						CompletableFuture<List<Map<String,String>>> body_type_policy_1 =thread.getSTPBodyType(request_1,token);
+						CompletableFuture<List<Map<String,String>>> vehicle_usage_policy_1 =thread.getSTPVehicleUsage(request_1,token);
+						
+						
+						CompletableFuture.allOf(insurance_type_1,insurance_class_1,body_type_policy_1,vehicle_usage_policy_1).join();
+						
+						/*map_policy.put("chassis_number", chassis_number);
 						map_policy.put("body_type", body_type);
 						map_policy.put("registration_number", registration_number);
 						map_policy.put("engine_number", engine_number);
-						map_policy.put("body_make", body_make);
+						map_policy.put("vehicle_make", vehicle_make);
 						map_policy.put("engine_capacity", engine_capacity);
 						map_policy.put("manufacture_year", manufacture_year);
 						map_policy.put("fuel_used", fuel_used);
@@ -2281,7 +2297,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 						map_policy.put("gross_weight", gross_weight);
 						map_policy.put("no_of_axle", no_of_axle);
 						map_policy.put("axle_distance", axle_distance);
-						map_policy.put("flow_token", flow_token);
+						map_policy.put("flow_token", flow_token);*/
 						
 						map_policy.put("title", title);
 						map_policy.put("customer_name", customer_name);
@@ -2289,7 +2305,29 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 						map_policy.put("mobile_number", mobile_number);
 						map_policy.put("email_id", email_id);
 						map_policy.put("address", address);
-						map_policy.put("region", region);	
+						map_policy.put("region", region);
+						
+						map_policy.put("insurance_class", insurance_class_1.get().isEmpty()?list:insurance_class_1.get());
+						map_policy.put("body_type_policy", body_type_policy_1.get().isEmpty()?list:body_type_policy_1.get());
+						map_policy.put("vehicle_usage_policy", vehicle_usage_policy_1.get().isEmpty()?list:vehicle_usage_policy_1.get());
+						map_policy.put("insurance_type",  insurance_type_1.get().isEmpty()?list:insurance_type_1.get());
+						map_policy.put("isMandatoryBrokerLoginId", false);
+						map_policy.put("isVisibleBrokerLoginId", false);
+						map_policy.put("isVehicle_si", false);
+						map_policy.put("isAccessories_si", false);
+						map_policy.put("isWindshield_si", false);
+						map_policy.put("extended_TPDD_si", false);
+						map_policy.put("isGas", false);
+						map_policy.put("isCarAlarm", false);
+						map_policy.put("required_vehicle_si", false);
+						map_policy.put("required_windshield_si", false);
+						map_policy.put("required_accessories_si", false);
+						map_policy.put("required_TPDD_si", false);
+						map_policy.put("required_gps", false);
+						map_policy.put("required_car_alarm", false);
+						
+						
+						
 						
 						Map<String,String> mapPolicy = new HashMap<>();
 						map_policy.put("error_messages", mapPolicy);
@@ -2319,6 +2357,30 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
 				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
 				
+				/*String insurance_class =data.get("insurance_class")==null?"":data.get("insurance_class").toString().trim();
+				String body_type_policy = data.get("body_type_policy")==null ? "" : data.get("body_type_policy").toString().trim();
+				String vehicle_usage_policy = data.get("vehicle_usage_policy")==null ? "" : data.get("vehicle_usage_policy").toString().trim();
+				String gps = data.get("gps")==null ? "" : data.get("gps").toString().trim();
+				String insurance_type = data.get("insurance_type")==null ? "" : data.get("insurance_type").toString().trim();
+				String car_alarm = data.get("car_alarm")==null ? "" : data.get("car_alarm").toString().trim();
+				String insurance_claim = data.get("insurance_claim")==null ? "" : data.get("insurance_claim").toString().trim();
+				String quatation_creator = data.get("quatation_creator")==null ? "" : data.get("quatation_creator").toString().trim();
+				String isMandatoryBrokerLoginId = data.get("isMandatoryBrokerLoginId")==null ? "" : data.get("isMandatoryBrokerLoginId").toString().trim();
+				String isVisibleBrokerLoginId = data.get("isVisibleBrokerLoginId")==null ? "" : data.get("isVisibleBrokerLoginId").toString().trim();
+				String isVehicle_si = data.get("isVehicle_si")==null ? "" : data.get("isVehicle_si").toString().trim();
+				String isAccessories_si = data.get("isAccessories_si")==null ? "" : data.get("isAccessories_si").toString().trim();
+				String isWindshield_si = data.get("isWindshield_si")==null ? "" : data.get("isWindshield_si").toString().trim();
+				String extended_TPDD_si = data.get("extended_TPDD_si")==null ? "" : data.get("extended_TPDD_si").toString().trim();
+				String isGas = data.get("isGas")==null ? "" : data.get("isGas").toString().trim();
+				String isCarAlarm = data.get("isCarAlarm")==null ? "" : data.get("isCarAlarm").toString().trim();
+				String required_vehicle_si = data.get("isAccessories_si")==null ? "" : data.get("isAccessories_si").toString().trim();
+				String required_windshield_si = data.get("isWindshield_si")==null ? "" : data.get("isWindshield_si").toString().trim();
+				String required_accessories_si = data.get("extended_TPDD_si")==null ? "" : data.get("extended_TPDD_si").toString().trim();
+				String required_TPDD_si = data.get("isGas")==null ? "" : data.get("isGas").toString().trim();
+				String required_gps = data.get("isCarAlarm")==null ? "" : data.get("isCarAlarm").toString().trim();
+				String required_car_alarm = data.get("isAccessories_si")==null ? "" : data.get("isAccessories_si").toString().trim();
+				*/
+				
 				if(!reg_no.matches("[a-zA-Z0-9]+")) {
 					input_validation.put("reg_no", "Special characters not allowed.");
 				}
@@ -2340,8 +2402,18 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 				Boolean status =(Boolean)map.get("IsError");
 				
 				if(status) {
-					input_validation.put("ReqRegNumber", "reg no not found");
+					input_validation.put("reg_no", "reg no not found");
+					
+					Map<String,Object> error_messages = new HashMap<String, Object>();
+					error_messages.put("error_messages", input_validation);
+									
+					return_response.put("action", "data_exchange");
+					return_response.put("data", error_messages);
+					
+					response =printReq.toJson(return_response);
+					return response;
 				}else {
+					
 					
 					if(input_validation.size()>0) {
 						Map<String,String> request_map= new HashMap<String,String>();
@@ -2363,6 +2435,21 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 						response =printReq.toJson(return_response);
 					}
 					else {
+						String bodyType=map.get("VehicleType").toString();
+						String vehicleUsage=map.get("Motorusage").toString();
+						Map<String,String> request_map= new HashMap<String,String>();
+						request_map.put("BranchCode", "55");
+						request_map.put("InsuranceId", "100019");
+						request_map.put("BodyId", bodyType);
+																					
+						String request_1 =printReq.toJson(request_map);
+						
+						CompletableFuture<List<Map<String,String>>> insurance_type_1 =thread.getInsuranceType(bodyType,vehicleUsage,token);
+						CompletableFuture<List<Map<String,String>>> insurance_class_1 =thread.getInsuranceClass(token);
+						CompletableFuture<List<Map<String,String>>> body_type_policy_1 =thread.getSTPBodyType(request_1,token);
+						CompletableFuture<List<Map<String,String>>> vehicle_usage_policy_1 =thread.getSTPVehicleUsage(request_1,token);
+				
+						CompletableFuture.allOf(insurance_type_1,insurance_class_1,body_type_policy_1,vehicle_usage_policy_1).join();
 						Map<String,Object> map_vehicle = new HashMap<String, Object>();
 						
 						map_vehicle.put("title", title);
@@ -2372,6 +2459,32 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 						map_vehicle.put("address", address);
 						map_vehicle.put("region", region);
 						map_vehicle.put("country_code", country_code);
+						map_vehicle.put("reg_no", reg_no);
+						map_vehicle.put("insurance_class", insurance_class_1.get().isEmpty()?list:insurance_class_1.get());
+						map_vehicle.put("body_type_policy", body_type_policy_1.get().isEmpty()?list:body_type_policy_1.get());
+						map_vehicle.put("vehicle_usage_policy", vehicle_usage_policy_1.get().isEmpty()?list:vehicle_usage_policy_1.get());
+						//map_vehicle.put("gps", SAMPLE_DATA);
+						map_vehicle.put("insurance_type",  insurance_type_1.get().isEmpty()?list:insurance_type_1.get());
+						//map_vehicle.put("car_alarm", SAMPLE_DATA);
+						
+						//map_vehicle.put("insurance_claim", SAMPLE_DATA);
+						//map_vehicle.put("quatation_creator", SAMPLE_DATA);
+						map_vehicle.put("isMandatoryBrokerLoginId", false);
+						map_vehicle.put("isVisibleBrokerLoginId", false);
+						map_vehicle.put("isVehicle_si", false);
+						map_vehicle.put("isAccessories_si", false);
+						map_vehicle.put("isWindshield_si", false);
+						map_vehicle.put("extended_TPDD_si", false);
+						map_vehicle.put("isGas", false);
+						map_vehicle.put("isCarAlarm", false);
+						map_vehicle.put("required_vehicle_si", false);
+						map_vehicle.put("required_windshield_si", false);
+						map_vehicle.put("required_accessories_si", false);
+						map_vehicle.put("required_TPDD_si", false);
+						map_vehicle.put("required_gps", false);
+						map_vehicle.put("required_car_alarm", false);
+						
+						
 						Map<String,String> errorMap = new HashMap<>();
 						map_vehicle.put("error_messages", errorMap);
 						
@@ -2432,7 +2545,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					data_list =SAMPLE_DATA;
 				}
 				Map<String,Object> make_list = new HashMap<String, Object>();
-				make_list.put("make", data_list);
+				make_list.put("vehicle_make", data_list);
 				return_response.put("data", make_list);
 				response =printReq.toJson(return_response);
 				return response;
@@ -2767,7 +2880,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					Map<String,Object> map_vehicle = new HashMap<String, Object>();
 					
 					
-					map_vehicle.put("new_registration", "create new vehicle");
+					map_vehicle.put("new_registration", "Create new vehicle");
 					map_vehicle.put("search_heading", "Search for your vehicle by Registration Number here.");
 					
 					map_vehicle.put("title", title);
@@ -2798,7 +2911,106 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService{
 					log.info("response"+ response);
 				}
 				return response;
+			}else if("CREATE_VEHICLE".equalsIgnoreCase(component_action)) {
+				
+				
+				String title =data.get("title")==null?"":data.get("title").toString().trim();
+				String customer_name = data.get("customer_name")==null ? "" : data.get("customer_name").toString().trim();
+				String country_code = data.get("country_code")==null ? "" : data.get("country_code").toString().trim();
+				String mobile_number = data.get("mobile_number")==null ? "" : data.get("mobile_number").toString().trim();
+				String email_id = data.get("email_id")==null ? "" : data.get("email_id").toString().trim();
+				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
+				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
+				String reg_no = data.get("reg_no")==null ? "" : data.get("reg_no").toString().trim();
+				
+				Map<String,Object> map_newVehicle = new HashMap<String, Object>();
+				
+				Map<String,String> request_map = new HashMap<String, String>();
+				request_map.put("BranchCode", "55");
+				request_map.put("InsuranceId", "100019");
+				
+				String request_1 =printReq.toJson(request_map);
+				
+				CompletableFuture<List<Map<String,String>>> fuel_type =thread.getFuelType(request_1,token);
+				CompletableFuture<List<Map<String,String>>> color =thread.getColor(request_1,token);
+				CompletableFuture<List<Map<String,String>>> manufacture_year =thread.getManuFactureYear();
+				CompletableFuture<List<Map<String,String>>> body_type =thread.getSTPBodyType(request_1,token);
+				CompletableFuture<List<Map<String,String>>> vehicle_usage =thread.getSTPVehicleUsage(request_1,token);
+				CompletableFuture<List<Map<String,String>>> motor_category =thread.getMotorCategory(request_1,token);
+				//CompletableFuture<List<Map<String,String>>> make_e =thread.getStpMake(token, body_type);
+			
+
+				CompletableFuture.allOf(fuel_type,color,manufacture_year,
+						body_type,vehicle_usage).join();
+				
+				map_newVehicle.put("fuel_used",  fuel_type.get().isEmpty()?list:fuel_type.get());
+				map_newVehicle.put("body_type",  body_type.get().isEmpty()?list:body_type.get());
+				map_newVehicle.put("vehicle_make", list);
+				map_newVehicle.put("manufacture_year",  manufacture_year.get().isEmpty()?list:manufacture_year.get());
+				map_newVehicle.put("vehicle_color", color.get().isEmpty()?list:color.get());
+				map_newVehicle.put("vehicle_usage",  vehicle_usage.get().isEmpty()?list:vehicle_usage.get());
+				map_newVehicle.put("motor_category",  motor_category.get().isEmpty()?list:motor_category.get());
+				
+				map_newVehicle.put("title", title);
+				map_newVehicle.put("customer_name", customer_name);
+				map_newVehicle.put("mobile_number", mobile_number);
+				map_newVehicle.put("email_id", email_id);
+				map_newVehicle.put("address", address);
+				map_newVehicle.put("region", region);
+				map_newVehicle.put("country_code", country_code);
+				map_newVehicle.put("reg_no", reg_no);
+				map_newVehicle.put("error_messages", mapper.readValue(error_messages_1, Map.class));
+				
+				/*map_newVehicle.put("body_type", SAMPLE_DATA);
+				map_newVehicle.put("vehicle_make", SAMPLE_DATA);
+				map_newVehicle.put("manufacture_year", SAMPLE_DATA);
+				map_newVehicle.put("fuel_used", SAMPLE_DATA);
+				map_newVehicle.put("motor_category", SAMPLE_DATA);
+				map_newVehicle.put("vehicle_color", SAMPLE_DATA);
+				map_newVehicle.put("vehicle_usage", SAMPLE_DATA);*/
+				
+				Map<String,String> map = new HashMap<>();
+				map_newVehicle.put("error_messages", map);
+				
+				
+				
+				return_response.put("data", map_newVehicle);
+				return_response.put("screen", "VEHICLE_INFORMATION");
+				response =printReq.toJson(return_response);
+
+				log.info("response"+ response);								
 			}
+			else if("SEARCH_VEHICLE".equalsIgnoreCase(component_action)) {
+				String title =data.get("title")==null?"":data.get("title").toString().trim();
+				String customer_name = data.get("customer_name")==null ? "" : data.get("customer_name").toString().trim();
+				String country_code = data.get("country_code")==null ? "" : data.get("country_code").toString().trim();
+				String mobile_number = data.get("mobile_number")==null ? "" : data.get("mobile_number").toString().trim();
+				String email_id = data.get("email_id")==null ? "" : data.get("email_id").toString().trim();
+				String address = data.get("address")==null ? "" : data.get("address").toString().trim();
+				String region = data.get("region")==null ? "" : data.get("region").toString().trim();
+				String reg_no = data.get("reg_no")==null ? "" : data.get("reg_no").toString().trim();
+				
+				Map<String,Object> map_backPage = new HashMap<String, Object>();
+				
+				map_backPage.put("new_registration", "Create new vehicle");
+				map_backPage.put("search_heading", "Search for your vehicle by Registration Number here.");
+				
+				map_backPage.put("title", title);
+				map_backPage.put("customer_name", customer_name);
+				map_backPage.put("mobile_number", mobile_number);
+				map_backPage.put("email_id", email_id);
+				map_backPage.put("address", address);
+				map_backPage.put("region", region);
+				map_backPage.put("country_code", country_code);
+				
+				return_response.put("data", map_backPage);
+				return_response.put("screen", "VEHICLE_DETAILS");
+				response =printReq.toJson(return_response);
+
+				log.info("response"+ response);	
+
+			}
+			
 		}
 		catch(Exception ex) {
 			log.error(ex);
