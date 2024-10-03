@@ -590,24 +590,24 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								
 								
 								if("Y".equalsIgnoreCase(isResSaveApi) && "Y".equalsIgnoreCase(isApiCall) &&
-										"N".equalsIgnoreCase(isskipped)) {
+										"N".equalsIgnoreCase(isskipped) && !"location".equalsIgnoreCase(request.getType())) {
 									
 									isValid = watiApiCall.sendValidationMsg(okhttp, body, commonurl, msgurl, fileurl, auth, reqDet, String.valueOf(waid), new Date(),tempM);
 	
 								}
 								
 								else if (isApiCall.equalsIgnoreCase("Y") && isValidationApi.equalsIgnoreCase("Y")
-										&& isskipped.equalsIgnoreCase("N") && "N".equalsIgnoreCase(isDocUpl)) {
+										&& isskipped.equalsIgnoreCase("N") && "N".equalsIgnoreCase(isDocUpl) && !"location".equalsIgnoreCase(request.getType())) {
 	
 									isValid = watiApiCall.sendValidationMsg(okhttp, body, commonurl, msgurl, fileurl, auth, reqDet, String.valueOf(waid), new Date(),tempM);
 	
 								} 
 								
-								else if(IsResYn.equals("Y") && isskipped.equalsIgnoreCase("N") && isApiCall.equalsIgnoreCase("Y") && "N".equals(IsResYnSent)) {
+								else if(IsResYn.equals("Y") && isskipped.equalsIgnoreCase("N") && isApiCall.equalsIgnoreCase("Y") && "N".equals(IsResYnSent) && !"location".equalsIgnoreCase(request.getType())) {
 									
 									isValid = watiApiCall.sendIsResYnMsg(okhttp, body, commonurl, button_msg_url, fileurl, auth, reqDet, String.valueOf(waid), new Date());
 	                                
-								}else if(IsResYn.equals("Y") && "Y".equals(IsResYnSent) && "No".equalsIgnoreCase(reply)) {
+								}else if(IsResYn.equals("Y") && "Y".equals(IsResYnSent) && "No".equalsIgnoreCase(reply) && !"location".equalsIgnoreCase(request.getType())) {
 									
 									Map<String,Object> map =waChatRepo.getParentMessageId(reqDet.getRemarks());
 									
@@ -636,7 +636,6 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								reqDet.setIsprocesscompleted(isProcessComp);
 								reqDet.setIsskipped(isskipped);
 								reqDet.setIsvalid(isValid);
-	
 								if (isDocUpl.equalsIgnoreCase("Y") && StringUtils.isNotBlank(data) &&isApiCall.equalsIgnoreCase("N")
 										&& type.equalsIgnoreCase("image") && isskipped.equalsIgnoreCase("N")) {
 	
@@ -666,7 +665,14 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 									
 									watiApiCall.sendDocValidationMsg(okhttp, body, commonurl, msgurl, fileurl, auth, reqDet,
 											String.valueOf(waid), new Date(),tempM);
-								} 
+								} else if("location".equalsIgnoreCase(request.getType())) {
+									
+									reqDet.setUserreply(request.getData());
+									reqDet.setIsprocesscompleted("Y");
+
+								}
+								
+								
 	
 								detailRepo.save(reqDet);
 	

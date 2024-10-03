@@ -258,10 +258,13 @@ public class WhatsappFlowController {
 								
 		}else {
 			
+			
 			Map<String,Object> data =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
 				
 			String response =service.preinspectionUpload(data);
-						
+			///response ="{\"screen\":\"REGISTRATION_CARD\",\"data\":{\"error_messages\":{\"registration_card_image\":\"Please upload valid image\"},\"title\":\"Upload Registration Card Image\",\"upload_transaction_no\":\"Example\",\"label\":\"Upload Registration Card Image\",\"description\":\"Please take photo as well and upload it\",\"footer_label\":\"Upload\",\"registration_no\":\"Example\",\"mobile_no\":\"Example\",\"image_enabled\":true,\"skip_image\":[{\"id\":\"Y\",\"title\":\"Skip\"}]}}";
+			log.info("/preinspection/image/upload || encrypt response : "+response);
+			
 			dcryptData.setEncrypted_flow_data(response);
 			
 			String encrypt_response =WhatsappEncryptionDecryption.metaEncryption(dcryptData);

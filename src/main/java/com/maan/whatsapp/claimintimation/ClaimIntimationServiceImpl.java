@@ -313,7 +313,6 @@ public class ClaimIntimationServiceImpl {
 			TokenResponse tokenRes = mapper.readValue(obj, TokenResponse.class);
 
 			String token = tokenRes.getTokenResponse().getToken();
-
 			RequestBody apiReqBody = RequestBody.create(request, mediaType);
 			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
 					.post(apiReqBody).build();
@@ -1266,10 +1265,9 @@ public class ClaimIntimationServiceImpl {
 			Map<String,Object> map_req = mapper.readValue(claim_form, Map.class);
 			Map<String,String> map = new HashMap<String, String>();
 			
-			Long date_number =map_req.get("accident_date")==null?0L:Long.valueOf(map_req.get("accident_date").toString());
-			Date accident_date =new Date(date_number);
+			Date accident_date =map_req.get("accident_date")==null?null:new SimpleDateFormat("yyyy-MM-dd").parse(map_req.get("accident_date").toString());
 			String acc_format_date =new SimpleDateFormat("dd/MM/yyyy").format(accident_date);
-			String customer_name =map_req.get("customer_name")==null?"":map_req.get("customer_name").toString().split(":")[1].trim();
+			String customer_name =map_req.get("customer_name")==null?"N/A":map_req.get("customer_name").toString().split(":")[1].trim();
 			String policy_no= map_req.get("policyNumber")==null?"":map_req.get("policyNumber").toString();
 			String registration_no =map_req.get("vehicle")==null?"":map_req.get("vehicle").toString();
 			
