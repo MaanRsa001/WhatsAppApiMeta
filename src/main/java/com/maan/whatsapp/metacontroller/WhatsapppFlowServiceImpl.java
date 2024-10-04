@@ -3574,7 +3574,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					data_list = SAMPLE_DATA;
 				}
 				Map<String, Object> make_list = new HashMap<String, Object>();
-				make_list.put("vehicle_make", data_list);
+				make_list.put("vehicle_model", data_list);
 				return_res.put("data", make_list);
 				response = printReq.toJson(return_res);
 				return response;
