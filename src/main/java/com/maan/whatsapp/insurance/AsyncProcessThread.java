@@ -110,7 +110,7 @@ public class AsyncProcessThread {
 	@Value("${wh.get.reg_no.api}")
 	private String wh_get_reg_no_api;
 
-	@Value("${wh.get.insurance.type.api}")
+	@Value("${wh.get.insurance.type}")
 	private String wh_get_insurance_type_api;
 
 	@Autowired
@@ -868,17 +868,17 @@ public class AsyncProcessThread {
 		return CompletableFuture.completedFuture(null);
 	}
 
-	public CompletableFuture<List<Map<String, String>>> getInsuranceType(String bodyType, String vehicleUsage,
-			String token) {
+	public CompletableFuture<List<Map<String, String>>> getInsuranceType(String token) {
 		try {
 
 			String api = this.wh_get_insurance_type_api;
 
 			Map<String, Object> insurance_req = new HashMap<String, Object>();
-			insurance_req.put("BodyId", bodyType);
+
 			insurance_req.put("InsuranceId", "100019");
 			insurance_req.put("BranchCode", "55");
-			insurance_req.put("MakeId", vehicleUsage);
+			insurance_req.put("ProductId", "5");
+
 
 			String response = callEwayApi(api, mapper.writeValueAsString(insurance_req), token);
 
@@ -912,6 +912,7 @@ public class AsyncProcessThread {
 			req.put("InsuranceId", "100019");
 			req.put("BranchCode", "55");
 			req.put("ProductId", "5");
+			req.put("LoginId", "ugandabroker3");
 
 			String request = mapper.writeValueAsString(req);
 			String api = cqPolicyType;

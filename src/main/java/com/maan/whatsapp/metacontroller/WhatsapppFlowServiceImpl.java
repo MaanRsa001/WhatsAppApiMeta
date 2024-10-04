@@ -2273,8 +2273,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 						String request_1 = printReq.toJson(request_map);
 
-						CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-								.getInsuranceType(body_type, vehicle_make, token);
+						//CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
+								//.getInsuranceType(body_type, vehicle_make, token);
 						CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread
 								.getInsuranceClass(token);
 						CompletableFuture<List<Map<String, String>>> body_type_policy_1 = thread
@@ -2282,9 +2282,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						CompletableFuture<List<Map<String, String>>> vehicle_usage_policy_1 = thread
 								.getSTPVehicleUsage(request_1, token);
 
-						CompletableFuture
-								.allOf(insurance_type_1, insurance_class_1, body_type_policy_1, vehicle_usage_policy_1)
-								.join();
+						//CompletableFuture
+								//.allOf(insurance_type_1, insurance_class_1, body_type_policy_1, vehicle_usage_policy_1)
+								//.join();
 
 						/*
 						 * map_policy.put("chassis_number", chassis_number); map_policy.put("body_type",
@@ -2318,8 +2318,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 								body_type_policy_1.get().isEmpty() ? list : body_type_policy_1.get());
 						map_policy.put("vehicle_usage_policy",
 								vehicle_usage_policy_1.get().isEmpty() ? list : vehicle_usage_policy_1.get());
-						map_policy.put("insurance_type",
-								insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
+						//map_policy.put("insurance_type",
+								//insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
 						map_policy.put("isMandatoryBrokerLoginId", false);
 						map_policy.put("isVisibleBrokerLoginId", false);
 						map_policy.put("isVehicle_si", false);
@@ -2470,8 +2470,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 						String request_1 = printReq.toJson(request_map);
 
-						CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-								.getInsuranceType(bodyType, vehicleUsage, token);
+						//CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
+								//.getInsuranceType(bodyType, vehicleUsage, token);
 						CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread
 								.getInsuranceClass(token);
 						CompletableFuture<List<Map<String, String>>> body_type_policy_1 = thread
@@ -2479,9 +2479,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						CompletableFuture<List<Map<String, String>>> vehicle_usage_policy_1 = thread
 								.getSTPVehicleUsage(request_1, token);
 
-						CompletableFuture
-								.allOf(insurance_type_1, insurance_class_1, body_type_policy_1, vehicle_usage_policy_1)
-								.join();
+						//CompletableFuture
+								//.allOf(insurance_type_1, insurance_class_1, body_type_policy_1, vehicle_usage_policy_1)
+								//.join();
 						Map<String, Object> map_vehicle = new HashMap<String, Object>();
 
 						map_vehicle.put("title", title);
@@ -2499,8 +2499,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						map_vehicle.put("vehicle_usage_policy",
 								vehicle_usage_policy_1.get().isEmpty() ? list : vehicle_usage_policy_1.get());
 						// map_vehicle.put("gps", SAMPLE_DATA);
-						map_vehicle.put("insurance_type",
-								insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
+						//map_vehicle.put("insurance_type",
+								//insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
 						// map_vehicle.put("car_alarm", SAMPLE_DATA);
 
 						// map_vehicle.put("insurance_claim", SAMPLE_DATA);
@@ -2779,8 +2779,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 					String request_1 = printReq.toJson(request_map);
 
-					CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-							.getInsuranceType(body_type_policy, vehicle_usage_policy, token);
+					//CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
+							//.getInsuranceType(body_type_policy, vehicle_usage_policy, token);
 					CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread.getInsuranceClass(token);
 					CompletableFuture<List<Map<String, String>>> body_type_policy_1 = thread.getSTPBodyType(request_1,
 							token);
@@ -2791,8 +2791,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 					Map<String, Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
-					error_messages.put("insurance_type",
-							insurance_type_1.get().isEmpty() ? SAMPLE_DATA : insurance_type_1.get());
+					//error_messages.put("insurance_type",
+							//insurance_type_1.get().isEmpty() ? SAMPLE_DATA : insurance_type_1.get());
 					error_messages.put("insurance_class",
 							insurance_class_1.get().isEmpty() ? SAMPLE_DATA : insurance_class_1.get());
 					error_messages.put("body_type_policy",
@@ -3361,22 +3361,12 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 				if (input_validation.size() > 0) {
 
-					Map<String, String> request_map = new HashMap<String, String>();
-					request_map.put("BranchCode", "55");
-					request_map.put("InsuranceId", "100019");
-					request_map.put("BodyId", body_type_policy);
-
-					String request_1 = printReq.toJson(request_map);
-
+					
 					CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-							.getInsuranceType(body_type_policy, vehicle_usage_policy, token);
+							.getInsuranceType(token);
 					CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread.getInsuranceClass(token);
-					CompletableFuture<List<Map<String, String>>> body_type_policy_1 = thread.getSTPBodyType(request_1,
-							token);
-					CompletableFuture<List<Map<String, String>>> vehicle_usage_policy_1 = thread
-							.getSTPVehicleUsage(request_1, token);
-
-					CompletableFuture.allOf(body_type_policy_1, vehicle_usage_policy_1).join();
+					
+					CompletableFuture.allOf(insurance_type_1, insurance_class_1).join();
 
 					Map<String, Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
@@ -3384,10 +3374,6 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 							insurance_type_1.get().isEmpty() ? SAMPLE_DATA : insurance_type_1.get());
 					error_messages.put("insurance_class",
 							insurance_class_1.get().isEmpty() ? SAMPLE_DATA : insurance_class_1.get());
-					error_messages.put("body_type_policy",
-							body_type_policy_1.get().isEmpty() ? SAMPLE_DATA : body_type_policy_1.get());
-					error_messages.put("vehicle_usage_policy",
-							vehicle_usage_policy_1.get().isEmpty() ? SAMPLE_DATA : vehicle_usage_policy_1.get());
 					error_messages.put("gps", gps);
 					error_messages.put("car_alarm", car_alarm);
 					error_messages.put("insurance_claim", insurance_claim);
@@ -3778,157 +3764,140 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						//Map<String,Object> insuranceType = new HashMap<>();
 						//insuranceType.put("Insurancetype", input_validation);
 						
-						Map<String,String> oldRate= new HashMap<>();
-						oldRate.put("OldAcccessoriesSumInsured", null);
-						oldRate.put("OldSumInsured", null);
-						oldRate.put("OldTppdIncreaeLimit", null);
-						oldRate.put("OldWindScreenSumInsured", null);
+						/*
+						 * Map<String,String> oldRate= new HashMap<>();
+						 * oldRate.put("OldAcccessoriesSumInsured", null); oldRate.put("OldSumInsured",
+						 * null); oldRate.put("OldTppdIncreaeLimit", null);
+						 * oldRate.put("OldWindScreenSumInsured", null);
+						 * 
+						 * Map<String,Object> exchangeRateSync =new HashMap<>();
+						 * exchangeRateSync.put("ExchangeRateScenario", oldRate);
+						 */
 						
-						Map<String,Object> exchangeRateSync =new HashMap<>();
-						exchangeRateSync.put("ExchangeRateScenario", oldRate);
-						
-						
-                    Map<String,Object> saveMotorDetails= new HashMap<>();
-                    saveMotorDetails.put("AcExecutiveId", null);
-                    saveMotorDetails.put("AcccessoriesSumInsured", null);
-                    saveMotorDetails.put("AccessoriesInformation", null);
-                    saveMotorDetails.put("AdditionalCircumstances", null);
-                    saveMotorDetails.put("AgencyCode", "12573");
-                    saveMotorDetails.put("ApplicationId", "1");
-                    saveMotorDetails.put("AxelDistance", axle_distance);                   
-                    saveMotorDetails.put("BdmCode", "70100010");
-                    saveMotorDetails.put("BorrowerType", null);
-                    saveMotorDetails.put("BranchCode", "55");
-                    saveMotorDetails.put("BrokerBranchCode", "1");
-                    saveMotorDetails.put("BrokerCode", "12573");
-                    saveMotorDetails.put("CarAlarmYn", "N");
-                    saveMotorDetails.put("Chassisnumber", chassis_number);
-                    saveMotorDetails.put("CityLimit", null);
-                    saveMotorDetails.put("ClaimRatio", null);
-                    saveMotorDetails.put("ClaimType", "0");
-                    saveMotorDetails.put("CollateralName", null);
-                    saveMotorDetails.put("CollateralYn", null);
-                    saveMotorDetails.put("Color", vehicle_color);
-                    saveMotorDetails.put("CommissionType", null);
-                    saveMotorDetails.put("CoverNoteNo", null);
-                    saveMotorDetails.put("CubicCapacity", "2000");
-                    saveMotorDetails.put("Currency", "UGX");
-                    saveMotorDetails.put("CustomerCode", "70100010");
-                    saveMotorDetails.put("CustomerReferenceNo", "AGI-CUST-16956");
-                    saveMotorDetails.put("DefenceValue", null);
-                    saveMotorDetails.put("DrivenByDesc", "D");
-                    saveMotorDetails.put("EndorsementDate", null);
-                    saveMotorDetails.put("EndorsementEffectiveDate", null);
-                    saveMotorDetails.put("EndorsementRemarks", null);
-                    saveMotorDetails.put("EndorsementType", null);
-                    saveMotorDetails.put("EndorsementTypeDesc", null);
-                    saveMotorDetails.put("EndorsementYn", "N");
-                    saveMotorDetails.put("EndtCategoryDesc", null);
-                    saveMotorDetails.put("EndtCount", null);
-                    saveMotorDetails.put("EndtPrevPolicyNo", null);
-                    saveMotorDetails.put("EndtPrevQuoteNo", null);
-                    saveMotorDetails.put("EndtStatus", null);
-                    saveMotorDetails.put("EngineNumber", engine_number);
-                    saveMotorDetails.put("ExcessLimit", "0");
-                    saveMotorDetails.put("ExchangeRate", "1.0");
-                    saveMotorDetails.put("FirstLossPayee", null);
-                    saveMotorDetails.put("FleetOwnerYn", "N");
-                    saveMotorDetails.put("FuelType", fuel_used);
-                    saveMotorDetails.put("Gpstrackinginstalled", null);
-                    saveMotorDetails.put("Grossweight", gross_weight);
-                    saveMotorDetails.put("HavePromoCode", "N");
-                    saveMotorDetails.put("HoldInsurancePolicy", "N");
-                    saveMotorDetails.put("Idnumber", "64564654654");
-                    saveMotorDetails.put("Inflation", "");
-                    saveMotorDetails.put("InsuranceClass", null);
-                    saveMotorDetails.put("InsuranceId", "100019");
-                    
-                    saveMotorDetails.put("InsurerSettlement", "");
-                    saveMotorDetails.put("InterestedCompanyDetails", "");
-                    saveMotorDetails.put("IsFinanceEndt", null);
-                    saveMotorDetails.put("LoginId", "ugandabroker3");
-                    saveMotorDetails.put("ManufactureYear",manufacture_year);
-                    saveMotorDetails.put("ModelNumber", null);
-                    saveMotorDetails.put("MotorCategory", motor_category);
-                    saveMotorDetails.put("Motorusage", vehicle_usage);                   
-                    saveMotorDetails.put("MotorusageId", "");
-                    saveMotorDetails.put("Ncb", "0");
-                    saveMotorDetails.put("NcdYn", null);
-                    saveMotorDetails.put("NoOfClaims", null);
-                    saveMotorDetails.put("NoOfComprehensives", "0");
-                    saveMotorDetails.put("NoOfVehicles", "");
-                    saveMotorDetails.put("OrginalPolicyNo", null);
-                    saveMotorDetails.put("OwnerCategory", "" );
-                    saveMotorDetails.put("PolicyEndDate","" );
-                    saveMotorDetails.put("PolicyRenewalYn", "N");
-                    saveMotorDetails.put("PolicyStartDate","" );
-                    saveMotorDetails.put("PolicyType", null);
-                    saveMotorDetails.put("ProductId", "5");
-                    saveMotorDetails.put("PromoCode", null);
-                    saveMotorDetails.put("PurchaseDate", null);
-                    saveMotorDetails.put("RadioOrCasseteplayer", null);
-                    saveMotorDetails.put("RegistrationDate", null);
-                    saveMotorDetails.put("RegistrationYear", "");
-                    saveMotorDetails.put("Registrationnumber",registration_no);
-                    saveMotorDetails.put("RequestReferenceNo","" );
-                    saveMotorDetails.put("RoofRack", null);
-                    saveMotorDetails.put("SaveOrSubmit", "Save");
-                    saveMotorDetails.put("SavedFrom", "WEB");
-                    saveMotorDetails.put("Scenarios", exchangeRateSync);
-                    saveMotorDetails.put("SeatingCapacity", seating_capacity);
-                    saveMotorDetails.put("SectionId","" );
-                    saveMotorDetails.put("SourceTypeId", "");
-                    saveMotorDetails.put("SpotFogLamp", null);
-                    saveMotorDetails.put("Status", "Y");
-                    saveMotorDetails.put("Stickerno", null);
-                    saveMotorDetails.put("SubUserType", "Broker");
-                    saveMotorDetails.put("SumInsured", null);
-                    saveMotorDetails.put("Tareweight", tare_weight);                    
-                    saveMotorDetails.put("TiraCoverNoteNo", null);
-                    saveMotorDetails.put("TppdFreeLimit", null);
-                    saveMotorDetails.put("TppdIncreaeLimit", null);
-                    saveMotorDetails.put("TrailerDetails", null);
-                    saveMotorDetails.put("UserType", "Broker");
-                    saveMotorDetails.put("Vehcilemodel", "vehicle_model");
-                    saveMotorDetails.put("VehcilemodelId", "");
-                    saveMotorDetails.put("VehicleId", "");
-                    saveMotorDetails.put("VehicleType","" );
-                    saveMotorDetails.put("VehicleTypeId","" );
-                    saveMotorDetails.put("VehicleValueType", "");
-                    saveMotorDetails.put("Vehiclemake",vehicle_make );
-                    saveMotorDetails.put("VehiclemakeId","" );
-                    saveMotorDetails.put("WindScreenSumInsured", null);
-                    saveMotorDetails.put("Windscreencoverrequired", "N");
-                    saveMotorDetails.put("accident", null);
-                    saveMotorDetails.put("periodOfInsurance", "365");
-                    
-                    String saveVehicleDetails = wh_save_motor_details_api;
-					api_response = thread.callEwayApi(saveVehicleDetails, mapper.writeValueAsString(saveMotorDetails), token);
-					Map<String, Object> mapping = mapper.readValue(api_response, Map.class);
-					String saveStatus = map.get("Message").toString();
-					if ("Success".equalsIgnoreCase(saveStatus)) {
+						/*
+						 * Map<String,Object> saveMotorDetails= new HashMap<>();
+						 * saveMotorDetails.put("AcExecutiveId", null);
+						 * saveMotorDetails.put("AcccessoriesSumInsured", null);
+						 * saveMotorDetails.put("AccessoriesInformation", null);
+						 * saveMotorDetails.put("AdditionalCircumstances", null);
+						 * saveMotorDetails.put("AgencyCode", "12573");
+						 * saveMotorDetails.put("ApplicationId", "1");
+						 * saveMotorDetails.put("AxelDistance", axle_distance);
+						 * saveMotorDetails.put("BdmCode", "70100010");
+						 * saveMotorDetails.put("BorrowerType", null);
+						 * saveMotorDetails.put("BranchCode", "55");
+						 * saveMotorDetails.put("BrokerBranchCode", "1");
+						 * saveMotorDetails.put("BrokerCode", "12573");
+						 * saveMotorDetails.put("CarAlarmYn", "N");
+						 * saveMotorDetails.put("Chassisnumber", chassis_number);
+						 * saveMotorDetails.put("CityLimit", null); saveMotorDetails.put("ClaimRatio",
+						 * null); saveMotorDetails.put("ClaimType", "0");
+						 * saveMotorDetails.put("CollateralName", null);
+						 * saveMotorDetails.put("CollateralYn", null); saveMotorDetails.put("Color",
+						 * vehicle_color); saveMotorDetails.put("CommissionType", null);
+						 * saveMotorDetails.put("CoverNoteNo", null);
+						 * saveMotorDetails.put("CubicCapacity", "2000");
+						 * saveMotorDetails.put("Currency", "UGX"); saveMotorDetails.put("CustomerCode",
+						 * "70100010"); saveMotorDetails.put("CustomerReferenceNo", "AGI-CUST-16956");
+						 * saveMotorDetails.put("DefenceValue", null);
+						 * saveMotorDetails.put("DrivenByDesc", "D");
+						 * saveMotorDetails.put("EndorsementDate", null);
+						 * saveMotorDetails.put("EndorsementEffectiveDate", null);
+						 * saveMotorDetails.put("EndorsementRemarks", null);
+						 * saveMotorDetails.put("EndorsementType", null);
+						 * saveMotorDetails.put("EndorsementTypeDesc", null);
+						 * saveMotorDetails.put("EndorsementYn", "N");
+						 * saveMotorDetails.put("EndtCategoryDesc", null);
+						 * saveMotorDetails.put("EndtCount", null);
+						 * saveMotorDetails.put("EndtPrevPolicyNo", null);
+						 * saveMotorDetails.put("EndtPrevQuoteNo", null);
+						 * saveMotorDetails.put("EndtStatus", null);
+						 * saveMotorDetails.put("EngineNumber", engine_number);
+						 * saveMotorDetails.put("ExcessLimit", "0");
+						 * saveMotorDetails.put("ExchangeRate", "1.0");
+						 * saveMotorDetails.put("FirstLossPayee", null);
+						 * saveMotorDetails.put("FleetOwnerYn", "N"); saveMotorDetails.put("FuelType",
+						 * fuel_used); saveMotorDetails.put("Gpstrackinginstalled", null);
+						 * saveMotorDetails.put("Grossweight", gross_weight);
+						 * saveMotorDetails.put("HavePromoCode", "N");
+						 * saveMotorDetails.put("HoldInsurancePolicy", "N");
+						 * saveMotorDetails.put("Idnumber", "64564654654");
+						 * saveMotorDetails.put("Inflation", ""); saveMotorDetails.put("InsuranceClass",
+						 * null); saveMotorDetails.put("InsuranceId", "100019");
+						 * 
+						 * saveMotorDetails.put("InsurerSettlement", "");
+						 * saveMotorDetails.put("InterestedCompanyDetails", "");
+						 * saveMotorDetails.put("IsFinanceEndt", null); saveMotorDetails.put("LoginId",
+						 * "ugandabroker3"); saveMotorDetails.put("ManufactureYear",manufacture_year);
+						 * saveMotorDetails.put("ModelNumber", null);
+						 * saveMotorDetails.put("MotorCategory", motor_category);
+						 * saveMotorDetails.put("Motorusage", vehicle_usage);
+						 * saveMotorDetails.put("MotorusageId", ""); saveMotorDetails.put("Ncb", "0");
+						 * saveMotorDetails.put("NcdYn", null); saveMotorDetails.put("NoOfClaims",
+						 * null); saveMotorDetails.put("NoOfComprehensives", "0");
+						 * saveMotorDetails.put("NoOfVehicles", "");
+						 * saveMotorDetails.put("OrginalPolicyNo", null);
+						 * saveMotorDetails.put("OwnerCategory", "" );
+						 * saveMotorDetails.put("PolicyEndDate","" );
+						 * saveMotorDetails.put("PolicyRenewalYn", "N");
+						 * saveMotorDetails.put("PolicyStartDate","" );
+						 * saveMotorDetails.put("PolicyType", null); saveMotorDetails.put("ProductId",
+						 * "5"); saveMotorDetails.put("PromoCode", null);
+						 * saveMotorDetails.put("PurchaseDate", null);
+						 * saveMotorDetails.put("RadioOrCasseteplayer", null);
+						 * saveMotorDetails.put("RegistrationDate", null);
+						 * saveMotorDetails.put("RegistrationYear", "");
+						 * saveMotorDetails.put("Registrationnumber",registration_no);
+						 * saveMotorDetails.put("RequestReferenceNo","" );
+						 * saveMotorDetails.put("RoofRack", null); saveMotorDetails.put("SaveOrSubmit",
+						 * "Save"); saveMotorDetails.put("SavedFrom", "WEB");
+						 * saveMotorDetails.put("Scenarios", exchangeRateSync);
+						 * saveMotorDetails.put("SeatingCapacity", seating_capacity);
+						 * saveMotorDetails.put("SectionId","" ); saveMotorDetails.put("SourceTypeId",
+						 * ""); saveMotorDetails.put("SpotFogLamp", null);
+						 * saveMotorDetails.put("Status", "Y"); saveMotorDetails.put("Stickerno", null);
+						 * saveMotorDetails.put("SubUserType", "Broker");
+						 * saveMotorDetails.put("SumInsured", null); saveMotorDetails.put("Tareweight",
+						 * tare_weight); saveMotorDetails.put("TiraCoverNoteNo", null);
+						 * saveMotorDetails.put("TppdFreeLimit", null);
+						 * saveMotorDetails.put("TppdIncreaeLimit", null);
+						 * saveMotorDetails.put("TrailerDetails", null);
+						 * saveMotorDetails.put("UserType", "Broker");
+						 * saveMotorDetails.put("Vehcilemodel", "vehicle_model");
+						 * saveMotorDetails.put("VehcilemodelId", ""); saveMotorDetails.put("VehicleId",
+						 * ""); saveMotorDetails.put("VehicleType","" );
+						 * saveMotorDetails.put("VehicleTypeId","" );
+						 * saveMotorDetails.put("VehicleValueType", "");
+						 * saveMotorDetails.put("Vehiclemake",vehicle_make );
+						 * saveMotorDetails.put("VehiclemakeId","" );
+						 * saveMotorDetails.put("WindScreenSumInsured", null);
+						 * saveMotorDetails.put("Windscreencoverrequired", "N");
+						 * saveMotorDetails.put("accident", null);
+						 * saveMotorDetails.put("periodOfInsurance", "365");
+						 * 
+						 * String saveVehicleDetails = wh_save_motor_details_api; api_response =
+						 * thread.callEwayApi(saveVehicleDetails,
+						 * mapper.writeValueAsString(saveMotorDetails), token); Map<String, Object>
+						 * mapping = mapper.readValue(api_response, Map.class); String saveStatus =
+						 * map.get("Message").toString();
+						 if ("Success".equalsIgnoreCase(saveStatus)) {
 						
 						//Map<String,String> getMotorDetails = new HashMap<>();
 						//getMotorDetails.put("Idnumber",saveMotorDetails.get("Idnumber"));
 						//getMotorDetails.put("RequestReferenceNo",saveMotorDetails.get("RequestReferenceNo"));
-						//getMotorDetails.put("Vehicleid",saveMotorDetails.get("Vehicleid"));
+						//getMotorDetails.put("Vehicleid",saveMotorDetails.get("Vehicleid"));*/
 						
-						String getMotorDetailsAPI=wh_get_motor_details;
+						/*String getMotorDetailsAPI=wh_get_motor_details;
 						
 						api_response = thread.callEwayApi(saveVehicleDetails, mapper.writeValueAsString(saveMotorDetails), token);
 						Map<String, Object> mappingMotorDetails = mapper.readValue(api_response, Map.class);
 						
 						String bodyType=mappingMotorDetails.get("VehicleType").toString();
 						String vehicleUsage=mappingMotorDetails.get("Motorusage").toString();
-						
-						Map<String, String> request_map = new HashMap<String, String>();
-						request_map.put("BranchCode", "55");
-						request_map.put("InsuranceId", "100019");
-
-						String request_1 = printReq.toJson(request_map);
+						*/
 
 						CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-								.getInsuranceType(bodyType, vehicleUsage, token);
+								.getInsuranceType(token);
 						CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread
 								.getInsuranceClass(token);
 						
@@ -3976,8 +3945,8 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					}
 											}
 				}
-			}
-			return response;
+			
+			//return response;
 		} catch (Exception ex) {
 			log.error(ex);
 			ex.printStackTrace();
