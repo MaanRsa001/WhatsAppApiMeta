@@ -3058,7 +3058,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				String email_id = data.get("email_id") == null ? "" : data.get("email_id").toString().trim();
 				String address = data.get("address") == null ? "" : data.get("address").toString().trim();
 				String region = data.get("region") == null ? "" : data.get("region").toString().trim();
-				String reg_no = data.get("reg_no") == null ? "" : data.get("reg_no").toString().trim();
+				String registration_no = data.get("registration_no") == null ? "" : data.get("registration_no").toString().trim();
 
 				Map<String, Object> map_backPage = new HashMap<String, Object>();
 
@@ -3218,7 +3218,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				Boolean status = (Boolean) map.get("IsError");
 
 				if (status) {
-					input_validation.put("registration_no", "reg no not found");
+					input_validation.put("registration_no", "registration number not found");
 
 					Map<String, Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
@@ -3230,27 +3230,12 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					return response;
 					
 				} else {
-
-					//String bodyType = map.get("VehicleType").toString();
-					//String vehicleUsage = map.get("Motorusage").toString();
-					Map<String, String> request_map = new HashMap<String, String>();
-					request_map.put("BranchCode", "55");
-					request_map.put("InsuranceId", "100019");
-					//request_map.put("BodyId", bodyType);
-
-					String request_1 = printReq.toJson(request_map);
-
-					//CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread.getInsuranceType(bodyType,
-							//vehicleUsage, token);
+					
 					CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread.getInsuranceClass(token);
-					CompletableFuture<List<Map<String, String>>> body_type_policy_1 = thread.getSTPBodyType(request_1,
-							token);
-					CompletableFuture<List<Map<String, String>>> vehicle_usage_policy_1 = thread
-							.getSTPVehicleUsage(request_1, token);
+					CompletableFuture<List<Map<String, String>>> insurance_type = thread.getInsuranceType(token);
 
-					CompletableFuture
-							.allOf(insurance_class_1, body_type_policy_1, vehicle_usage_policy_1)
-							.join();
+					CompletableFuture.allOf(insurance_class_1,insurance_type).join();							
+							
 					Map<String, Object> map_vehicle = new HashMap<String, Object>();
 
 					map_vehicle.put("title", title);
@@ -3260,30 +3245,14 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					map_vehicle.put("address", address);
 					map_vehicle.put("region", region);
 					map_vehicle.put("country_code", country_code);
-					map_vehicle.put("reg_no", registration_no);
-
+					map_vehicle.put("registration_no", registration_no);
 					map_vehicle.put("insurance_class",
 							insurance_class_1.get().isEmpty() ? list : insurance_class_1.get());
-					map_vehicle.put("body_type_policy",
-							body_type_policy_1.get().isEmpty() ? list : body_type_policy_1.get());
-					map_vehicle.put("vehicle_usage_policy",
-							vehicle_usage_policy_1.get().isEmpty() ? list : vehicle_usage_policy_1.get());
-					//map_vehicle.put("insurance_type", insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
+					map_vehicle.put("insurance_type",
+							insurance_type.get().isEmpty() ? list : insurance_type.get());
 					map_vehicle.put("isMandatoryBrokerLoginId", false);
 					map_vehicle.put("isVisibleBrokerLoginId", false);
-					map_vehicle.put("isVehicle_si", false);
-					map_vehicle.put("isAccessories_si", false);
-					map_vehicle.put("isWindshield_si", false);
-					map_vehicle.put("extended_TPDD_si", false);
-					map_vehicle.put("isGas", false);
-					map_vehicle.put("isCarAlarm", false);
-					map_vehicle.put("required_vehicle_si", false);
-					map_vehicle.put("required_windshield_si", false);
-					map_vehicle.put("required_accessories_si", false);
-					map_vehicle.put("required_TPDD_si", false);
-					map_vehicle.put("required_gps", false);
-					map_vehicle.put("required_car_alarm", false);
-
+					map_vehicle.put("policy_type", "default");
 					Map<String, String> errorMap = new HashMap<>();
 					map_vehicle.put("error_messages", errorMap);
 
@@ -3313,79 +3282,86 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				String insurance_type = data.get("insurance_type") == null ? ""
 						: data.get("insurance_type").toString().trim();
 				String insurance_class = data.get("insurance_class") == null ? ""
-						: data.get("insurance_class").toString().trim();
-				String gps = data.get("gps") == null ? "" : data.get("gps").toString().trim();
-				String car_alarm = data.get("car_alarm") == null ? "" : data.get("car_alarm").toString().trim();
-				String insurance_claim = data.get("insurance_claim") == null ? ""
-						: data.get("insurance_claim").toString().trim();
-				String body_type_policy = data.get("body_type_policy") == null ? ""
-						: data.get("body_type_policy").toString().trim();
-				String vehicle_usage_policy = data.get("vehicle_usage_policy") == null ? ""
-						: data.get("vehicle_usage_policy").toString().trim();
-				String quotation_creator = data.get("quotation_creator") == null ? ""
-						: data.get("quotation_creator").toString().trim();
-				String vehicle_si = data.get("vehicle_si") == null ? "" : data.get("vehicle_si").toString().trim();
-				String accessories_si = data.get("accessories_si") == null ? ""
-						: data.get("accessories_si").toString().trim();
-				String windshield_si = data.get("windshield_si") == null ? ""
-						: data.get("windshield_si").toString().trim();
-				String extended_TPDD_si = data.get("extended_TPDD_si") == null ? ""
-						: data.get("extended_TPDD_si").toString().trim();
-				String broker_loginid = data.get("broker_loginid") == null ? ""
-						: data.get("broker_loginid").toString().trim();
-				String policy_start_date = data.get("policy_start_date") == null ? ""
-						: data.get("policy_start_date").toString().trim();
+						: data.get("insurance_class").toString().trim();				
+				String broker_loginid = data.get("broker_loginid") == null ? "" : data.get("broker_loginid").toString().trim();
+				String quotation_creator = data.get("quotation_creator") == null ? "" : data.get("quotation_creator").toString().trim();
+				String comp_gpsYn = data.get("comp_gpsYn") == null ? ""
+						: data.get("comp_gpsYn").toString().trim();
+				String comp_carAlaramYn = data.get("comp_carAlaramYn") == null ? ""
+						: data.get("comp_carAlaramYn").toString().trim();
+				String comp_vehicle_si = data.get("comp_vehicle_si") == null ? ""
+						: data.get("comp_vehicle_si").toString().trim();
+				String comp_accessories_sumInured = data.get("comp_accessories_sumInured") == null ? ""
+						: data.get("comp_accessories_sumInured").toString().trim();
+				String comp_windShield_sumInured = data.get("comp_windShield_sumInured") == null ? "" : data.get("comp_windShield_sumInured").toString().trim();				
+				String comp_extended_tppd_sumInsured = data.get("comp_extended_tppd_sumInsured") == null ? ""
+						: data.get("comp_extended_tppd_sumInsured").toString().trim();
+				String comp_claimYn = data.get("comp_claimYn") == null ? ""
+						: data.get("comp_claimYn").toString().trim();
+				String tpft_vehicle_si = data.get("tpft_vehicle_si") == null ? ""
+						: data.get("tpft_vehicle_si").toString().trim();
+				String tpft_accessories_sumInured = data.get("tpft_accessories_sumInured") == null ? ""
+						: data.get("tpft_accessories_sumInured").toString().trim();
+				String tpft_windShield_sumInured = data.get("tpft_windShield_sumInured") == null ? ""
+						: data.get("tpft_windShield_sumInured").toString().trim();
 
-				// String date = new Date().();
-				// validation need to do here
-				/*
-				 * if(!policy_start_date.equals(date)) {
-				 * input_validation.put("policy_start_date", "Please provide valid date.");
-				 * 
-				 * }
-				 */
+				String tpft_extended_tppd_sumInsured = data.get("tpft_extended_tppd_sumInsured") == null ? ""
+						: data.get("tpft_extended_tppd_sumInsured").toString().trim();
 
-				if (!vehicle_si.matches("[0-9]+")) {
-					input_validation.put("vehicle_si", "Please enter valid mobile");
-				}
-				if (!accessories_si.matches("[0-9]+")) {
-					input_validation.put("windshield_si", "Please enter valid mobile");
-				}
-				if (!windshield_si.matches("[0-9]+")) {
-					input_validation.put("windshield_si", "Please enter valid mobile");
-				}
-				if (!extended_TPDD_si.matches("[0-9]+")) {
-					input_validation.put("extended_TPDD_si", "Please enter valid mobile");
-				}
-				//Boolean validation_status = true;
+				String tpft_claimYn = data.get("tpft_claimYn") == null ? ""
+						: data.get("tpft_claimYn").toString().trim();
 
+				String tpo_claimYn = data.get("tpo_claimYn") == null ? ""
+						: data.get("tpo_claimYn").toString().trim();
+
+				String default_gpsYn = data.get("default_gpsYn") == null ? ""
+						: data.get("default_gpsYn").toString().trim();
+
+				String default_carAlaramYn = data.get("default_carAlaramYn") == null ? ""
+						: data.get("default_carAlaramYn").toString().trim();
+
+				String default_claimYn = data.get("default_claimYn") == null ? ""
+						: data.get("default_claimYn").toString().trim();
+
+				if("1".equals(insurance_class)) {
+					if(!comp_vehicle_si.matches("[0-9.]+")) {
+						input_validation.put("comp_vehicle_si", "Digits only allows");
+					}
+					if(!comp_accessories_sumInured.matches("[0-9.]+")) {
+						input_validation.put("comp_accessories_sumInured", "Digits only allows");
+					}
+					if(!comp_windShield_sumInured.matches("[0-9.]+")) {
+						input_validation.put("comp_windShield_sumInured", "Digits only allows");
+					}
+					if(!comp_extended_tppd_sumInsured.matches("[0-9.]+")) {
+						input_validation.put("comp_extended_tppd_sumInsured", "Digits only allows");
+					}
+				}else if("2".equals(insurance_class)) {
+					if(!tpft_vehicle_si.matches("[0-9.]+")) {
+						input_validation.put("tpft_vehicle_si", "Digits only allows");
+					}
+					if(!tpft_accessories_sumInured.matches("[0-9.]+")) {
+						input_validation.put("tpft_accessories_sumInured", "Digits only allows");
+					}
+					if(!tpft_windShield_sumInured.matches("[0-9.]+")) {
+						input_validation.put("tpft_windShield_sumInured", "Digits only allows");
+					}
+					if(!tpft_extended_tppd_sumInsured.matches("[0-9.]+")) {
+						input_validation.put("tpft_extended_tppd_sumInsured", "Digits only allows");
+					}
+				}
+				
+				
 				if (input_validation.size() > 0) {
-
-					
-					CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-							.getInsuranceType(token);
-					CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread.getInsuranceClass(token);
-					
-					CompletableFuture.allOf(insurance_type_1, insurance_class_1).join();
 
 					Map<String, Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
-					error_messages.put("insurance_type",
-							insurance_type_1.get().isEmpty() ? SAMPLE_DATA : insurance_type_1.get());
-					error_messages.put("insurance_class",
-							insurance_class_1.get().isEmpty() ? SAMPLE_DATA : insurance_class_1.get());
-					error_messages.put("gps", gps);
-					error_messages.put("car_alarm", car_alarm);
-					error_messages.put("insurance_claim", insurance_claim);
-					error_messages.put("vehicle_si", vehicle_si);
-					error_messages.put("accessories_si", accessories_si);
-					error_messages.put("windshield_si", windshield_si);
-					error_messages.put("extended_TPDD_si", extended_TPDD_si);
 
 					return_res.put("action", "data_exchange");
 					return_res.put("data", error_messages);
 
 					response = printReq.toJson(return_res);
+					return response;
 
 				} else {
 
@@ -3402,18 +3378,26 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					params.put("region", region);
 					params.put("registration_no", registration_no);
 					params.put("insurance_type", insurance_type);
-					params.put("insurance_class", insurance_class);
-					params.put("gps", gps);
-					params.put("car_alarm", car_alarm);
-					params.put("insurance_claim", insurance_claim);
-					params.put("body_type_policy", body_type_policy);
-					params.put("vehicle_usage_policy", vehicle_usage_policy);
-					params.put("quotation_creator", quotation_creator);
-					params.put("vehicle_si", vehicle_si);
-					params.put("accessories_si", accessories_si);
-					params.put("windshield_si", windshield_si);
-					params.put("extended_TPDD_si", extended_TPDD_si);
+					params.put("insurance_class", insurance_class);					
 					params.put("broker_loginid", broker_loginid);
+					params.put("quotation_creator", quotation_creator);
+					params.put("comp_gpsYn", comp_gpsYn);
+					params.put("comp_carAlaramYn", comp_carAlaramYn);
+					params.put("comp_vehicle_si", comp_vehicle_si);
+					params.put("comp_accessories_sumInured", comp_accessories_sumInured);
+					params.put("comp_windShield_sumInured", comp_windShield_sumInured);
+					params.put("comp_extended_tppd_sumInsured", comp_extended_tppd_sumInsured);
+					params.put("comp_claimYn", comp_claimYn);
+					params.put("tpft_vehicle_si", tpft_vehicle_si);
+					params.put("tpft_accessories_sumInured", tpft_accessories_sumInured);					
+					params.put("tpft_accessories_sumInured", tpft_accessories_sumInured);
+					params.put("tpft_windShield_sumInured", tpft_windShield_sumInured);
+					params.put("tpft_extended_tppd_sumInsured", tpft_extended_tppd_sumInsured);
+					params.put("tpft_claimYn", tpft_claimYn);
+					params.put("tpo_claimYn", tpo_claimYn);
+					params.put("default_gpsYn", default_gpsYn);
+					params.put("default_carAlaramYn", default_carAlaramYn);
+					params.put("default_claimYn", default_claimYn);
 
 					param_map.put("params", params);
 					extension_message_response.put("extension_message_response", param_map);
@@ -3943,10 +3927,28 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						return response;
 
 					}
-											}
+											
 				}
+
+			}else if("INDURANCE_CLASS_INPUTTYPE".equalsIgnoreCase(component_action)) {
+				String insurance_class_type = data.get("insurance_class_type")==null?"":data.get("insurance_class_type").toString();
+				Map<String,String> map = new HashMap<>();
+				if("1".equals(insurance_class_type)){
+					map.put("value", "COMP");
+				}else if("2".equals(insurance_class_type)){
+					map.put("value", "TPFT");
+				}else if("3".equals(insurance_class_type)){
+					map.put("value", "TPO");
+				}
+				return_res.put("data", map);
+				response  = printReq.toJson(return_res);
+				return response;
+				
+			}
 			
-			//return response;
+		return response;
+			
+			
 		} catch (Exception ex) {
 			log.error(ex);
 			ex.printStackTrace();
