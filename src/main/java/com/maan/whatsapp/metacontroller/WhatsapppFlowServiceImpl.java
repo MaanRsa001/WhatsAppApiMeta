@@ -3561,7 +3561,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				 */
 			}else if ("MODEL".equalsIgnoreCase(component_action)) {
 				String body_type = data.get("body_type") == null ? "" : data.get("body_type").toString().trim();
-				String make = data.get("body_make") == null ? "" : data.get("body_make").toString().trim();
+				String make = data.get("vehicle_make") == null ? "" : data.get("vehicle_make").toString().trim();
 				List<Map<String, String>> data_list = new ArrayList<Map<String, String>>();
 
 				if (!"00000".equals(make) && StringUtils.isNotBlank(make)) {
