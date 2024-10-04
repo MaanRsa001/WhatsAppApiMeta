@@ -3902,22 +3902,10 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 								insurance_type_1.get().isEmpty() ? list : insurance_type_1.get());
 						map_policy.put("isMandatoryBrokerLoginId", false);
 						map_policy.put("isVisibleBrokerLoginId", false);
-						map_policy.put("isVehicle_si", false);
-						map_policy.put("isAccessories_si", false);
-						map_policy.put("isWindshield_si", false);
-						map_policy.put("extended_TPDD_si", false);
-						map_policy.put("isGas", false);
-						map_policy.put("isCarAlarm", false);
-						map_policy.put("required_vehicle_si", false);
-						map_policy.put("required_windshield_si", false);
-						map_policy.put("required_accessories_si", false);
-						map_policy.put("required_TPDD_si", false);
-						map_policy.put("required_gps", false);
-						map_policy.put("required_car_alarm", false);
-
-						Map<String, String> mapPolicy = new HashMap<>();
-						map_policy.put("error_messages", mapPolicy);
-
+						map_policy.put("policy_type", "default");
+						Map<String, String> errorMap = new HashMap<>();
+						map_policy.put("error_messages", errorMap);
+						
 						return_res.put("data", map_policy);
 						return_res.put("screen", "POLICY_DETAILS");
 						response = printReq.toJson(return_res);
