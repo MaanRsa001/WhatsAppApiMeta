@@ -3842,7 +3842,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
                     saveMotorDetails.put("Inflation", "");
                     saveMotorDetails.put("InsuranceClass", null);
                     saveMotorDetails.put("InsuranceId", "100019");
-                    insuranceType
+                    
                     saveMotorDetails.put("InsurerSettlement", "");
                     saveMotorDetails.put("InterestedCompanyDetails", "");
                     saveMotorDetails.put("IsFinanceEndt", null);
@@ -3851,33 +3851,33 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
                     saveMotorDetails.put("ModelNumber", null);
                     saveMotorDetails.put("MotorCategory", motor_category);
                     saveMotorDetails.put("Motorusage", vehicle_usage);                   
-                    saveMotorDetails.put("MotorusageId", );
+                    saveMotorDetails.put("MotorusageId", "");
                     saveMotorDetails.put("Ncb", "0");
                     saveMotorDetails.put("NcdYn", null);
                     saveMotorDetails.put("NoOfClaims", null);
                     saveMotorDetails.put("NoOfComprehensives", "0");
-                    saveMotorDetails.put("NoOfVehicles", );
+                    saveMotorDetails.put("NoOfVehicles", "");
                     saveMotorDetails.put("OrginalPolicyNo", null);
-                    saveMotorDetails.put("OwnerCategory", );
-                    saveMotorDetails.put("PolicyEndDate", );
+                    saveMotorDetails.put("OwnerCategory", "" );
+                    saveMotorDetails.put("PolicyEndDate","" );
                     saveMotorDetails.put("PolicyRenewalYn", "N");
-                    saveMotorDetails.put("PolicyStartDate", );
+                    saveMotorDetails.put("PolicyStartDate","" );
                     saveMotorDetails.put("PolicyType", null);
                     saveMotorDetails.put("ProductId", "5");
                     saveMotorDetails.put("PromoCode", null);
                     saveMotorDetails.put("PurchaseDate", null);
                     saveMotorDetails.put("RadioOrCasseteplayer", null);
                     saveMotorDetails.put("RegistrationDate", null);
-                    saveMotorDetails.put("RegistrationYear", );
+                    saveMotorDetails.put("RegistrationYear", "");
                     saveMotorDetails.put("Registrationnumber",registration_no);
-                    saveMotorDetails.put("RequestReferenceNo", );
+                    saveMotorDetails.put("RequestReferenceNo","" );
                     saveMotorDetails.put("RoofRack", null);
                     saveMotorDetails.put("SaveOrSubmit", "Save");
                     saveMotorDetails.put("SavedFrom", "WEB");
                     saveMotorDetails.put("Scenarios", exchangeRateSync);
                     saveMotorDetails.put("SeatingCapacity", seating_capacity);
-                    saveMotorDetails.put("SectionId", );
-                    saveMotorDetails.put("SourceTypeId", );
+                    saveMotorDetails.put("SectionId","" );
+                    saveMotorDetails.put("SourceTypeId", "");
                     saveMotorDetails.put("SpotFogLamp", null);
                     saveMotorDetails.put("Status", "Y");
                     saveMotorDetails.put("Stickerno", null);
@@ -3890,13 +3890,13 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
                     saveMotorDetails.put("TrailerDetails", null);
                     saveMotorDetails.put("UserType", "Broker");
                     saveMotorDetails.put("Vehcilemodel", "vehicle_model");
-                    saveMotorDetails.put("VehcilemodelId", );
-                    saveMotorDetails.put("VehicleId", );
-                    saveMotorDetails.put("VehicleType", );
-                    saveMotorDetails.put("VehicleTypeId", );
+                    saveMotorDetails.put("VehcilemodelId", "");
+                    saveMotorDetails.put("VehicleId", "");
+                    saveMotorDetails.put("VehicleType","" );
+                    saveMotorDetails.put("VehicleTypeId","" );
                     saveMotorDetails.put("VehicleValueType", "");
                     saveMotorDetails.put("Vehiclemake",vehicle_make );
-                    saveMotorDetails.put("VehiclemakeId", );
+                    saveMotorDetails.put("VehiclemakeId","" );
                     saveMotorDetails.put("WindScreenSumInsured", null);
                     saveMotorDetails.put("Windscreencoverrequired", "N");
                     saveMotorDetails.put("accident", null);
@@ -3908,18 +3908,18 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					String saveStatus = map.get("Message").toString();
 					if ("Success".equalsIgnoreCase(saveStatus)) {
 						
-						Map<String,String> getMotorDetails = new HashMap<>();
-						getMotorDetails.put("Idnumber", );
-						getMotorDetails.put("RequestReferenceNo", );
-						getMotorDetails.put("Vehicleid", );
+						//Map<String,String> getMotorDetails = new HashMap<>();
+						//getMotorDetails.put("Idnumber",saveMotorDetails.get("Idnumber"));
+						//getMotorDetails.put("RequestReferenceNo",saveMotorDetails.get("RequestReferenceNo"));
+						//getMotorDetails.put("Vehicleid",saveMotorDetails.get("Vehicleid"));
 						
 						String getMotorDetailsAPI=wh_get_motor_details;
 						
 						api_response = thread.callEwayApi(saveVehicleDetails, mapper.writeValueAsString(saveMotorDetails), token);
 						Map<String, Object> mappingMotorDetails = mapper.readValue(api_response, Map.class);
 						
-						Object bodyType=mappingMotorDetails.get("VehicleType");
-						Object vehicleUsage=mappingMotorDetails.get("Motorusage");
+						String bodyType=mappingMotorDetails.get("VehicleType").toString();
+						String vehicleUsage=mappingMotorDetails.get("Motorusage").toString();
 						
 						Map<String, String> request_map = new HashMap<String, String>();
 						request_map.put("BranchCode", "55");
@@ -3928,14 +3928,12 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						String request_1 = printReq.toJson(request_map);
 
 						CompletableFuture<List<Map<String, String>>> insurance_type_1 = thread
-								.getInsuranceType(body_type, vehicle_make, token);
+								.getInsuranceType(bodyType, vehicleUsage, token);
 						CompletableFuture<List<Map<String, String>>> insurance_class_1 = thread
 								.getInsuranceClass(token);
 						
 
-						CompletableFuture
-								.allOf(insurance_type_1, insurance_class_1)
-								.join();
+						CompletableFuture.allOf(insurance_type_1, insurance_class_1).join();
 
 						map_policy.put("title", title);
 						map_policy.put("customer_name", customer_name);
