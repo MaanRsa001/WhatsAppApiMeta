@@ -28,6 +28,8 @@ public interface WhatsapppFlowService {
 	
 	String shortTermPolicy(Map<String, Object> request);
 
+	String createQuote(Map<String, Object> request);
+
 
 
 }

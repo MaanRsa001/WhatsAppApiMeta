@@ -315,6 +315,42 @@ public class WhatsappFlowController {
 			return new ResponseEntity<Object>(encrypt_response,HttpStatus.OK);
 		}
 	}
+	
+	
+	@PostMapping("/create/quote")
+	public ResponseEntity<Object> createQuote(@RequestBody Map<String,Object> req) throws JsonMappingException,JsonProcessingException{
+		
+		log.info("/createQuote encrypted request : "+printReq.toJson(req));
+		MetaEncryptDecryptRes dcryptData = WhatsappEncryptionDecryption.metaDecryption(req);
+		Map<String,Object> request = mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
+		String action = request.get("action")==null ? "" : request.get("action").toString();
+		log.info("/createQuote decrypted request : "+printReq.toJson(dcryptData));
+		
+		if("ping".equals(action)) {
+			String version = request.get("version")==null ? "" : request.get("version").toString();
+			Map<String,Object> data =new HashMap<String, Object>();
+			data.put("status", "active");
+			
+			Map<String,Object> healthCheckReq = new HashMap<String, Object>();
+			healthCheckReq.put("version", version);
+			healthCheckReq.put("data", data);
+			
+			String encryptReq = printReq.toJson(healthCheckReq);
+			dcryptData.setEncrypted_flow_data(encryptReq);
+			String response =WhatsappEncryptionDecryption.metaEncryption(dcryptData);
+			
+			return new ResponseEntity<Object>(response,HttpStatus.OK);
+			
+		}
+		else {
+			String response = service.createQuote(request);
+			dcryptData.setEncrypted_flow_data(response);
+			String encrypt_response = WhatsappEncryptionDecryption.metaEncryption(dcryptData);
+			
+			return new ResponseEntity<Object>(encrypt_response,HttpStatus.OK);
+		}
+	}
+	 
 
 }
 
