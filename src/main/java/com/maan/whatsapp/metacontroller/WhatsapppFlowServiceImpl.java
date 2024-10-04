@@ -3929,21 +3929,37 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					}
 											
 				}
-
+				
 			}else if("INDURANCE_CLASS_INPUTTYPE".equalsIgnoreCase(component_action)) {
 				String insurance_class_type = data.get("insurance_class_type")==null?"":data.get("insurance_class_type").toString();
 				Map<String,String> map = new HashMap<>();
 				if("1".equals(insurance_class_type)){
-					map.put("value", "COMP");
+					map.put("policy_type", "COMP");
 				}else if("2".equals(insurance_class_type)){
-					map.put("value", "TPFT");
+					map.put("policy_type", "TPFT");
 				}else if("3".equals(insurance_class_type)){
-					map.put("value", "TPO");
+					map.put("policy_type", "TPO");
 				}
 				return_res.put("data", map);
 				response  = printReq.toJson(return_res);
 				return response;
 				
+			}if ("QUOTATION_CREATOR".equalsIgnoreCase(component_action)) {
+
+				String is_broker = data.get("quotation_creator") == null ? "" : data.get("quotation_creator").toString().trim();
+				Map<String, Boolean> enableLogin = new HashMap<String, Boolean>();
+				if ("1".equalsIgnoreCase(is_broker)) {
+					enableLogin.put("isVisibleBrokerLoginId", true);
+					enableLogin.put("isMandatoryBrokerLoginId", true);
+				} else if ("2".equalsIgnoreCase(is_broker)) {
+					enableLogin.put("isVisibleBrokerLoginId", false);
+					enableLogin.put("isMandatoryBrokerLoginId", false);
+				}
+
+				return_res.put("data", enableLogin);
+				response = printReq.toJson(return_res);
+				return response;
+
 			}
 			
 		return response;
