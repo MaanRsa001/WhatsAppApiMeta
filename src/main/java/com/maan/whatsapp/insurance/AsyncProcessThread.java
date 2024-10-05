@@ -692,7 +692,7 @@ public class AsyncProcessThread {
 			String api = this.stpRegion;
 
 			Map<String, Object> request = new HashMap<String, Object>();
-			request.put("CountryId", "TZA");
+			request.put("CountryId", "UGA");
 
 			String response = callEwayApi(api, mapper.writeValueAsString(request), token);
 
@@ -927,7 +927,7 @@ public class AsyncProcessThread {
 
 			apiData.forEach(p -> {
 				Map<String, String> r = new HashMap<>();
-				r.put("id", p.get("Code").toString());
+				r.put("id", p.get("Code").toString().equals("1")?"COMP":p.get("Code").toString().equals("2")?"TPFT":"TPO");
 				r.put("title", p.get("CodeDesc").toString());
 				returnRes.add(r);
 			});

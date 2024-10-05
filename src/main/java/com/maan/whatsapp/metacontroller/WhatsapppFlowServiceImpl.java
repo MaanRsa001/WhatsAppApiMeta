@@ -1044,7 +1044,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 			String token = this.thread.getEwayToken();
 			Map<String, String> request_map = new HashMap<String, String>();
 			request_map.put("BranchCode", "01");
-			request_map.put("InsuranceId", "100002");
+			request_map.put("InsuranceId", "100019");
 
 			String request = printReq.toJson(request_map);
 
@@ -1078,7 +1078,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 
 			Map<String, Object> data = new HashMap<String, Object>();
 			data.put("title", title.get());
-			data.put("countryCode", country_code.get());
+			data.put("country_code", country_code.get());
 			data.put("region", region.get());
 			data.put("error_messages", error_message);
 			log.info("Vehicle api End time is : " + mapper.writeValueAsString(data));
@@ -3253,6 +3253,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					map_vehicle.put("isMandatoryBrokerLoginId", false);
 					map_vehicle.put("isVisibleBrokerLoginId", false);
 					map_vehicle.put("policy_type", "default");
+					map_vehicle.put("value", "default");
 					Map<String, String> errorMap = new HashMap<>();
 					map_vehicle.put("error_messages", errorMap);
 
@@ -3903,6 +3904,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						map_policy.put("isMandatoryBrokerLoginId", false);
 						map_policy.put("isVisibleBrokerLoginId", false);
 						map_policy.put("policy_type", "default");
+						map_policy.put("value", "default");
 						Map<String, String> errorMap = new HashMap<>();
 						map_policy.put("error_messages", errorMap);
 						

@@ -60,6 +60,11 @@ public class InsuranceController {
 		return service.generateStpQuote(req);
 	}
 	
+	@PostMapping("/generate/uganda/quote")
+	public Object generateUgandaQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException,JsonMappingException, JsonProcessingException {
+		return service.generateUgandaQuote(req);
+	}
+	
 	@PostMapping("/get/preinspection/details")
     public Object getPreinspectionDetails(@RequestBody UploadPreinspectionReq req) {
 		return service.getPreinspectionDetails(req);
