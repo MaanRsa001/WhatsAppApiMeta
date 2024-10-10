@@ -112,6 +112,12 @@ public class AsyncProcessThread {
 
 	@Value("${wh.get.insurance.type}")
 	private String wh_get_insurance_type_api;
+	
+	@Value("${wh.get.policy.body.type}")
+	private String wh_get_policy_body_type;
+	
+	@Value("${wh.get.policy.vehicle.usage}")
+	private String wh_get_policy_vehicle_usage;
 
 	@Autowired
 	private ClaimIntimationServiceImpl claimIntimation;
@@ -282,7 +288,7 @@ public class AsyncProcessThread {
 	public String getEwayToken() {
 		try {
 			Map<String, Object> tokReq = new HashMap<String, Object>();
-			tokReq.put("LoginId", "guest");
+			tokReq.put("LoginId", "WhatsApp_Uganda_Broker");
 			tokReq.put("Password", "Admin@01");
 			tokReq.put("ReLoginKey", "Y");
 
@@ -940,5 +946,64 @@ public class AsyncProcessThread {
 		return CompletableFuture.completedFuture(null);
 
 	}
+	
+	@Async("EWAYAPI_EXECUTER")
+	public CompletableFuture<List<Map<String, String>>> getPolicyBodyType(String request, String token) {
+		try {
+
+			String api = this.stpBodyType;
+			String response = callEwayApi(api, request, token);
+
+			// log.info("getSTPBodyType ||"+ response);
+			Map<String, Object> viewCalcRes = mapper.readValue(response, Map.class);
+			List<Map<String, String>> apiData = viewCalcRes.get("Result") == null ? null
+					: (List<Map<String, String>>) viewCalcRes.get("Result");
+
+			List<Map<String, String>> returnRes = new ArrayList<Map<String, String>>();
+
+			apiData.forEach(p -> {
+				Map<String, String> r = new HashMap<>();
+				r.put("id", p.get("Code").toString());
+				r.put("title", p.get("CodeDesc").toString());
+				returnRes.add(r);
+			});
+
+			return CompletableFuture.completedFuture(returnRes);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return CompletableFuture.completedFuture(null);
+	}
+
+	@Async("EWAYAPI_EXECUTER")
+	public CompletableFuture<List<Map<String, String>>> getPolicyVehicleUsage(String request, String token) {
+		try {
+
+			String api = this.stpVehicleUsage;
+			String response = callEwayApi(api, request, token);
+
+			// log.info("getSTPVehicleUsage ||"+ response);
+			Map<String, Object> viewCalcRes = mapper.readValue(response, Map.class);
+			List<Map<String, String>> apiData = viewCalcRes.get("Result") == null ? null
+					: (List<Map<String, String>>) viewCalcRes.get("Result");
+
+			List<Map<String, String>> returnRes = new ArrayList<Map<String, String>>();
+
+			apiData.forEach(p -> {
+				Map<String, String> r = new HashMap<>();
+				r.put("id", p.get("Code").toString());
+				r.put("title", p.get("CodeDesc").toString());
+				returnRes.add(r);
+			});
+
+			return CompletableFuture.completedFuture(returnRes);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return CompletableFuture.completedFuture(null);
+	}
+
 
 }
