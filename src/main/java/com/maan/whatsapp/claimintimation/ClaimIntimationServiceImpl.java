@@ -331,7 +331,7 @@ public class ClaimIntimationServiceImpl {
 		try {
 			Response response = null;
 			Map<String, Object> tokReq = new HashMap<String, Object>();
-			tokReq.put("LoginId", "guest");
+			tokReq.put("LoginId", "WhatsApp_Uganda_Broker");
 			tokReq.put("Password", "Admin@01");
 			tokReq.put("ReLoginKey", "Y");
 			

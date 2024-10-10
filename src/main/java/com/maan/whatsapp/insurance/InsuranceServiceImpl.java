@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -3562,17 +3563,28 @@ public class InsuranceServiceImpl implements InsuranceService{
 		String mobile_number = stp_req.get("mobile_number")==null?"":stp_req.get("mobile_number").toString();
 		String email_id = stp_req.get("email_id")==null?"":stp_req.get("email_id").toString();
 		String address = stp_req.get("address")==null?"":stp_req.get("address").toString();
-		String registration_no = stp_req.get("registration_no")==null?"":stp_req.get("registration_no").toString();
+		String registration_no =stp_req.get("Registrationnumber")==null?"":stp_req.get("Registrationnumber").toString();
 		String insurance_type = stp_req.get("insurance_type")==null?"":stp_req.get("insurance_type").toString();
 		String insurance_class = stp_req.get("insurance_class")==null?"":stp_req.get("insurance_class").toString();
 		String broker_loginid = stp_req.get("broker_loginid")==null?"":stp_req.get("broker_loginid").toString();
 		String quotation_creator = stp_req.get("quotation_creator")==null?"":stp_req.get("quotation_creator").toString();
 				
-		String gpsyn ="N",carAlaramYn="N",vehicle_si="0",accessories_sumInured="0"
-				,windShield_sumInured="0",extended_tppd_sumInsured="0",claimYn="N",login_id="";
+		String gpsyn ="N",carAlaramYn="N",vehicle_si=null,accessories_sumInured=null
+				,windShield_sumInured=null,extended_tppd_sumInsured=null,claimYn="N",login_id="";
 		
 		if("1".equals(quotation_creator))
 			login_id = broker_loginid;
+		
+		
+		if("comp".equalsIgnoreCase(insurance_class)) {
+			insurance_class="1";
+		}
+		else if("TPFT".equalsIgnoreCase(insurance_class)) {
+			insurance_class="2";
+		}
+		else if("TPO".equalsIgnoreCase(insurance_class)) {
+			insurance_class="3";
+		}
 		
 		
 		if(insurance_class.equals("1")) {
@@ -3583,28 +3595,41 @@ public class InsuranceServiceImpl implements InsuranceService{
 			String comp_windShield_sumInured = stp_req.get("comp_windShield_sumInured")==null?"":stp_req.get("comp_windShield_sumInured").toString();
 			String comp_extended_tppd_sumInsured = stp_req.get("comp_extended_tppd_sumInsured")==null?"":stp_req.get("comp_extended_tppd_sumInsured").toString();
 			String comp_claimYn = stp_req.get("comp_claimYn")==null?"":stp_req.get("comp_claimYn").toString();
+			gpsyn=comp_gpsYn;
+			carAlaramYn=comp_carAlaramYn;
+			vehicle_si=comp_vehicle_si;
+			accessories_sumInured=comp_accessories_sumInured;
+			windShield_sumInured=comp_windShield_sumInured;
+			extended_tppd_sumInsured=comp_extended_tppd_sumInsured;
+			claimYn=comp_claimYn;
 		}else if(insurance_class.equals("2")) {
 			String tpft_vehicle_si = stp_req.get("tpft_vehicle_si")==null?"":stp_req.get("tpft_vehicle_si").toString();
 			String tpft_accessories_sumInured = stp_req.get("tpft_accessories_sumInured")==null?"":stp_req.get("tpft_accessories_sumInured").toString();
 			String tpft_windShield_sumInured = stp_req.get("tpft_windShield_sumInured")==null?"":stp_req.get("tpft_windShield_sumInured").toString();
 			String tpft_extended_tppd_sumInsured = stp_req.get("tpft_extended_tppd_sumInsured")==null?"":stp_req.get("tpft_extended_tppd_sumInsured").toString();
 			String tpft_claimYn = stp_req.get("tpft_claimYn")==null?"":stp_req.get("tpft_claimYn").toString();
+		
+			vehicle_si=tpft_vehicle_si;
+			accessories_sumInured=tpft_accessories_sumInured;
+			windShield_sumInured=tpft_windShield_sumInured;
+			extended_tppd_sumInsured=tpft_extended_tppd_sumInsured;
+			claimYn=tpft_claimYn;
 		}else if("3".equals(insurance_class)) {
 			String tpo_claimYn = stp_req.get("tpo_claimYn")==null?"":stp_req.get("tpo_claimYn").toString();
+			claimYn=tpo_claimYn;
 		}
 		
-		
-		Map<String,Object> customerCreationReq = new HashMap<String, Object>();
+		LinkedHashMap<String,Object> customerCreationReq = new LinkedHashMap<String, Object>();
 		customerCreationReq.put("Address1",  address);
-		customerCreationReq.put("BranchCode", "01");
+		customerCreationReq.put("BranchCode", "59");
 		customerCreationReq.put("BrokerBranchCode", "1");
 		customerCreationReq.put("BusinessType", "1");
 		customerCreationReq.put("ClientName", customer_name);
 		customerCreationReq.put("Clientstatus", "Y");
 		customerCreationReq.put("CreatedBy",req.getWhatsAppCode() + req.getWhatsAppNo());
-		customerCreationReq.put("IdNumber", "8213571024");
+		customerCreationReq.put("IdNumber", "464475555");
 		customerCreationReq.put("IdType", "1");
-		customerCreationReq.put("InsuranceId", "100002");
+		customerCreationReq.put("InsuranceId", "100019");
 		customerCreationReq.put("IsTaxExempted", "N");
 		customerCreationReq.put("Language", "1");
 		customerCreationReq.put("MobileCode1",country_code);
@@ -3614,25 +3639,27 @@ public class InsuranceServiceImpl implements InsuranceService{
 		customerCreationReq.put("PolicyHolderType", "1");
 		customerCreationReq.put("PolicyHolderTypeid", "59");
 		customerCreationReq.put("PreferredNotification", "sms");
-		customerCreationReq.put("ProductId", "46");
+		customerCreationReq.put("ProductId", "5");
 		customerCreationReq.put("RegionCode", region);
 		customerCreationReq.put("SaveOrSubmit", "Save");
 		customerCreationReq.put("Status", "Y");
 		customerCreationReq.put("ClientStatus", "Y");
 		customerCreationReq.put("Title", title);
-		customerCreationReq.put("Type", "b2c");
+		customerCreationReq.put("Type", "Broker");
 		customerCreationReq.put("VrTinNo", "0");
 		customerCreationReq.put("WhatsappCode", country_code);
 		customerCreationReq.put("WhatsappDesc", country_code);
 		customerCreationReq.put("WhatsappNo", req.getWhatsAppNo());
-		customerCreationReq.put("CityName", "Ilala");
-		customerCreationReq.put("CityCode", "11000");
-		customerCreationReq.put("StateCode", "10000");
-		customerCreationReq.put("StateName", "Dar es Salaam");
+		customerCreationReq.put("CityName", "Buikwe");
+		customerCreationReq.put("CityCode", "300101");
+		customerCreationReq.put("StateCode", "10001");
+		customerCreationReq.put("StateName", "CENTRAL");
 		customerCreationReq.put("Street", "7th FLOOR,Exim Tower,Ghana Avenue");
 		customerCreationReq.put("Address1", "P.O.Box 9942,Dar es Salaam");
-		customerCreationReq.put("Nationality", "TZA");
+		customerCreationReq.put("Nationality", "UGA");
+		customerCreationReq.put("Email1", email_id);
 
+		
 		
 		String api_request =mapper.writeValueAsString(customerCreationReq);
 		
@@ -3658,8 +3685,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 		String policy_start_date = sdf.format(system_date);
 		Calendar calendar = new GregorianCalendar();
 		calendar.setTime(system_date);
-		calendar.add(Calendar.DATE, 29);
-		
+		calendar.add(Calendar.DATE, 364);
 		String policy_end_date = sdf.format(calendar.getTime());
 		
 		String customerRefNo = cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString();
@@ -3701,79 +3727,183 @@ public class InsuranceServiceImpl implements InsuranceService{
 			broker_code = result.get("BrokerCode")==null?"": result.get("BrokerCode").toString();
 		}
 		
-		Map<String,Object> stpReq = new HashMap<String, Object>();
-		stpReq.put("AcccessoriesSumInsured", "0");
-		stpReq.put("AgencyCode", StringUtils.isBlank(agency_code)?"10303":agency_code);
+		Map<String, String> reg_validatation = new HashMap<String, String>();
+		reg_validatation.put("InsuranceId", "100019");
+		reg_validatation.put("BranchCode", "59");
+		reg_validatation.put("BrokerBranchCode", "1");
+		reg_validatation.put("ProductId", "5");
+		reg_validatation.put("CreatedBy", "WhatsApp_Uganda_Broker");
+		reg_validatation.put("SavedFrom", "API");
+		reg_validatation.put("ReqRegNumber", registration_no);
+		reg_validatation.put("ReqChassisNumber", "");
+		
+		String reg_noValidationApi = "http://192.168.1.19:8085/regulatory/showvehicleinfo";
+		api_response = serviceImpl.callEwayApi(reg_noValidationApi, mapper.writeValueAsString(reg_validatation));
+		Map<String, Object> vehicleinfoMap = mapper.readValue(api_response, Map.class);
+		
+		Map<String,Object> vehicleInfo = new HashMap<>();
+		vehicleInfo = (Map<String, Object>) vehicleinfoMap.get("Result");
+
+		log.info("Vehicle Info response : "+vehicleinfoMap);
+		
+				
+		LinkedHashMap<String,Object> stpReq = new LinkedHashMap<String, Object>();
+		stpReq.put("ExcessLimit", null);
+		stpReq.put("Deductibles", null);
+		stpReq.put("BrokerBranchCode",StringUtils.isBlank(broker_branchcode)?"1":broker_branchcode);
+		stpReq.put("AcExecutiveId", null);
+		stpReq.put("CommissionType", null);
+		stpReq.put("CustomerCode", "45353");
+		stpReq.put("CustomerName", customer_name);
+		stpReq.put("BdmCode", StringUtils.isBlank(bdm_code)?"45353":bdm_code);
+		stpReq.put("BrokerCode", "13254");
+		stpReq.put("LoginId", StringUtils.isBlank(login_id)?"WhatsApp_Uganda_Broker":login_id);
+		stpReq.put("SubUserType", StringUtils.isBlank(subusertype)?"Broker":subusertype);
 		stpReq.put("ApplicationId", "1");
-		stpReq.put("AxelDistance", "01");
-		stpReq.put("BdmCode", StringUtils.isBlank(bdm_code)?"620499":bdm_code);
-		stpReq.put("BranchCode", "02");
-		stpReq.put("BrokerBranchCode", StringUtils.isBlank(broker_branchcode)?"1":broker_branchcode);
-		stpReq.put("BrokerCode", StringUtils.isBlank(broker_code)?"10303":broker_code);
-		stpReq.put("Chassisnumber", stp_req.get("chassis_no")==null?"":stp_req.get("chassis_no").toString());
-		stpReq.put("CollateralYn", "N");
-		stpReq.put("Color", stp_req.get("vehicle_color")==null?"":stp_req.get("vehicle_color").toString());
-		stpReq.put("ColorDesc", "");
-		stpReq.put("CreatedBy",StringUtils.isBlank(login_id)?"guest":login_id);
-		stpReq.put("CubicCapacity", "100");
-		stpReq.put("Currency", "TZS");
-		stpReq.put("CustomerCode", "620499");
-		stpReq.put("CustomerReferenceNo", cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString());
-		stpReq.put("DrivenByDesc", "Driver");
-		stpReq.put("EndorsementYn", "N");
-		stpReq.put("EngineCapacity",stp_req.get("engine_capacity")==null?"":stp_req.get("engine_capacity").toString());
-		stpReq.put("ExchangeRate", "1.0");
-		stpReq.put("FleetOwnerYn", "N");
-		stpReq.put("FuelType", stp_req.get("fuel_used")==null?"":stp_req.get("fuel_used").toString());
-		stpReq.put("FuelTypeDesc", "");
-		stpReq.put("Gpstrackinginstalled", "N");
-		stpReq.put("Grossweight", "100");
-		stpReq.put("HavePromoCode", "N");
+		stpReq.put("CustomerReferenceNo",cust_rsult.get("SuccessId")==null?"":cust_rsult.get("SuccessId").toString());
+		stpReq.put("RequestReferenceNo", "");
+		stpReq.put("Idnumber", "464475555");
+		stpReq.put("VehicleId",1);
+		stpReq.put("AcccessoriesSumInsured", accessories_sumInured);
+		stpReq.put("AccessoriesInformation", "");
+		stpReq.put("AdditionalCircumstances", "");
+		stpReq.put("AxelDistance",stp_req.get("AxelDistance")==null?"":stp_req.get("AxelDistance").toString());
+		stpReq.put("Chassisnumber", stp_req.get("Chassisnumber")==null?"":stp_req.get("Chassisnumber").toString());
+		stpReq.put("Color", vehicleinfoMap.get("Color")==null?"":vehicleinfoMap.get("Color").toString());
+		stpReq.put("CityLimit", null);
+		stpReq.put("CoverNoteNo", null);
+		stpReq.put("MobileCode", req.getWhatsAppCode());
+		stpReq.put("MobileNumber", req.getWhatsAppNo());
+		stpReq.put("OwnerCategory",vehicleinfoMap.get("OwnerCategory")==null?"":vehicleinfoMap.get("OwnerCategory").toString());
+		stpReq.put("CubicCapacity", "2000");
+		stpReq.put("CreatedBy", StringUtils.isBlank(login_id)?"WhatsApp_Uganda_Broker":login_id);
+		stpReq.put("DrivenByDesc", "D");
+		stpReq.put("EngineNumber", stp_req.get("EngineNumber")==null?"":stp_req.get("EngineNumber").toString());
+		stpReq.put("FuelType",vehicleinfoMap.get("FuelType")==null?"":vehicleinfoMap.get("FuelType").toString());
+		stpReq.put("Gpstrackinginstalled", gpsyn);
+		stpReq.put("Grossweight",stp_req.get("Grossweight")==null?"500":stp_req.get("Grossweight").toString());
 		stpReq.put("HoldInsurancePolicy", "N");
-		stpReq.put("Idnumber", "8213571024");
-		stpReq.put("InsuranceClass", insurance_class);
+		stpReq.put("Insurancetype", insurance_type);
+		stpReq.put("InsurancetypeDesc", "");
 		stpReq.put("InsuranceId", "100019");
-		stpReq.put("Insurancetype", Arrays.asList(insurance_type));
-		stpReq.put("LoginId", "guest");
-		stpReq.put("ManufactureYear", stp_req.get("manufacture_year")==null?"":stp_req.get("manufacture_year").toString());
-		stpReq.put("MotorCategory", "");
-		stpReq.put("MotorCategoryDesc", "Common Usage");
-		stpReq.put("Motorusage", "Common Usage");
-		stpReq.put("MotorusageId", stp_req.get("vehicle_usage")==null?"":stp_req.get("vehicle_usage").toString());
-		stpReq.put("Ncb", "0");
-		stpReq.put("NcdYn", "N");
-		stpReq.put("NoOfVehicles", "1");
-		stpReq.put("NumberOfAxels", "1");
-		stpReq.put("OwnerCategory", "");
-		stpReq.put("PolicyEndDate", policy_end_date);
+		
+		stpReq.put("InsuranceClass",insurance_class);
+		stpReq.put("InsuranceClassDesc", "");
+		stpReq.put("InsurerSettlement", "");
+		stpReq.put("InterestedCompanyDetails", "");
+		stpReq.put("ManufactureYear", stp_req.get("ManufactureYear")==null?"":stp_req.get("ManufactureYear").toString());
+		stpReq.put("ModelNumber", null);
+		stpReq.put("MotorCategory",stp_req.get("MotorCategory")==null?"":stp_req.get("MotorCategory").toString());
+		stpReq.put("Motorusage", vehicleinfoMap.get("Motorusage")==null?"":vehicleinfoMap.get("Motorusage").toString());
+		//stpReq.put("MotorusageId",stp_req.get("Motorusage")==null?"":stp_req.get("Motorusage").toString());
+		stpReq.put("MotorusageId","3");
+		stpReq.put("NcdYn", claimYn);
+		stpReq.put("PolicyRenewalYn","N");
+		stpReq.put("NoOfClaims", null);
+		stpReq.put("NumberOfAxels", "4");// need to map
+		stpReq.put("BranchCode", "59");
+		stpReq.put("AgencyCode", StringUtils.isBlank(agency_code)?"13254":agency_code);
+		stpReq.put("ProductId", "5");
+		stpReq.put("SectionId", Arrays.asList(insurance_type));
+		stpReq.put("PolicyType", insurance_class);
+		stpReq.put("RadioOrCasseteplayer", null);
+		stpReq.put("RegistrationYear", "24/04/2006");
+		stpReq.put("Registrationnumber", stp_req.get("Registrationnumber")==null?"":stp_req.get("Registrationnumber").toString());
+		stpReq.put("RoofRack", null);
+		stpReq.put("SeatingCapacity",stp_req.get("SeatingCapacity")==null?"":stp_req.get("SeatingCapacity").toString());
+		stpReq.put("SourceTypeId", StringUtils.isBlank(source_typeid)?"Broker":source_typeid);
+		stpReq.put("SpotFogLamp", null);
+		stpReq.put("Stickerno", null);
+		stpReq.put("SumInsured", vehicle_si);
+		stpReq.put("InflationSumInsured", "350000");
+		stpReq.put("Tareweight", stp_req.get("Tareweight")==null?"":stp_req.get("Tareweight").toString());
+		stpReq.put("TppdFreeLimit",  null);
+		stpReq.put("TppdIncreaeLimit",  extended_tppd_sumInsured);
+		stpReq.put("TrailerDetails", null);
+		stpReq.put("VehicleModel", vehicleinfoMap.get("Vehcilemodel")==null?"":vehicleinfoMap.get("Vehcilemodel").toString());
+		stpReq.put("VehcilemodelId",stp_req.get("Vehcilemodel")==null?"":stp_req.get("Vehcilemodel").toString());
+		stpReq.put("VehicleType", vehicleinfoMap.get("VehicleType")==null?"":vehicleinfoMap.get("VehicleType").toString());
+		//stpReq.put("VehicleTypeId", stp_req.get("VehicleType")==null?"":stp_req.get("VehicleType").toString());
+		stpReq.put("VehicleTypeId", "88");
+		stpReq.put("Vehiclemake", vehicleinfoMap.get("Vehiclemake")==null?"":vehicleinfoMap.get("Vehiclemake").toString());
+		stpReq.put("VehiclemakeId",stp_req.get("Vehiclemake")==null?"":stp_req.get("Vehiclemake").toString());
+		stpReq.put("WindScreenSumInsured", windShield_sumInured);
+		stpReq.put("Windscreencoverrequired",null);
+		stpReq.put("accident", null);
+		stpReq.put("periodOfInsurance", 365);
 		stpReq.put("PolicyStartDate", policy_start_date);
-		stpReq.put("PolicyType", "1");
-		stpReq.put("ProductId", "46");
-		stpReq.put("RegistrationYear", "02/05/2006");
-		stpReq.put("Registrationnumber",registration_no);
-		stpReq.put("SavedFrom", "Owner");
-		stpReq.put("SearchFromApi", false);
-		stpReq.put("SeatingCapacity", stp_req.get("seating_capacity")==null?"":stp_req.get("seating_capacity").toString());
-		stpReq.put("SectionId", "73");
-		stpReq.put("SourceTypeId", StringUtils.isBlank(source_typeid)?"b2c":source_typeid);
-		stpReq.put("SourceType", StringUtils.isBlank(source_type)?"b2c":source_type);
-		stpReq.put("Status", "Y");
-		stpReq.put("SubUserType", StringUtils.isBlank(subusertype)?"b2c":subusertype);
-		stpReq.put("SumInsured", "0");
-		stpReq.put("Tareweight", "100");
-		stpReq.put("TppdIncreaeLimit", "0");
+		stpReq.put("PolicyEndDate", policy_end_date);
+		stpReq.put("Currency", "UGX");
+		stpReq.put("ExchangeRate", "1.0");
+		stpReq.put("HavePromoCode", "N");
+		stpReq.put("PromoCode",  null);
+		stpReq.put("CollateralYn", "N");
+		stpReq.put("BorrowerType",  null);
+		stpReq.put("CollateralName", null);
+		stpReq.put("FirstLossPayee", null);
+		stpReq.put("FleetOwnerYn", "N");
+		stpReq.put("NoOfVehicles", "1");
+		stpReq.put("SavedFrom", "API");
 		stpReq.put("UserType", StringUtils.isBlank(usertype)?"Broker":usertype);
-		stpReq.put("Vehcilemodel", "");
-		stpReq.put("VehcilemodelId", stp_req.get("model")==null?"":stp_req.get("model").toString());
-		stpReq.put("VehicleId", "1");
-		stpReq.put("VehicleModel", "");
-		stpReq.put("VehicleType", "PICK UP");
-		stpReq.put("VehicleTypeId", stp_req.get("body_type")==null?"":stp_req.get("body_type").toString());
-		stpReq.put("Vehiclemake", "");
-		stpReq.put("VehiclemakeId", stp_req.get("make")==null?"":stp_req.get("make").toString());
-		stpReq.put("WindScreenSumInsured", "0");
-		stpReq.put("periodOfInsurance", "30");
-		stpReq.put("EngineNumber", "");
+		stpReq.put("TiraCoverNoteNo", null);
+		stpReq.put("EndorsementYn", "N");
+		stpReq.put("EndorsementDate", null);
+		stpReq.put("EndorsementEffectiveDate", null);
+		stpReq.put("EndorsementRemarks",  null);
+		stpReq.put("EndorsementType",  null);
+		stpReq.put("EndorsementTypeDesc",  null);
+		stpReq.put("EndtCategoryDesc", null);
+		stpReq.put("EndtCount",  null);
+		stpReq.put("EndtPrevPolicyNo", null);
+		stpReq.put("EndtPrevQuoteNo",  null);
+		stpReq.put("EndtStatus",  null);
+		stpReq.put("IsFinanceEndt",  null);
+		stpReq.put("OrginalPolicyNo",  null);
+		stpReq.put("ClaimType", "0");
+		stpReq.put("VehicleValueType", "");
+		stpReq.put("Inflation", "");
+		stpReq.put("Ncb", "0");
+		stpReq.put("DefenceValue", "");
+		stpReq.put("PurchaseDate",  null);
+		stpReq.put("RegistrationDate",  null);
+		stpReq.put("Mileage",  null);
+		stpReq.put("NoOfClaimYears",  null);
+		stpReq.put("NoOfPassengers",  null);
+		stpReq.put("PreviousInsuranceYN", "N");
+		stpReq.put("PreviousLossRatio", "");
+		stpReq.put("HorsePower", "");
+		stpReq.put("Zone", "1");
+		stpReq.put("DateOfCirculation",  null);
+		stpReq.put("NewValue",  null);
+		stpReq.put("MarketValue",  null);
+		stpReq.put("AggregatedValue",  "null");
+		stpReq.put("NumberOfCards",  null);
+		stpReq.put("MunicipalityTraffic",  null);
+		stpReq.put("TransportHydro",  null);
+		stpReq.put("BankingDelegation", "");
+		stpReq.put("LoanStartDate",  null);
+		stpReq.put("LoanEndDate",  null);
+		stpReq.put("CollateralCompanyAddress", "");
+		stpReq.put("CollateralCompanyName", "");
+		stpReq.put("LoanAmount", 0);
+		stpReq.put("PaCoverId", "0");
+		stpReq.put("UsageId", "");
+		stpReq.put("VehicleTypeIvr", "");
+		stpReq.put("ZoneCirculation", "");
+		stpReq.put("Status", "Y");
+		stpReq.put("DriverDetails",  null);
+		stpReq.put("CarAlarmYn", carAlaramYn);		
+		LinkedHashMap<String, Object> exchangeRateScenario = new  LinkedHashMap<>();
+		exchangeRateScenario.put("OldAcccessoriesSumInsured", null);
+		exchangeRateScenario.put("OldCurrency", "UGX");
+		exchangeRateScenario.put("OldExchangeRate", "1.0");
+		exchangeRateScenario.put("OldSumInsured", 0);
+		exchangeRateScenario.put("OldTppdIncreaeLimit", null);
+		exchangeRateScenario.put("OldWindScreenSumInsured", null);
+		LinkedHashMap<String, Object> excahnge = new  LinkedHashMap<>();
+		excahnge.put("ExchangeRateScenario", exchangeRateScenario);
+		stpReq.put("Scenarios", excahnge);
+		
 
 		api_request =mapper.writeValueAsString(stpReq);
 		
@@ -3800,8 +3930,8 @@ public class InsuranceServiceImpl implements InsuranceService{
 					
 			Map<String,Object> calcMap = new HashMap<>();
 			calcMap.put("InsuranceId", motorResult.get("InsuranceId")==null?"":motorResult.get("InsuranceId"));
-			calcMap.put("BranchCode", "01");
-			calcMap.put("AgencyCode", "10303");
+			calcMap.put("BranchCode", "55");
+			calcMap.put("AgencyCode", "12860");
 			calcMap.put("SectionId", motorResult.get("SectionId")==null?"":motorResult.get("SectionId"));
 			calcMap.put("ProductId", motorResult.get("ProductId")==null?"":motorResult.get("ProductId"));
 			calcMap.put("MSRefNo", motorResult.get("MSRefNo")==null?"":motorResult.get("MSRefNo"));
@@ -3815,14 +3945,14 @@ public class InsuranceServiceImpl implements InsuranceService{
 			calcMap.put("EffectiveDate",policy_start_date);
 			calcMap.put("PolicyEndDate", policy_end_date);
 			calcMap.put("CoverModification", "N");
-			
+			calcMap.put("LocationId", "1");
 			String calcApi =this.calcApi;
 			
 			List<Map<String,Object>> coverList =null;
 			Map<String,Object> calcRes=null;
 			try {
 				String calcReq =mapper.writeValueAsString(calcMap);
-				log.info("CALC Request || "+calcRes);
+				log.info("CALC Request || "+calcReq);
 				 api_response =serviceImpl.callEwayApi(calcApi, calcReq);
 				calcRes =mapper.readValue(api_response, Map.class);
 				coverList=calcRes.get("CoverList")==null?null:
@@ -3842,7 +3972,10 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 					
 			premium =coverList.get(0).get("PremiumExcluedTax")==null?0L:Double.valueOf(coverList.get(0).get("PremiumExcluedTax").toString()).longValue();
-			vatTax =tax.get(0).get("TaxAmount")==null?0L:Double.valueOf(tax.get(0).get("TaxAmount").toString()).longValue();
+			//vatTax =tax.get(0).get("TaxAmount")==null?0L:Double.valueOf(tax.get(0).get("TaxAmount").toString()).longValue();
+			vatTax = tax.stream().map(t -> t.get("TaxAmount")==null?0L:Double.valueOf(t.get("TaxAmount").toString()).longValue())
+					.reduce(0L, (a,b) -> a + b);
+			
 			vatPercentage =tax.get(0).get("TaxRate")==null?0L:Double.valueOf(tax.get(0).get("TaxRate").toString());
 					
 				
@@ -3851,17 +3984,17 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 			// user creation block
 			
-			if("2".equals(isBroker)) {
+			//if("2".equals(isBroker)) {
 				log.info("USER CREATION BLOCK START : "+new Date());
 										
 				Map<String,Object> userCreateMap =new HashMap<>();
-				userCreateMap.put("CompanyId", "100002");
+				userCreateMap.put("CompanyId", "100019");
 				userCreateMap.put("CustomerId", customerRefNo);
-				userCreateMap.put("ProductId", "46");
+				userCreateMap.put("ProductId", "5");
 				userCreateMap.put("ReferenceNo", refNo);
 				userCreateMap.put("UserMobileNo", req.getWhatsAppNo());
 				userCreateMap.put("UserMobileCode", req.getWhatsAppCode());
-				userCreateMap.put("AgencyCode", "10303");
+				userCreateMap.put("AgencyCode", "13254");
 				
 				
 				String userCreationReq =objectPrint.toJson(userCreateMap);
@@ -3871,7 +4004,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				log.info("User Creation Response || "+response);
 	
 				log.info("USER CREATION BLOCK END : "+new Date());
-			}
+			//}
 
 			String exception="";
 			
@@ -3879,21 +4012,22 @@ public class InsuranceServiceImpl implements InsuranceService{
 			
 			// buypolicy block 
 			Map<String,Object> coversMap =new HashMap<String,Object>();
+			Map<String,Object> object=null;
 			coversMap.put("CoverId", "5");
-			coversMap.put("SubCoverId", "");
 			coversMap.put("SubCoverYn", "N");
 			List<Map<String,Object>> coversMapList =new ArrayList<Map<String,Object>>();
 			coversMapList.add(coversMap);
 			Map<String,Object> vehicleMap =new HashMap<String,Object>();
-			vehicleMap.put("SectionId", "73");
+			vehicleMap.put("SectionId",insurance_type);
 			vehicleMap.put("Id", "1");
+			vehicleMap.put("LocationId", "1");
 			vehicleMap.put("Covers", coversMapList);
 			List<Map<String,Object>> vehiMapList =new ArrayList<Map<String,Object>>();
 			vehiMapList.add(vehicleMap);
 			Map<String,Object> buypolicyMap =new HashMap<String,Object>();
 			buypolicyMap.put("RequestReferenceNo", refNo);
-			buypolicyMap.put("CreatedBy", "guest");
-			buypolicyMap.put("ProductId", "46");
+			buypolicyMap.put("CreatedBy", "WhatsApp_Uganda_Broker");
+			buypolicyMap.put("ProductId", "5");
 			buypolicyMap.put("ManualReferralYn", "N");
 			buypolicyMap.put("Vehicles", vehiMapList);
 
@@ -3929,15 +4063,15 @@ public class InsuranceServiceImpl implements InsuranceService{
 				
 				// make payment
 				Map<String,Object> makePaymentMap = new HashMap<String,Object>();
-				makePaymentMap.put("CreatedBy", "guest");
+				makePaymentMap.put("CreatedBy", "WhatsApp_Uganda_Broker");
 				makePaymentMap.put("EmiYn", "N");
 				makePaymentMap.put("InstallmentMonth", "");
 				makePaymentMap.put("InstallmentPeriod", "");
-				makePaymentMap.put("InsuranceId", "100002");
+				makePaymentMap.put("InsuranceId", "100019");
 				makePaymentMap.put("Premium", totalPremium);
 				makePaymentMap.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
 				makePaymentMap.put("Remarks", "None");
-				makePaymentMap.put("SubUserType", "b2c");
+				makePaymentMap.put("SubUserType", "Broker");
 				makePaymentMap.put("UserType", "Broker");
 					
 				String makePaymentReq =objectPrint.toJson(makePaymentMap);
@@ -3970,14 +4104,14 @@ public class InsuranceServiceImpl implements InsuranceService{
 					// insert payment 
 					
 					Map<String,Object> insertPayment =new HashMap<String,Object>();
-					insertPayment.put("CreatedBy", "guest");
-					insertPayment.put("InsuranceId", "100002");
+					insertPayment.put("CreatedBy", "WhatsApp_Uganda_Broker");
+					insertPayment.put("InsuranceId", "100019");
 					insertPayment.put("EmiYn", "N");
 					insertPayment.put("Premium", totalPremium);
 					insertPayment.put("QuoteNo", buyPolicyResult.get("QuoteNo"));
 					insertPayment.put("Remarks", "None");
 					insertPayment.put("PayeeName", customer_name);
-					insertPayment.put("SubUserType", "b2c");
+					insertPayment.put("SubUserType", "Broker");
 					insertPayment.put("UserType", "Broker");
 					insertPayment.put("PaymentId", makePaymentResult.get("PaymentId"));
 					insertPayment.put("PaymentType", "4");
@@ -4023,7 +4157,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				
 				Map<String,String> paymentMap =new HashMap<>();
 				paymentMap.put("MerchantRefNo", merchantRefNo);
-				paymentMap.put("CompanyId", "100002");
+				paymentMap.put("CompanyId", "100019");
 				paymentMap.put("WhatsappCode", req.getWhatsAppCode());
 				paymentMap.put("WhtsappNo", req.getWhatsAppNo());
 				paymentMap.put("QuoteNo", quoteNo);
