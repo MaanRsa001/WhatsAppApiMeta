@@ -1121,6 +1121,7 @@ public class WatiApiCall {
 				parameters.put("flow_id", req.getFlowId());
 				parameters.put("flow_cta", req.getFlow_button_name());
 				parameters.put("flow_action", "navigate");
+				//parameters.put("mode", "draft");
 				
 				if("Y".equals(req.getFlow_requestdata_yn())) {
 					

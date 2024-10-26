@@ -509,7 +509,9 @@ public class AsyncProcessThread {
 				returnRes.add(r);
 			});
 
-			return CompletableFuture.completedFuture(returnRes);
+			List<Map<String,String>> list = returnRes.stream().limit(200).collect(Collectors.toList());
+			
+			return CompletableFuture.completedFuture(list);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -591,7 +593,7 @@ public class AsyncProcessThread {
 
 			apiData.forEach(p -> {
 				Map<String, String> r = new HashMap<>();
-				r.put("id", p.get("Code").toString());
+				r.put("id", p.get("CodeDesc").toString());
 				r.put("title", p.get("CodeDesc").toString());
 				returnRes.add(r);
 			});
@@ -947,7 +949,7 @@ public class AsyncProcessThread {
 
 	}
 	
-	@Async("EWAYAPI_EXECUTER")
+
 	public CompletableFuture<List<Map<String, String>>> getPolicyBodyType(String request, String token) {
 		try {
 

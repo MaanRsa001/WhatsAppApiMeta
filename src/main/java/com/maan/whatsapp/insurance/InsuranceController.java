@@ -69,4 +69,9 @@ public class InsuranceController {
     public Object getPreinspectionDetails(@RequestBody UploadPreinspectionReq req) {
 		return service.getPreinspectionDetails(req);
 	}
+	
+	@PostMapping("/generate/payment")
+	public Object generatePayment(@RequestBody InsuranceReq req) throws WhatsAppValidationException, JsonProcessingException{
+		return service.generatePayment(req);
+	}
 }
