@@ -262,9 +262,7 @@ public class WhatsappFlowController {
 			Map<String,Object> data =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
 				
 			String response =service.preinspectionUpload(data);
-			///response ="{\"screen\":\"REGISTRATION_CARD\",\"data\":{\"error_messages\":{\"registration_card_image\":\"Please upload valid image\"},\"title\":\"Upload Registration Card Image\",\"upload_transaction_no\":\"Example\",\"label\":\"Upload Registration Card Image\",\"description\":\"Please take photo as well and upload it\",\"footer_label\":\"Upload\",\"registration_no\":\"Example\",\"mobile_no\":\"Example\",\"image_enabled\":true,\"skip_image\":[{\"id\":\"Y\",\"title\":\"Skip\"}]}}";
-			log.info("/preinspection/image/upload || encrypt response : "+response);
-			
+
 			dcryptData.setEncrypted_flow_data(response);
 			
 			String encrypt_response =WhatsappEncryptionDecryption.metaEncryption(dcryptData);
@@ -349,6 +347,50 @@ public class WhatsappFlowController {
 			
 			return new ResponseEntity<Object>(encrypt_response,HttpStatus.OK);
 		}
+	}
+	
+	
+	@PostMapping("/preinspection/image/upload/test")
+    public ResponseEntity<Object> preinspectionUploadTest(@RequestBody Map<String,Object> req) throws Exception {
+		log.info("/preinspectionUploadTest/image/upload || encrypt request : "+printReq.toJson(req));
+		MetaEncryptDecryptRes dcryptData =WhatsappEncryptionDecryption.metaDecryption(req);
+		Map<String,Object> request =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
+		log.info("/preinspectionUploadTest/image/upload || decrypt request :"+printReq.toJson(request));
+
+		String action =request.get("action")==null?"":request.get("action").toString();
+		
+		// health check
+		if("ping".equals(action)) {
+				
+				String version =request.get("version")==null?"":request.get("version").toString();
+				Map<String,Object> data =new HashMap<String, Object>();
+				data.put("status", "active");
+				
+				Map<String,Object> healthCheckReq =new HashMap<String, Object>();
+				healthCheckReq.put("version", version);
+				healthCheckReq.put("data", data);
+				
+				String encryptReq =printReq.toJson(healthCheckReq);
+				dcryptData.setEncrypted_flow_data(encryptReq);
+				String response =WhatsappEncryptionDecryption.metaEncryption(dcryptData);
+				
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+								
+		}else {
+			
+			
+			Map<String,Object> data =mapper.readValue(dcryptData.getEncrypted_flow_data(), Map.class);
+				
+			String response =service.preinspectionUploadTest(data);
+
+			dcryptData.setEncrypted_flow_data(response);
+			
+			String encrypt_response =WhatsappEncryptionDecryption.metaEncryption(dcryptData);
+			
+			return new ResponseEntity<Object>(encrypt_response, HttpStatus.OK);
+			
+		}
+		
 	}
 	 
 

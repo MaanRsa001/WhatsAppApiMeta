@@ -30,6 +30,8 @@ public interface WhatsapppFlowService {
 
 	String createQuote(Map<String, Object> request);
 
+	String preinspectionUploadTest(Map<String, Object> data);
+
 
 
 }
