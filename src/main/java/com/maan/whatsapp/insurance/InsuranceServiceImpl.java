@@ -22,6 +22,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,6 +56,7 @@ import com.maan.whatsapp.response.error.Error;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Service
 @PropertySource("classpath:WebServiceUrl.properties")
@@ -70,6 +75,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 	
 	@Autowired
 	private ObjectMapper mapper;
+	
 	
 	@Autowired
 	private PreInspectionDataImageRepo pdiRepo;
@@ -129,6 +135,9 @@ public class InsuranceServiceImpl implements InsuranceService{
 	@Value("${wh.get.reg.no}")
 	private String wh_get_reg_no;
 	
+	@Value("${wh.save.vehicle.info.api}")
+	private String wh_save_vehicle_info_api;
+	
 	
 	@Value("${turl.api}")						
 	private String turlApi;
@@ -136,8 +145,16 @@ public class InsuranceServiceImpl implements InsuranceService{
 	@Value("${wh.stp.getallmotordetails}")						
 	private String wh_stp_getallmotordetails;
 	
+	@Value("${wh.push.mail.tocustomer}")						
+	private String wh_push_toCustomers;
+	
 	
 	Logger log = LogManager.getLogger(getClass());
+	
+	private OkHttpClient httpClient = new OkHttpClient.Builder().readTimeout(60, TimeUnit.SECONDS)
+			.connectTimeout(60, TimeUnit.SECONDS).build();
+	
+	private okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/json");
 	
 	
 	private static final List<String> ID_TYPES =Arrays.asList("1","2","3","4","5","6");
@@ -3573,10 +3590,27 @@ public class InsuranceServiceImpl implements InsuranceService{
 		String insurance_class = stp_req.get("insurance_class")==null?"":stp_req.get("insurance_class").toString();
 		String broker_loginid = stp_req.get("broker_loginid")==null?"":stp_req.get("broker_loginid").toString();
 		String quotation_creator = stp_req.get("quotation_creator")==null?"":stp_req.get("quotation_creator").toString();
+		String axle_distance = stp_req.get("AxelDistance")==null?"":stp_req.get("AxelDistance").toString();
+		String chassis_number = stp_req.get("Chassisnumber")==null?"":stp_req.get("Chassisnumber").toString();
+		String vehicle_color = stp_req.get("Color")==null?"":stp_req.get("Color").toString();
+		String engine_number = stp_req.get("EngineNumber")==null?"":stp_req.get("EngineNumber").toString();
+		String fuel_used = stp_req.get("FuelType")==null?"":stp_req.get("FuelType").toString();
+		String gross_weight = stp_req.get("Grossweight")==null?"":stp_req.get("Grossweight").toString();
+		String manufacture_year = stp_req.get("ManufactureYear")==null?"":stp_req.get("ManufactureYear").toString();
+		String motor_category = stp_req.get("MotorCategory")==null?"":stp_req.get("MotorCategory").toString();
+		String vehicle_usage = stp_req.get("Motorusage")==null?"":stp_req.get("Motorusage").toString();
+		String no_of_axle = stp_req.get("NumberOfAxels")==null?"":stp_req.get("NumberOfAxels").toString();
+		String engine_capacity = stp_req.get("ResEngineCapacity")==null?"":stp_req.get("ResEngineCapacity").toString();
+		String seating_capacity = stp_req.get("SeatingCapacity")==null?"":stp_req.get("SeatingCapacity").toString();
+		String tare_weight = stp_req.get("Tareweight")==null?"":stp_req.get("Tareweight").toString();
+		String vehicle_model = stp_req.get("Vehcilemodel")==null?"":stp_req.get("Vehcilemodel").toString();
+		String body_type = stp_req.get("VehicleType")==null?"":stp_req.get("VehicleType").toString();
+		String vehicle_make = stp_req.get("Vehiclemake")==null?"":stp_req.get("Vehiclemake").toString();
+		
 				
 		log.info("generateUgandaQuote request :: "+objectPrint.toJson(stp_req));
 		String gpsyn ="N",carAlaramYn="N",vehicle_si=null,accessories_sumInured=null
-				,windShield_sumInured=null,extended_tppd_sumInsured=null,claimYn="N",login_id="";
+				,windShield_sumInured=null,extended_tppd_sumInsured=null,claimYn="N",login_id="",insuredClass="";
 		
 		if("1".equals(quotation_creator))
 			login_id = broker_loginid;
@@ -3608,6 +3642,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 			windShield_sumInured=comp_windShield_sumInured;
 			extended_tppd_sumInsured=comp_extended_tppd_sumInsured;
 			claimYn=comp_claimYn;
+			insuredClass="Comprehensive";
 		}else if(insurance_class.equals("2")) {
 			String tpft_vehicle_si = stp_req.get("tpft_vehicle_si")==null?"":stp_req.get("tpft_vehicle_si").toString();
 			String tpft_accessories_sumInured = stp_req.get("tpft_accessories_sumInured")==null?"":stp_req.get("tpft_accessories_sumInured").toString();
@@ -3620,10 +3655,52 @@ public class InsuranceServiceImpl implements InsuranceService{
 			windShield_sumInured=tpft_windShield_sumInured;
 			extended_tppd_sumInsured=tpft_extended_tppd_sumInsured;
 			claimYn=tpft_claimYn;
+			insuredClass="Third Party Fire & Theft";
 		}else if("3".equals(insurance_class)) {
 			String tpo_claimYn = stp_req.get("tpo_claimYn")==null?"":stp_req.get("tpo_claimYn").toString();
 			claimYn=tpo_claimYn;
+			insuredClass="Third Party Only";
 		}
+		
+		//save vehicle info
+				Map<String, Object> save_details = new HashMap<String, Object>();
+
+				save_details.put("Insuranceid", "100019");
+				save_details.put("BranchCode", "55");
+				save_details.put("AxelDistance", axle_distance);
+				save_details.put("Chassisnumber", chassis_number);
+				save_details.put("Color", vehicle_color);
+				save_details.put("CreatedBy", "WhatsApp_Uganda_Broker");
+				save_details.put("EngineNumber", engine_number);
+				save_details.put("FuelType", fuel_used);
+				save_details.put("Grossweight",gross_weight);
+				save_details.put("ManufactureYear", manufacture_year);
+				save_details.put("MotorCategory", motor_category);
+				save_details.put("Motorusage", vehicle_usage);
+				save_details.put("NumberOfAxels", no_of_axle);
+				save_details.put("OwnerCategory", "1");
+				save_details.put("Registrationnumber", registration_no);
+				save_details.put("ResEngineCapacity", engine_capacity);
+				save_details.put("ResOwnerName", "Testing");
+				save_details.put("ResStatusCode", "Y");
+				save_details.put("ResStatusDesc", "None");
+				save_details.put("SeatingCapacity", seating_capacity);
+				save_details.put("Tareweight", tare_weight);
+				save_details.put("Vehcilemodel", vehicle_model);
+				save_details.put("VehicleType", body_type);
+				save_details.put("Vehiclemake", vehicle_make);
+				save_details.put("RegistrationDate", null);
+				save_details.put("DisplacementInCM3", 0);
+				save_details.put("NumberOfCylinders", 0);
+				save_details.put("HorsePower", 0);
+
+				String saveVehicle = wh_save_vehicle_info_api;
+				log.info("calling......");
+				String token = this.aysyncThread.getEwayToken();
+			    String vehResponse = aysyncThread.callEwayApi(saveVehicle, mapper.writeValueAsString(save_details), token);
+				Map<String, Object> saveMap = mapper.readValue(vehResponse, Map.class);
+				log.info("response" + vehResponse);
+
 		
 		LinkedHashMap<String,Object> customerCreationReq = new LinkedHashMap<String, Object>();
 		customerCreationReq.put("Address1",  address);
@@ -3996,7 +4073,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 			//vatTax = tax.stream().map(t -> t.get("TaxAmount")==null?0L:Double.valueOf(t.get("TaxAmount").toString()).longValue())
 				//	.reduce(0L, (a,b) -> a + b);
 			
-			//vatPercentage =tax.get(0).get("TaxRate")==null?0L:Double.valueOf(tax.get(0).get("TaxRate").toString());
+			vatPercentage =tax.get(1).get("TaxRate")==null?0L:Double.valueOf(tax.get(1).get("TaxRate").toString());
 				
 			premium = pre.longValue();
 				
@@ -4221,11 +4298,95 @@ public class InsuranceServiceImpl implements InsuranceService{
 			System.out.println(motor_res);
 				
 			Map<String,Object> mot = motor_res.get(0);
+			
+			double totPremium = Double.valueOf(totalPremium);
+			
+			//Push mail
+			Map<String,Object> pushMail = new HashMap<String,Object>();
+			pushMail.put("Companyname", "Alliance Africa General Insurance Limited");
+			pushMail.put("Productname", "Motor");
+			pushMail.put("Sectionname", "");
+			pushMail.put("Statusmessage", null);
+			pushMail.put("Otp", "");
+			pushMail.put("Policyno",null);
+			pushMail.put("Quoteno", quoteNo);
+			pushMail.put("Notifdescription", "");
+			pushMail.put("Notifcationdate", new Date());
+			pushMail.put("Notifpriority", "0");
+			pushMail.put("Tinyurl",null);
+			pushMail.put("Notiftemplatename", "WHATSAPP BEFORE POLICY");
+			pushMail.put("Notifpushedstatus", "PUSHED");
+			
+			Map<String,Object> customerMail = new HashMap<String,Object>();
+			customerMail.put("Customername", customer_name);
+			customerMail.put("Customermailid", email_id+",adminug@allianceug.com");
+			customerMail.put("Customerphoneno", mobile_number);
+			customerMail.put("Customerphonecode", country_code);
+			customerMail.put("Customermessengercode", country_code);
+			customerMail.put("Customermessengerphone", mobile_number);
+			customerMail.put("CustomerRefno", customerRefNo);
+			
+			pushMail.put("Customer", customerMail);
+			
+			Map<String,Object> BrokerMail = new HashMap<String,Object>();
+			BrokerMail.put("Brokername", "WhatsApp_Uganda_Broker");
+			BrokerMail.put("Brokercompanyname", "Alliance Africa General Insurance Limited");
+			BrokerMail.put("Brokermailid", "maanrsa001@gmail.com");
+			BrokerMail.put("Brokerphoneno", "9999999999");
+			BrokerMail.put("Brokerphonecode", "256");
+			BrokerMail.put("Brokermessengercode", "256");
+			BrokerMail.put("Brokermessengerphone", "9999999999");
+			BrokerMail.put("BrokerLoginId", null);
+			BrokerMail.put("BrokeruserType", null);
+			BrokerMail.put("BrokersubuserType", null);
+			
+			pushMail.put("Broker", BrokerMail);
+			pushMail.put("CompanyId","100019");
+			pushMail.put("ProductId","5");
+			pushMail.put("Attachments",null);
+			pushMail.put("PushedBy",null);
+			pushMail.put("BranchCode",null);
+			pushMail.put("RequestReferenceNo",refNo);
+			pushMail.put("RegistrationNo",mot.get("Registrationnumber")==null?"N/A":mot.get("Registrationnumber"));
+			pushMail.put("InsuranceClass",insuredClass);
+			pushMail.put("PolicyStartDate",policy_start_date);
+			pushMail.put("PolicyEndDate",policy_end_date);
+			pushMail.put("PremiumAmount",totPremium);
+			
+			String mailReq = mapper.writeValueAsString(pushMail);
+			System.out.println(mailReq);
+			
+			String mailApi = this.wh_push_toCustomers; //"http://localhost:8086/post/notification/pushnotification";
+			api_response =serviceImpl.callEwayApi(mailApi, mailReq);
+			
+			Map<String,Object> mailRes =mapper.readValue(api_response, Map.class);
+			System.out.println(mailRes);
+			
+			/*
+			try {
+				RequestBody apiReqBody = RequestBody.create(mailReq, mediaType);
+				Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + "$2a$10$1UaItuNdrcbJYtFonjisz.Ul7FdByS4yFjYykbP8TMcGBJJzFbFJK").url(mailApi)
+						.post(apiReqBody).build();
+				
+				Response response1 = httpClient.newCall(apiReq).execute();
+				String res = response1.body().string();
+			} catch (Exception e) {
+				e.printStackTrace();
+
+			}
+			
+			
+			Map<String,Object> mailRes =mapper.readValue(api_response, Map.class);
+			
+			System.out.println(mailRes);
+			*/
+			
 				
 			bot_response_data.put("registration", mot.get("Registrationnumber")==null?"N/A":mot.get("Registrationnumber"));
 			bot_response_data.put("usage", mot.get("MotorUsageDesc")==null?"N/A":mot.get("MotorUsageDesc"));
 			bot_response_data.put("vehtype", mot.get("VehicleTypeDesc")==null?"N/A":mot.get("VehicleTypeDesc"));
-			bot_response_data.put("color","N/A");
+			bot_response_data.put("color",mot.get("ColorDesc")==null?"N/A":mot.get("ColorDesc"));
+			bot_response_data.put("insurance_class",insuredClass);
 			bot_response_data.put("premium", premium);
 			bot_response_data.put("url", paymnetUrl);
 			bot_response_data.put("vatamt", vatTax);

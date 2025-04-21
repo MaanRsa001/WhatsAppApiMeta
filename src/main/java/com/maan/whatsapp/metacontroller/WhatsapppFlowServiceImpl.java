@@ -311,6 +311,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				String regionCode = data.get("regionCode") == null ? "" : data.get("regionCode").toString();
 				String product = data.get("product") == null ? "" : data.get("product").toString();
 				String divn_code = data.get("divn_code") == null ? "" : data.get("divn_code").toString();
+				String email = data.get("emailId") == null ? "" : data.get("emailId").toString();
+				
+				
 
 				Map<String, String> error_message = new HashMap<String, String>();
 
@@ -368,6 +371,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					object.put("loss_type", loss_type.get());
 					object.put("product", product);
 					object.put("divn_code", divn_code);
+					object.put("emailId", email);
 
 					object.put("casue_of_loss", casue_of_loss.get());
 					object.put("responsible_personof_accident", drivenBy);
@@ -398,6 +402,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				String regionCode = data.get("regionCode") == null ? "" : data.get("regionCode").toString();
 				String product = data.get("product") == null ? "" : data.get("product").toString();
 				String divn_code = data.get("divn_code") == null ? "" : data.get("divn_code").toString();
+				String email = data.get("emailId") == null ? "" : data.get("emailId").toString();
 
 				Map<String, Object> extension_message_response = new HashMap<String, Object>();
 				Map<String, Object> params = new HashMap<String, Object>();
@@ -419,6 +424,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				params.put("regionCode", regionCode);
 				params.put("product", product);
 				params.put("divn_code", divn_code);
+				params.put("emailId", email);
 
 				param_map.put("params", params);
 				extension_message_response.put("extension_message_response", param_map);
@@ -1357,7 +1363,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				} else if ("2".equals(input_type)) {
 					if (inputdata.length() < 5) {
 						validation.put("inputdata", "Minimum 5 characters required");
-					} else if (inputdata.matches("^[a-zA-Z0-9]+")) {
+					} else if (!inputdata.matches("^[a-zA-Z0-9]+")) {
 						validation.put("inputdata", "Special characters not allowed");
 					}
 				}
@@ -3199,7 +3205,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					return_map.put("title", title);
 					return_map.put("customer_name", customer_name);
 					return_map.put("country_code", country_code);
-					return_map.put("mobile_no", mobile_no);
+					return_map.put("mobile_number", mobile_no);
 					return_map.put("email_id", email_id);
 					return_map.put("address", address);
 					return_map.put("region", region);
@@ -3426,7 +3432,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					params.put("title", title);
 					params.put("customer_name", customer_name);
 					params.put("country_code", country_code);
-					params.put("mobile_no", mobile_no);
+					params.put("mobile_number", mobile_no);
 					params.put("email_id", email_id);
 					params.put("address", address);
 					params.put("region", region);
@@ -3467,6 +3473,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					params.put("Tareweight", data.get("Tareweight") == null ? "" : data.get("Tareweight").toString().trim());
 					params.put("Vehcilemodel", data.get("Vehcilemodel") == null ? "" : data.get("Vehcilemodel").toString().trim());
 					params.put("Vehiclemake", data.get("Vehiclemake") == null ? "" : data.get("Vehiclemake").toString().trim());
+					params.put("VehicleType", data.get("VehicleType") == null ? "" : data.get("VehicleType").toString().trim());
+					params.put("ResEngineCapacity", data.get("ResEngineCapacity") == null ? "" : data.get("ResEngineCapacity").toString().trim());
+					params.put("Motorusage", data.get("Motorusage") == null ? "" : data.get("Motorusage").toString().trim());
 					
 					
 					/*Map<String,Object> result = insurance.generateQuoteInfo(params);
@@ -3790,7 +3799,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 						: data.get("engine_capacity").toString().trim();
 				String seating_capacity = data.get("seating_capacity") == null ? ""
 						: data.get("seating_capacity").toString().trim();
-
+				String bodyType = data.get("body_type") == null ? "" : data.get("body_type").toString().split("~")[0].trim();
+				String vehicleMake = data.get("vehicle_make") == null ? ""
+						: data.get("vehicle_make").toString().split("~")[0].trim();
 				// validation need
 				if (chassis_number.length() < 5) {
 					input_validation.put("chassis_number", "Minimum 5 characters required.");
@@ -3820,16 +3831,37 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 				if (!axle_distance.matches("[0-9]+")) {
 					input_validation.put("axle_distance", "digits only allowed");
 				}
+			//	if (!seating_capacity.matches("[0-9]+")) {
+			//		input_validation.put("seating_capacity", "digits only allowed");
+			//	}
 				if (!seating_capacity.matches("[0-9]+")) {
-					input_validation.put("seating_capacity", "digits only allowed");
+					input_validation.put("seating_capacity", "Only digits are allowed");
+				} else {
+					Map<String, String> request_map = new HashMap<String, String>();
+					request_map.put("Type", "SEAT_CAPACITY");
+					request_map.put("SeatingCapacity", seating_capacity);
+					request_map.put("InsuranceId", "100019");
+					request_map.put("BranchCode", "55");
+					request_map.put("BodyType", bodyType);
+					String ewayValidationApi = wh_get_ewaydata_api;
+					api_response = thread.callEwayApi(ewayValidationApi, mapper.writeValueAsString(request_map), token);
+
+					Map<String, Object> validation_map = mapper.readValue(api_response, Map.class);
+					Boolean status = (Boolean) validation_map.get("IsError");
+					if (status) {
+						Map<String, Object> seat_map = (Map<String, Object>) validation_map.get("Result");
+						String seats = seat_map.get("Seating Capacity").toString();
+						input_validation.put("seating_capacity", "should be under " + seats + " or equal ");
+					}
 				}
+
 
 				if (!input_validation.isEmpty() && input_validation.size() > 0) {
 					Map<String, String> request_map = new HashMap<String, String>();
 					request_map.put("BranchCode", "55");
 					request_map.put("InsuranceId", "100019");
-					request_map.put("BodyId", body_type);
-					request_map.put("MakeId", vehicle_make);
+					request_map.put("BodyId", bodyType);
+					request_map.put("MakeId", vehicleMake);
 
 					String request_1 = printReq.toJson(request_map);
 
@@ -3839,18 +3871,34 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					CompletableFuture<List<Map<String, String>>> body_type_e = thread.getSTPBodyType(request_1, token);
 					CompletableFuture<List<Map<String, String>>> vehicle_usage_e = thread.getSTPVehicleUsage(request_1,
 							token);
-					CompletableFuture<List<Map<String, String>>> make_e = thread.getStpMake(token, body_type);
-					CompletableFuture<List<Map<String,String>>> model_e =thread.getSTPModel(body_type,vehicle_make,token);
+					CompletableFuture<List<Map<String, String>>> make_e = thread.getStpMake(token, bodyType);
+					CompletableFuture<List<Map<String,String>>> model_e =thread.getSTPModel(bodyType,vehicleMake,token);
 
 					CompletableFuture
 							.allOf(fuel_type_e, color_e, manufacture_year_e, body_type_e, vehicle_usage_e, make_e,model_e)
 							.join();
 
+					Function<Map<String,String>,Map<String,String>> function = fun -> {
+						Map<String,String>  map = new HashMap<>();
+						map.put("id", fun.get("id").toString()+"~"+fun.get("title").toString());
+						map.put("title", fun.get("title").toString());
+						return map;
+					};
+					
+					List<Map<String,String>> bodyList = body_type_e.get().stream()
+							.map(function).collect(Collectors.toList());
+					
+					List<Map<String,String>> makeList = make_e.get().stream()
+							.map(function).collect(Collectors.toList());
+					
+					List<Map<String,String>> modelList = model_e.get().stream()
+							.map(function).collect(Collectors.toList());
+					
 					Map<String, Object> error_messages = new HashMap<String, Object>();
 					error_messages.put("error_messages", input_validation);
-					error_messages.put("body_type", body_type_e.get().isEmpty() ? SAMPLE_DATA : body_type_e.get());
-					error_messages.put("vehicle_make", make_e.get().isEmpty() ? SAMPLE_DATA : make_e.get());
-					error_messages.put("vehicle_model", model_e.get().isEmpty()?SAMPLE_DATA : model_e.get());
+					error_messages.put("body_type", bodyList.isEmpty() ? SAMPLE_DATA : bodyList);
+					error_messages.put("vehicle_make", makeList.isEmpty() ? SAMPLE_DATA : makeList);
+					error_messages.put("vehicle_model", modelList.isEmpty()?SAMPLE_DATA : modelList);
 					error_messages.put("manufacture_year",
 							manufacture_year_e.get().isEmpty() ? SAMPLE_DATA : manufacture_year_e.get());
 					error_messages.put("fuel_used", fuel_type_e.get().isEmpty() ? SAMPLE_DATA : fuel_type_e.get());
@@ -3880,6 +3928,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					return response;
 				} else {
 					Map<String, Object> map_policy = new HashMap<String, Object>();
+				/*	
 					Map<String, Object> save_details = new HashMap<String, Object>();
 
 					save_details.put("Insuranceid", "100019");
@@ -3917,6 +3966,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					log.info("response" + api_response);
 					String status = map.get("Message").toString();
 					if ("Success".equalsIgnoreCase(status)) {
+						*/
 						Map<String, String> request_map = new HashMap<String, String>();
 						request_map.put("BranchCode", "55");
 						request_map.put("InsuranceId", "100019");
@@ -3986,7 +4036,7 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 	
 						return response;
 					}
-				}	
+		//		}	
 				
 			}else if("INDURANCE_CLASS_INPUTTYPE".equalsIgnoreCase(component_action)) {
 				String insurance_class_type = data.get("insurance_class_type")==null?"":data.get("insurance_class_type").toString();

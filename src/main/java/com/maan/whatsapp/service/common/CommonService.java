@@ -27,6 +27,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
@@ -640,6 +644,24 @@ public class CommonService {
 			return seen.putIfAbsent(keys, Boolean.TRUE) == null;
 		};
 	}
+	
+	private void setupSSLContext() throws Exception {
+		TrustManager[] trustAllCerts = new TrustManager[] {
+		new X509TrustManager() {
+		public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+		return null;
+		}
+
+		public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+		public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
+		}
+		};
+
+		SSLContext sc = SSLContext.getInstance("SSL");
+		sc.init(null, trustAllCerts, new java.security.SecureRandom());
+		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+		HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+		}
 
 	public Map<String, Object> callApi(String url, String auth, String method, Object request) {
 		Map<String, Object> response = new HashMap<>();
@@ -649,6 +671,7 @@ public class CommonService {
 
 			RestTemplate restTemplate = new RestTemplate();
 			HttpHeaders headers = new HttpHeaders();
+			setupSSLContext();
 			headers.setAccept(Arrays.asList(new MediaType[] { MediaType.APPLICATION_JSON }));
 			headers.setContentType(MediaType.APPLICATION_JSON);
 			if("Bearer".equalsIgnoreCase(auth)) {
@@ -825,6 +848,27 @@ public class CommonService {
 			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
 			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
 			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+			
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+			
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
 		
 			String tokenJsonReq =new Gson().toJson(tokReq);
 			String tokenApi =cs.getwebserviceurlProperty().getProperty("token.api");

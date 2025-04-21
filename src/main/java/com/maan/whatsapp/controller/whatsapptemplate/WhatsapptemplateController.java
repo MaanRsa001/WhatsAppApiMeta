@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.gson.Gson;
+import com.maan.whatsapp.insurance.SearchPreInsPectionReq;
 import com.maan.whatsapp.request.motor.DocumentResponse;
 import com.maan.whatsapp.request.motor.PreFileUploadReq;
 import com.maan.whatsapp.request.whatsapptemplate.WhatsappchatrecipiantReq;
@@ -122,8 +123,8 @@ public class WhatsapptemplateController {
 	}
 	
 	@GetMapping("/getPreinspectionImagesByDate")
-	public WACommonRes getPreinspectionImagesByDate(@RequestParam("entryDate") String entry_date) {
-		return service.getPreinspectionImagesByDate(entry_date);
+	public WACommonRes getPreinspectionImagesByDate(@RequestParam("startDate") String startDate,@RequestParam("endDate") String endDate) {
+		return service.getPreinspectionImagesByDate(startDate,endDate);
 	}
 	
 	@GetMapping("/getPreinspectionImagesByTranId")
@@ -173,6 +174,11 @@ public class WhatsapptemplateController {
 	public List<DocumentResponse> getMasterDocuments() {
 		return service.getMasterDocuments();
 		
+	}
+	
+	@PostMapping("/search/preinspection")
+	public WACommonRes searchPreInspection(@RequestBody SearchPreInsPectionReq req){
+		return service.searchPreInspection(req);
 	}
 	
 }

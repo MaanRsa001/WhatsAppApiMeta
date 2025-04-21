@@ -27,8 +27,8 @@ public interface PreInspectionDataDetailRepo extends JpaRepository<Preinspection
 	@Query(value = "select trunc(entry_date) as ENTRY_DATE,count(*)as TOTAL_COUNT from wh_PreInspection_Data_Detail group by trunc(entry_date) order by entry_date desc",nativeQuery=true)
 	List<Map<String,Object>> getPreInspectionImage();
 
-	@Query(value = "SELECT pdd.tranid, pdd.registraionno, pdd.chassisno, pdd.mobileno, wcd.sendername, pid.imagename, pid.imagefilepath,pid.original_file_name FROM wh_preinspection_data_detail pdd, whatsapp_contact_data wcd, wh_preinspection_image_detail pid WHERE trunc(pdd.entry_date) = to_date(?1,'DD/MM/YYYY') AND pdd.mobileno = wcd.whatsappid and pdd.tranid=pid.tranid order by pdd.entry_date desc ",nativeQuery=true)
-	List<Map<String, Object>> getPreInspectionImageByDate(String date);
+	@Query(value = "SELECT pdd.tranid, pdd.registraionno, pdd.chassisno, pdd.mobileno, wcd.sendername, pid.imagename, pid.imagefilepath,pid.original_file_name FROM wh_preinspection_data_detail pdd, whatsapp_contact_data wcd, wh_preinspection_image_detail pid WHERE trunc(pdd.entry_date) between trunc(to_date(?1,'DD/MM/YYYY')) and trunc(to_date(?2,'DD/MM/YYYY')) AND pdd.mobileno = wcd.whatsappid and pdd.tranid=pid.tranid order by pdd.entry_date",nativeQuery=true)
+	List<Map<String, Object>> getPreInspectionImageByDate(String startDate ,String endDate);
 	
 	@Query(value="select senderName from whatsapp_contact_data where whatsappid=?1",nativeQuery=true)
 	String getCustomerName(String watiId);
@@ -44,6 +44,12 @@ public interface PreInspectionDataDetailRepo extends JpaRepository<Preinspection
 	
 	@Query(value="select item_value from list_item_value where item_type='PRE_INSPECTION_IMAGES' and status='Y'",nativeQuery=true)
 	String getPreinsDocuments();
+
+	@Query(value="select pdd.REGISTRAIONNO,pdd.CHASSISNO,pdd.MOBILENO,wcd.sendername,pmd.* from WH_PREINSPECTION_IMAGE_DETAIL pmd,WH_PREINSPECTION_DATA_DETAIL pdd ,WHATSAPP_CONTACT_DATA wcd where pmd.tranid in((select tranid from WH_PREINSPECTION_DATA_DETAIL where REGISTRAIONNO=?1)) and pdd.tranid=pmd.tranid and pdd.mobileno=wcd.whatsappid",nativeQuery=true)
+	List<Map<String, Object>> searchPreInspectionByRegNo(String regNo);
+
+	@Query(value="select pdd.REGISTRAIONNO,pdd.CHASSISNO,pdd.MOBILENO,wcd.sendername,pmd.* from WH_PREINSPECTION_IMAGE_DETAIL pmd,WH_PREINSPECTION_DATA_DETAIL pdd ,WHATSAPP_CONTACT_DATA wcd where pmd.tranid in((select tranid from WH_PREINSPECTION_DATA_DETAIL where CHASSISNO=?1)) and pdd.tranid=pmd.tranid and pdd.mobileno=wcd.whatsappid",nativeQuery=true)
+	List<Map<String, Object>> searchPreInspectionByChassisNo(String chassisNo);
 	
 	
 }

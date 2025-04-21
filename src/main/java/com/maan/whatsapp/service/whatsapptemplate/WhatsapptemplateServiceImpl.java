@@ -41,6 +41,7 @@ import com.maan.whatsapp.entity.whatsapptemplate.WhatsappChatrecipiantMessageMas
 import com.maan.whatsapp.entity.whatsapptemplate.WhatsappMessageMaster;
 import com.maan.whatsapp.entity.whatsapptemplate.Whatsapptemplate;
 import com.maan.whatsapp.entity.whatsapptemplate.WhatsapptemplatePK;
+import com.maan.whatsapp.insurance.SearchPreInsPectionReq;
 import com.maan.whatsapp.repository.whatsapp.PreInspectionDataDetailRepo;
 import com.maan.whatsapp.repository.whatsapptemplate.WhatsapptemplateRepository;
 import com.maan.whatsapp.repository.whatsapptemplate.WhatschatreciptemplateRepository;
@@ -810,11 +811,11 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 	}
 
 	@Override
-	public WACommonRes getPreinspectionImagesByDate(String entry_date) {
+	public WACommonRes getPreinspectionImagesByDate(String startDate, String endDate) {
 		WACommonRes response = new WACommonRes();
 		List<PreinspectionDetailsRes> rlist =new ArrayList<PreinspectionDetailsRes>();
 		try {
-			List<Map<String,Object>> list =preInsImgRepo.getPreInspectionImageByDate(entry_date);
+			List<Map<String,Object>> list =preInsImgRepo.getPreInspectionImageByDate(startDate,endDate);
 			if(!CollectionUtils.isEmpty(list)) {
 				Map<String,List<Map<String,Object>>> d= list.stream()
 						.collect(Collectors.groupingBy(p->p.get("TRANID").toString(),Collectors.toList()));
@@ -1047,6 +1048,57 @@ public class WhatsapptemplateServiceImpl implements WhatsapptemplateService {
 			log.error(e);
 		}
 		return list;
+	}
+
+	@Override
+	public WACommonRes searchPreInspection(SearchPreInsPectionReq req) {
+		WACommonRes response = new WACommonRes();
+		List<PreinspectionDetailsRes> rlist =new ArrayList<PreinspectionDetailsRes>();
+		try {
+			List<Map<String,Object>> list = new ArrayList<>();
+			if("REGISTRATION_NO".equalsIgnoreCase(req.getSearchType())) {
+				list=preInsImgRepo.searchPreInspectionByRegNo(req.getSearchValue());
+			}else if("CHASSIS_NO".equalsIgnoreCase(req.getSearchType())) {
+				list=preInsImgRepo.searchPreInspectionByChassisNo(req.getSearchValue());
+			}
+			if(!list.isEmpty()) {
+				
+				Map<String, List<Map<String, Object>>> data=list.stream().collect(Collectors.groupingBy(p -> p.get("TRANID").toString()));
+		
+				for(Map.Entry<String,List<Map<String,Object>>> entry:data.entrySet()) {
+					List<Map<String,Object>> value =entry.getValue();
+					List<PreinspectionImageRes> image =new ArrayList<PreinspectionImageRes>();
+					for(Map<String,Object> p : value) {
+						PreinspectionImageRes imageRes = PreinspectionImageRes.builder()
+								.imageName(p.get("IMAGENAME")==null?"":p.get("IMAGENAME").toString().trim())
+								.imagePath(p.get("IMAGEFILEPATH")==null || p.get("IMAGEFILEPATH").equals("99")?"":p.get("IMAGEFILEPATH").toString().replace("\\", "//"))
+								.originalFileName(p.get("ORIGINAL_FILE_NAME")==null?"":p.get("ORIGINAL_FILE_NAME").toString().trim())
+								.build();
+						image.add(imageRes);
+					}
+					PreinspectionDetailsRes pid = PreinspectionDetailsRes.builder()
+							.chassisNo(value.get(0).get("CHASSISNO")==null?"":value.get(0).get("CHASSISNO").toString())
+							.mobileNo(value.get(0).get("MOBILENO")==null?"":value.get(0).get("MOBILENO").toString())
+							.registrationNo(value.get(0).get("REGISTRAIONNO")==null?"":value.get(0).get("REGISTRAIONNO").toString())
+							.transactionId(value.get(0).get("TRANID")==null?"":value.get(0).get("TRANID").toString())
+							.customerName(value.get(0).get("SENDERNAME")==null?"":value.get(0).get("SENDERNAME").toString())
+							.image(image)
+							.build();
+					rlist.add(pid);
+				}
+						
+				response.setResponse(rlist);
+				response.setMessage("SUCCESS");
+			}else {
+				response.setResponse(rlist);
+				response.setMessage("FAILED");
+			}
+		}catch (Exception e) {
+			log.error(e);
+			e.printStackTrace();
+		}
+		return response;
+
 	}
 
 	/*private void getImageExifDate() {

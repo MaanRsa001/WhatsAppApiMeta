@@ -1,6 +1,8 @@
 package com.maan.whatsapp.claimintimation;
 
 import java.io.File;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -16,6 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -303,6 +310,28 @@ public class ClaimIntimationServiceImpl {
 			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
 			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
 			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+			
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+			
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
+
 
 			String tokenJsonReq = new Gson().toJson(tokReq);
 			String tokenApi = cs.getwebserviceurlProperty().getProperty("token.api");
@@ -334,6 +363,26 @@ public class ClaimIntimationServiceImpl {
 			tokReq.put("LoginId", "WhatsApp_Uganda_Broker");
 			tokReq.put("Password", "Admin@01");
 			tokReq.put("ReLoginKey", "Y");
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
 			
 		//	log.info("Token Request ==> "+tokReq.toString());
 			String tokenJsonReq = new Gson().toJson(tokReq);
@@ -351,6 +400,7 @@ public class ClaimIntimationServiceImpl {
 			RequestBody apiReqBody = RequestBody.create(request, mediaType);
 			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
 					.post(apiReqBody).build();
+			
 			response = httpClient.newCall(apiReq).execute();
 			apiReponse = response.body().string();
 		} catch (Exception e) {
@@ -1291,6 +1341,7 @@ public class ClaimIntimationServiceImpl {
 			map.put("Usesofvehicle", "None");
 			map.put("AccidentDesc",map_req.get("accident_desc")==null?"":map_req.get("accident_desc").toString());
 			map.put("DrivenBy", map_req.get("accident_person")==null?"":map_req.get("accident_person").toString());
+			map.put("Email", map_req.get("emailId")==null?"":map_req.get("emailId").toString());
 
 			String claimSubmitApi = cs.getwebserviceurlProperty().getProperty("claim.intimation");
 			log.info("Claim Intimation Submit API " + claimSubmitApi);
@@ -1324,6 +1375,21 @@ public class ClaimIntimationServiceImpl {
 			Map<String,Object> veh_info =map_data.get("VehicleInfo")==null?null : (Map<String,Object>)map_data.get("VehicleInfo");
 			Map<String,Object> claim_info =map_data.get("ClaimInfo")==null?null : (Map<String,Object>)map_data.get("ClaimInfo");
 			
+			//Status Api
+			//String statussApi =cs.getwebserviceurlProperty().getProperty("get.claim.status");
+			String statussApi = "https://apps.alliance.co.tz/ClaimApi/api/claim-status-tracking";
+			Map<String,Object> statusApiMap = new HashMap<String,Object>();
+			statusApiMap.put("claimRefNo", claim_no);
+			statusApiMap.put("companyId", "100003");
+			
+			String statusApiReq = new Gson().toJson(statusApiMap);
+			//String token = callTokenApi();
+			//String statusResponse = callClaimApi(token,statussApi,statusApiReq);
+			String statusRes = callStatusApi(statussApi,statusApiReq);
+			Map<String,Object> status_data =mapper.readValue(statusRes, Map.class);
+			List<Map<String,Object>> claim_status = status_data.get("Result")==null?null : (List<Map<String, Object>>) status_data.get("Result");
+			System.out.println(claim_status);
+			
 			Map<String, String> response = new HashMap<String, String>();
 			if(policy_info!=null && veh_info!=null && claim_info!=null) {
 				response.put("customer_name", claim_info.get("AssuredName")==null?"N/A":claim_info.get("AssuredName").toString());
@@ -1340,6 +1406,7 @@ public class ClaimIntimationServiceImpl {
 				response.put("accident_time", claim_info.get("Accidenttime")==null?"N/A":claim_info.get("Accidenttime").toString());
 				response.put("location_desc", claim_info.get("Accidentplace")==null?"N/A":claim_info.get("Accidentplace").toString());
 				response.put("intimate_date", claim_info.get("ClaimIntimatedDate")==null?"N/A":claim_info.get("ClaimIntimatedDate").toString());
+				response.put("claim_status", claim_status.get(0).get("statusDesc")==null?"N/A": claim_status.get(0).get("statusDesc").toString());
 			}else {
 				response.put("ErrorMessage", "Record not found");
 			}
@@ -1351,6 +1418,62 @@ public class ClaimIntimationServiceImpl {
 		return null;
 	}
 	
+	private String callStatusApi(String url, String request) {
+		String apiReponse = "";
+		try {
+			Response response = null;
+			Map<String, Object> tokReq = new HashMap<String, Object>();
+			tokReq.put("InsuranceId", cs.getwebserviceurlProperty().getProperty("InsuranceId"));
+			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
+			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
+			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+		
+			
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+			
+
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build(); 
+			
+		String tokenJsonReq = new Gson().toJson(tokReq);
+		String tokenApi = cs.getwebserviceurlProperty().getProperty("token.api");
+		RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
+		Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
+		response = httpClient.newCall(tokenReq).execute();
+		String obj = response.body().string();
+		TokenResponse tokenRes = mapper.readValue(obj, TokenResponse.class);
+
+		String token = tokenRes.getTokenResponse().getToken();
+		
+			RequestBody apiReqBody = RequestBody.create(request, mediaType);
+			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
+					.post(apiReqBody).build();
+			
+			response = httpClient.newCall(apiReq).execute();
+			apiReponse = response.body().string();
+
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return apiReponse;
+	}
+
 	public  String callGetApi(String url) {
 		String apiReponse = "";
 		try {
@@ -1360,6 +1483,27 @@ public class ClaimIntimationServiceImpl {
 			tokReq.put("LoginType", cs.getwebserviceurlProperty().getProperty("LoginType"));
 			tokReq.put("Password", cs.getwebserviceurlProperty().getProperty("Password"));
 			tokReq.put("UserId", cs.getwebserviceurlProperty().getProperty("UserId"));
+
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
 
 			String tokenJsonReq = new Gson().toJson(tokReq);
 			String tokenApi = cs.getwebserviceurlProperty().getProperty("token.api");

@@ -1,5 +1,7 @@
 package com.maan.whatsapp.insurance;
 
+import java.security.cert.CertificateException;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -10,8 +12,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -25,8 +29,6 @@ import com.maan.whatsapp.claimintimation.ClaimIntimationServiceImpl;
 import com.maan.whatsapp.claimintimation.LosstypeRes;
 import com.maan.whatsapp.service.common.CommonService;
 
-import lombok.val;
-import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -162,8 +164,32 @@ public class AsyncProcessThread {
 		try {
 			Response response = null;
 			RequestBody apiReqBody = RequestBody.create(request, mediaType);
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException{}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException{}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+
+
 			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url(url)
 					.post(apiReqBody).build();
+
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
+
 			response = httpClient.newCall(apiReq).execute();
 			apiReponse = response.body().string();
 		} catch (Exception e) {
@@ -299,13 +325,41 @@ public class AsyncProcessThread {
 			// log.info("Token Api URL ==> "+tokenApi);
 			RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
 			Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
-			response = httpClient.newCall(tokenReq).execute();
+			
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			
+			// Install the all-trusting trust manager
+						final SSLContext sslContext = SSLContext.getInstance("SSL");
+						sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+						
+						httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS).build(); 
+						response = httpClient.newCall(tokenReq).execute();
+						String obj = response.body().string();
+						Map<String, Object> tokenRes = mapper.readValue(obj, Map.class);
+						Map<String, Object> tokenObj = tokenRes.get("Result") == null ? null
+								: (Map<String, Object>) tokenRes.get("Result");
+						String token = tokenObj.get("Token") == null ? "" : tokenObj.get("Token").toString();
+						// log.info("Token Response ==> "+token);
+		/*	response = httpClient.newCall(tokenReq).execute();
 			String obj = response.body().string();
 			Map<String, Object> tokenRes = mapper.readValue(obj, Map.class);
 			Map<String, Object> tokenObj = tokenRes.get("Result") == null ? null
 					: (Map<String, Object>) tokenRes.get("Result");
 			String token = tokenObj.get("Token") == null ? "" : tokenObj.get("Token").toString();
-			// log.info("Token Response ==> "+token);
+			// log.info("Token Response ==> "+token); */
 
 			return token;
 		} catch (Exception e) {
@@ -639,8 +693,9 @@ public class AsyncProcessThread {
 	public CompletableFuture<List<Map<String, String>>> getManuFactureYear() {
 		try {
 
+			int currentYear = Year.now().getValue();
 			List<Map<String, String>> returnRes = new ArrayList<Map<String, String>>();
-			List<Long> list = LongStream.rangeClosed(1990, 2024).boxed().sorted(Comparator.reverseOrder())
+			List<Long> list = LongStream.rangeClosed(1990, currentYear).boxed().sorted(Comparator.reverseOrder())
 					.collect(Collectors.toList());
 
 			list.forEach(p -> {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.maan.whatsapp.insurance.SearchPreInsPectionReq;
 import com.maan.whatsapp.request.motor.DocumentResponse;
 import com.maan.whatsapp.request.motor.PreFileUploadReq;
 import com.maan.whatsapp.request.motor.PreInsPectionReq;
@@ -39,7 +40,7 @@ public interface WhatsapptemplateService {
 
 	WACommonRes getPreinspectionImageByDate();
 
-	WACommonRes getPreinspectionImagesByDate(String entry_date);
+	WACommonRes getPreinspectionImagesByDate(String entry_date, String endDate);
 
 	WACommonRes getPreinspectionImagesByTranId(String tranId);
 
@@ -48,5 +49,7 @@ public interface WhatsapptemplateService {
 	List<DocumentResponse> getMasterDocuments();
 
 	FileUploadRes uploadFile(PreFileUploadReq req);
+
+	WACommonRes searchPreInspection(SearchPreInsPectionReq req);
 
 }
