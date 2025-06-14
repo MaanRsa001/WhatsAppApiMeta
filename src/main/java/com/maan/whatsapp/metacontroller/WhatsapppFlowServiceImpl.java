@@ -213,9 +213,9 @@ public class WhatsapppFlowServiceImpl implements WhatsapppFlowService {
 					Map<String, String> error = new HashMap<String, String>();
 
 					if ("1".equals(claim_inputType)) {
-						error.put("inputdata", "RegistrationNo not found");
+						error.put("inputdata", "Please enter valid RegistrationNo,does not allow any white spaces");//RegistrationNo not found
 					} else if ("2".equals(claim_inputType)) {
-						error.put("inputdata", "PolicyNumber not found");
+						error.put("inputdata", "Please enter valid PolicyNumber,does not allow any white spaces");//PolicyNumber not found
 					}
 
 					Map<String, Object> response_data = new HashMap<String, Object>();
