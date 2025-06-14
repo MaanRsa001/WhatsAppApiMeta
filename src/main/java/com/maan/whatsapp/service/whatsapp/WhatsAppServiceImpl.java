@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -27,6 +28,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.maan.whatsapp.entity.master.QWAChatRecipientMaster;
+import com.maan.whatsapp.entity.master.QWAChatRecipientMasterPK;
 import com.maan.whatsapp.entity.master.QWAMessageMaster;
 import com.maan.whatsapp.entity.master.QWhatsappTemplateMaster;
 import com.maan.whatsapp.entity.master.QWhatsappTemplateMasterPK;
@@ -41,6 +43,7 @@ import com.maan.whatsapp.entity.whatsapp.WADataDetailPK;
 import com.maan.whatsapp.entity.whatsapp.WhatsappContactData;
 import com.maan.whatsapp.entity.whatsapp.WhatsappRequestDetail;
 import com.maan.whatsapp.entity.whatsapp.WhatsappRequestDetailPK;
+import com.maan.whatsapp.entity.whatsapptemplate.WhatsappChatrecipiantMessageMaster;
 import com.maan.whatsapp.repository.master.WAChatRecipientMasterRepo;
 import com.maan.whatsapp.repository.master.WAMessageMasterRepo;
 import com.maan.whatsapp.repository.master.WhatsappTemplateMasterRepo;
@@ -60,6 +63,8 @@ import com.maan.whatsapp.service.common.CommonService;
 import com.maan.whatsapp.service.motor.MotorServiceImpl;
 import com.maan.whatsapp.service.wati.WatiApiCall;
 import com.maan.whatsapp.service.wati.WatiService;
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Path;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -459,22 +464,22 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 								if (userReply == 0) {
 									nxtMsgId = "COM001";
 								} else {
-									Map<String, Object> map = waChatRepo.getNextMsgId(wdd.getParentmessageid(), userReply);
-	
+									//Map<String, Object> map = waChatRepo.getNextMsgId(wdd.getParentmessageid(), userReply);
+									Map<String, Object> map = (Map<String, Object>) getNextMsgId(wdd.getParentmessageid(), userReply);
 									if (map.size() > 0) {
-										nxtMsgId = map.get("MESSAGEID") == null ? "" : map.get("MESSAGEID").toString();
-										isJob = map.get("ISJOBYN") == null ? "N" : map.get("ISJOBYN").toString();
-										replyMsg = map.get("DESCRIPTION") == null ? "" : map.get("DESCRIPTION").toString();
+										nxtMsgId = map.get("messageid") == null ? "" : map.get("messageid").toString();
+										isJob = map.get("isjobyn") == null ? "N" : map.get("isjobyn").toString();
+										replyMsg = map.get("description") == null ? "" : map.get("description").toString();
 										
 										if (StringUtils.isNotBlank(nxtMsgId)) {
 	
-											Map<String, Object> map2 = waChatRepo.getChatInputs(nxtMsgId);
-	
-											isinput = map2.get("ISINPUT") == null ? "N" : map2.get("ISINPUT").toString();
-											inputValue = map2.get("INPUT_VALUE") == null ? ""
-													: map2.get("INPUT_VALUE").toString();
-											requestKey = map2.get("REQUEST_KEY") == null ? ""
-													: map2.get("REQUEST_KEY").toString();
+											//Map<String, Object> map2 = waChatRepo.getChatInputs(nxtMsgId);
+											Map<String, Object> map2 = getChatInputs(nxtMsgId);
+											isinput = map2.get("isinput") == null ? "N" : map2.get("isinput").toString();
+											inputValue = map2.get("input_value") == null ? ""
+													: map2.get("input_value").toString();
+											requestKey = map2.get("request_key") == null ? ""
+													: map2.get("request_key").toString();
 										}
 									}
 								}
@@ -710,6 +715,101 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 	}
 
 
+	private Map<String, Object> getChatInputs(String nxtMsgId) {
+		try {
+			QWAChatRecipientMaster qchatres = QWAChatRecipientMaster.wAChatRecipientMaster;
+			//QWAChatRecipientMasterPK qchatpk = QWAChatRecipientMasterPK.wAChatRecipientMasterPK;
+			
+			List<Path<?>> allFields = Arrays.asList(
+					qchatres.chatPk.parentmessageid,
+					qchatres.chatPk.messageid,
+					qchatres.description,
+					qchatres.useroptted_messageid,
+					qchatres.validationapi,
+					qchatres.apiusername,
+					qchatres.apipassword,
+					qchatres.requeststring,
+					qchatres.status,
+					qchatres.effectivedate,
+					qchatres.entrydate,
+					qchatres.remarks,
+					qchatres.isjobyn,
+					qchatres.isinput,
+					qchatres.input_value,
+					qchatres.request_key,
+					qchatres.iscommonmsg,
+					qchatres.commonmsgid
+					);
+			
+			Tuple chatmsg =  (Tuple) jpa.from(qchatres)
+					.select(allFields.toArray(new Path<?>[0]))
+					.where(qchatres.chatPk.messageid.eq(nxtMsgId),
+							qchatres.status.equalsIgnoreCase("Y"),
+							qchatres.effectivedate.loe(new Date()),
+							qchatres.useroptted_messageid.notIn(0,9,99)
+							).fetchOne();
+
+			Map<String, Object> resultMap = new HashMap<>();
+			if(chatmsg == null){
+				return resultMap;	
+			}else {
+	        for (Path<?> field : allFields) {
+	            resultMap.put(field.getMetadata().getName(), chatmsg.get(field));
+	        }
+	        return resultMap;
+			}
+		}catch(Exception e) {
+			log.error(e);
+		}
+		return null;
+			}
+
+	private Map<String, Object> getNextMsgId(String parentmessageid, Long userReply) {
+		try {
+			QWAChatRecipientMaster qchatres = QWAChatRecipientMaster.wAChatRecipientMaster;
+			//QWAChatRecipientMasterPK qchatpk = QWAChatRecipientMasterPK.wAChatRecipientMasterPK;
+			
+			List<Path<?>> allFields = Arrays.asList(
+					qchatres.chatPk.parentmessageid,
+					qchatres.chatPk.messageid,
+					qchatres.description,
+					qchatres.useroptted_messageid,
+					qchatres.validationapi,
+					qchatres.apiusername,
+					qchatres.apipassword,
+					qchatres.requeststring,
+					qchatres.status,
+					qchatres.effectivedate,
+					qchatres.entrydate,
+					qchatres.remarks,
+					qchatres.isjobyn,
+					qchatres.isinput,
+					qchatres.input_value,
+					qchatres.request_key,
+					qchatres.iscommonmsg,
+					qchatres.commonmsgid
+					);
+					
+			
+			Tuple chatmsg =  (Tuple) jpa.from(qchatres)
+					.select(allFields.toArray(new Path<?>[0]))
+					.where(qchatres.chatPk.parentmessageid.eq(parentmessageid),
+							qchatres.useroptted_messageid.eq(userReply),
+							qchatres.status.equalsIgnoreCase("Y"),
+							qchatres.effectivedate.loe(new Date())
+							).fetchOne();
+			
+			Map<String, Object> resultMap = new HashMap<>();
+	        for (Path<?> field : allFields) {
+	            resultMap.put(field.getMetadata().getName(), chatmsg.get(field));
+	        }
+	        return resultMap;
+		}catch(Exception e) {
+			log.error(e);
+		}
+		return null;
+			}
+
 	private WAMessageMaster getMsgMasterContent(String msgid) {
 		try {
 
@@ -719,8 +819,15 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 					.where(qwamsgM.messageid.eq(msgid)
 							.and(qwamsgM.status.equalsIgnoreCase("Y")))
 					.fetchOne();*/
+			QWAMessageMaster qwamsgM = QWAMessageMaster.wAMessageMaster;
 			
-			WAMessageMaster wamsgM = wamsgMRepo.getMsgCont(msgid);
+			WAMessageMaster wamsgM = (WAMessageMaster) jpa.select(qwamsgM).from(qwamsgM)
+					.where(qwamsgM.messageid.eq(msgid),
+							qwamsgM.status.equalsIgnoreCase("Y"),
+							qwamsgM.effectivedate.loe(new Date())
+                  ).fetchOne();
+					
+			//WAMessageMaster wamsgM = wamsgMRepo.getMsgCont(msgid);
 
 			return wamsgM;
 		} catch (Exception e) {
@@ -1238,6 +1345,7 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 		return buttonMessage;
 		
 	}
+
 	
 	
 

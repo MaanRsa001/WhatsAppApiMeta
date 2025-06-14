@@ -15,10 +15,10 @@ import com.maan.whatsapp.entity.whatsapp.WhatsappContactData;
 public interface WhatsappContactDataRepo
 		extends JpaRepository<WhatsappContactData, Long>, QuerydslPredicateExecutor<WhatsappContactData> {
 
-	@Query(value = "SELECT WHATSAPPID FROM WHATSAPP_CONTACT_DATA WHERE STATUS='Y' AND SYSTIMESTAMP BETWEEN SESSION_END_TIME -(NUMTODSINTERVAL (30, 'MINUTE')) AND SESSION_END_TIME", nativeQuery = true)
+	@Query(value = "SELECT WHATSAPPID FROM whatsapp_contact_data WHERE STATUS='Y' AND SYSTIMESTAMP BETWEEN SESSION_END_TIME -(NUMTODSINTERVAL (30, 'MINUTE')) AND SESSION_END_TIME", nativeQuery = true)
 	List<Long> getWhatsAppIds();
 
-	@Query(nativeQuery = true,value ="SELECT LANGUAGE FROM WHATSAPP_CONTACT_DATA WHERE STATUS='Y' AND WHATSAPPID=?1")
+	@Query(nativeQuery = true,value ="SELECT LANGUAGE FROM whatsapp_contact_data WHERE STATUS='Y' AND WHATSAPPID=?1")
 	String getLanguage(String mobileNo);
 	
 	

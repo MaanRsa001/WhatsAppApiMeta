@@ -25,7 +25,7 @@ public interface WhatsappTemplateMasterRepo extends JpaRepository<WhatsappTempla
 	@Query(value = "SELECT STATUS FROM CONSTANT_DETAIL WHERE CATEGORY_ID=?1 AND CATEGORY_DETAIL_ID=?2 AND REMARKS=?3", nativeQuery = true)
 	String getStatus(String categoryid, String detailid, String ip);
 
-	@Query(value = "SELECT DISTINCT COUNTRY_MOBILECODE FROM WHATSAPP_MOTOR_COUNTRY_MASTER WHERE STATUS='Y' AND COUNTRY_MOBILECODE IS NOT NULL", nativeQuery = true)
+	@Query(value = "SELECT DISTINCT COUNTRY_MOBILECODE FROM whatsapp_motor_country_master WHERE STATUS='Y' AND COUNTRY_MOBILECODE IS NOT NULL", nativeQuery = true)
 	List<String> getMobCode();
 
 }

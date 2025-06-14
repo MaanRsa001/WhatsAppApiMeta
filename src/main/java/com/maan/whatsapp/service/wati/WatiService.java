@@ -23,5 +23,15 @@ public interface WatiService {
 
 	String storeWAFile(String wafile);
 
+	WAWatiReq sendSessMsgNamibia(WAMessageMaster msgM, Long waid);
+
+	WAWatiReq sendSessMsgBoatswana(WAMessageMaster msgM, Long waid);
+
+	WAWatiReq sendSessMsgMozambique(WAMessageMaster msgM, Long waid);
+
+	WAWatiReq sendSessMsgSwaziland(WAMessageMaster msgM, Long waid);
+
+	WAWatiReq sendSessMsgZambia(WAMessageMaster msgM, Long waid);
+
 
 }

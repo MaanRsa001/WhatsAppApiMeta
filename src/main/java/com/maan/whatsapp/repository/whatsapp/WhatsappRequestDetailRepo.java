@@ -21,7 +21,7 @@ public interface WhatsappRequestDetailRepo extends JpaRepository<WhatsappRequest
 			+ "CURRENT_STAGE=?2 and CURRENT_SUB_STAGE=?3 ",nativeQuery=true)
 	String getMessageText(String mobileNo, String cuStage, String subStage);
 
-	@Query(value="select * from WHATSAPP_REQRES_KEYS where DESCRIPTION ='EMOJI' AND STATUS='Y'",nativeQuery=true)
+	@Query(value="select * from whatsapp_reqres_keys where DESCRIPTION ='EMOJI' AND STATUS='Y'",nativeQuery=true)
 	List<Map<String,Object>> getEmojiDetails();
 
 

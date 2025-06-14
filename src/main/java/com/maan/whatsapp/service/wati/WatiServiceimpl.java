@@ -620,5 +620,466 @@ public class WatiServiceimpl implements WatiService {
 		return "";
 	}
 
+	@Override
+	public WAWatiReq sendSessMsgNamibia(WAMessageMaster msgM, Long waid) {
+		try {
+
+			String url = cs.getwebserviceurlProperty().getProperty("namibia.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("nambia.message.auth");
+
+			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+
+			RequestBody body = RequestBody.create(new byte[0], null);
+			
+			String msgEn = StringUtils.isBlank(msgM.getMessagedescen()) ? "" : msgM.getMessagedescen();
+			String msgAr = StringUtils.isBlank(msgM.getMessagedescar()) ? "" : msgM.getMessagedescar();
+			String interactive_button_yn=StringUtils.isBlank(msgM.getInteractiveButtonYn())?"N":msgM.getInteractiveButtonYn();
+			String language =contactRepo.getLanguage(waid.toString());
+			String msg ="";
+			
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+			
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =msgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(msgM.getFlowToken())?"":msgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(msgM.getRequestdataYn())?"N":msgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(msgM.getFlowApi())?"":msgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(msgM.getFlowApiAuth())?"":msgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(msgM.getFlowApiMethod())?"":msgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(msgM.getFlowId())?"":msgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(msgM.getFlow_index_screen_name())?"":msgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(msgM.getFlowApiRequest())?"":msgM.getFlowApiRequest();
+				}
+				
+				if("English".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1())?"":msgM.getButton_1();
+					button2 =StringUtils.isBlank(msgM.getButton_2())?"":msgM.getButton_2();
+					button3 =StringUtils.isBlank(msgM.getButton_3())?"":msgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonName())?"":msgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonName())?"":msgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonName())?"":msgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name())?"":msgM.getMenu_button_name();
+				}else if("Swahili".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1_sw())?"":msgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(msgM.getButton_2_sw())?"":msgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(msgM.getButton_3_sw())?"":msgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonNameSw())?"":msgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonNameSw())?"":msgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonNameSw())?"":msgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name_sw())?"":msgM.getMenu_button_name_sw();
+
+				}						
+			}
+			WAWatiReq waReq = WAWatiReq.builder()
+					.filepath("")
+					.msg(msg)
+					.interactiveYn(interactive_button_yn)
+					.waid(String.valueOf(waid))
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(msgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
+					.build();
+
+			
+			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
+
+			return response;
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return null;
+
+	}
+
+	@Override
+	public WAWatiReq sendSessMsgBoatswana(WAMessageMaster msgM, Long waid) {
+		try {
+
+			String url = cs.getwebserviceurlProperty().getProperty("boatswana.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("boatswana.message.auth");
+
+			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+
+			RequestBody body = RequestBody.create(new byte[0], null);
+			
+			String msgEn = StringUtils.isBlank(msgM.getMessagedescen()) ? "" : msgM.getMessagedescen();
+			String msgAr = StringUtils.isBlank(msgM.getMessagedescar()) ? "" : msgM.getMessagedescar();
+			String interactive_button_yn=StringUtils.isBlank(msgM.getInteractiveButtonYn())?"N":msgM.getInteractiveButtonYn();
+			String language =contactRepo.getLanguage(waid.toString());
+			String msg ="";
+			
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+			
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =msgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(msgM.getFlowToken())?"":msgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(msgM.getRequestdataYn())?"N":msgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(msgM.getFlowApi())?"":msgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(msgM.getFlowApiAuth())?"":msgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(msgM.getFlowApiMethod())?"":msgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(msgM.getFlowId())?"":msgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(msgM.getFlow_index_screen_name())?"":msgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(msgM.getFlowApiRequest())?"":msgM.getFlowApiRequest();
+				}
+				
+				if("English".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1())?"":msgM.getButton_1();
+					button2 =StringUtils.isBlank(msgM.getButton_2())?"":msgM.getButton_2();
+					button3 =StringUtils.isBlank(msgM.getButton_3())?"":msgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonName())?"":msgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonName())?"":msgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonName())?"":msgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name())?"":msgM.getMenu_button_name();
+				}else if("Swahili".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1_sw())?"":msgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(msgM.getButton_2_sw())?"":msgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(msgM.getButton_3_sw())?"":msgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonNameSw())?"":msgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonNameSw())?"":msgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonNameSw())?"":msgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name_sw())?"":msgM.getMenu_button_name_sw();
+
+				}						
+			}
+			WAWatiReq waReq = WAWatiReq.builder()
+					.filepath("")
+					.msg(msg)
+					.interactiveYn(interactive_button_yn)
+					.waid(String.valueOf(waid))
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(msgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
+					.build();
+
+			
+			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
+
+			return response;
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return null;
+	}
+
+	@Override
+	public WAWatiReq sendSessMsgMozambique(WAMessageMaster msgM, Long waid) {
+		try {
+
+			String url = cs.getwebserviceurlProperty().getProperty("mozambique.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("mozambique.message.auth");
+
+			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+
+			RequestBody body = RequestBody.create(new byte[0], null);
+			
+			String msgEn = StringUtils.isBlank(msgM.getMessagedescen()) ? "" : msgM.getMessagedescen();
+			String msgAr = StringUtils.isBlank(msgM.getMessagedescar()) ? "" : msgM.getMessagedescar();
+			String interactive_button_yn=StringUtils.isBlank(msgM.getInteractiveButtonYn())?"N":msgM.getInteractiveButtonYn();
+			String language =contactRepo.getLanguage(waid.toString());
+			String msg ="";
+			
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+			
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =msgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(msgM.getFlowToken())?"":msgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(msgM.getRequestdataYn())?"N":msgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(msgM.getFlowApi())?"":msgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(msgM.getFlowApiAuth())?"":msgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(msgM.getFlowApiMethod())?"":msgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(msgM.getFlowId())?"":msgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(msgM.getFlow_index_screen_name())?"":msgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(msgM.getFlowApiRequest())?"":msgM.getFlowApiRequest();
+				}
+				
+				if("English".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1())?"":msgM.getButton_1();
+					button2 =StringUtils.isBlank(msgM.getButton_2())?"":msgM.getButton_2();
+					button3 =StringUtils.isBlank(msgM.getButton_3())?"":msgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonName())?"":msgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonName())?"":msgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonName())?"":msgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name())?"":msgM.getMenu_button_name();
+				}else if("Swahili".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1_sw())?"":msgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(msgM.getButton_2_sw())?"":msgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(msgM.getButton_3_sw())?"":msgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonNameSw())?"":msgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonNameSw())?"":msgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonNameSw())?"":msgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name_sw())?"":msgM.getMenu_button_name_sw();
+
+				}						
+			}
+			WAWatiReq waReq = WAWatiReq.builder()
+					.filepath("")
+					.msg(msg)
+					.interactiveYn(interactive_button_yn)
+					.waid(String.valueOf(waid))
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(msgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
+					.build();
+
+			
+			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
+
+			return response;
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return null;
+	}
+
+	@Override
+	public WAWatiReq sendSessMsgSwaziland(WAMessageMaster msgM, Long waid) {
+		try {
+
+			String url = cs.getwebserviceurlProperty().getProperty("swaziland.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("swaziland.message.auth");
+
+			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+
+			RequestBody body = RequestBody.create(new byte[0], null);
+			
+			String msgEn = StringUtils.isBlank(msgM.getMessagedescen()) ? "" : msgM.getMessagedescen();
+			String msgAr = StringUtils.isBlank(msgM.getMessagedescar()) ? "" : msgM.getMessagedescar();
+			String interactive_button_yn=StringUtils.isBlank(msgM.getInteractiveButtonYn())?"N":msgM.getInteractiveButtonYn();
+			String language =contactRepo.getLanguage(waid.toString());
+			String msg ="";
+			
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+			
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =msgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(msgM.getFlowToken())?"":msgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(msgM.getRequestdataYn())?"N":msgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(msgM.getFlowApi())?"":msgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(msgM.getFlowApiAuth())?"":msgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(msgM.getFlowApiMethod())?"":msgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(msgM.getFlowId())?"":msgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(msgM.getFlow_index_screen_name())?"":msgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(msgM.getFlowApiRequest())?"":msgM.getFlowApiRequest();
+				}
+				
+				if("English".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1())?"":msgM.getButton_1();
+					button2 =StringUtils.isBlank(msgM.getButton_2())?"":msgM.getButton_2();
+					button3 =StringUtils.isBlank(msgM.getButton_3())?"":msgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonName())?"":msgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonName())?"":msgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonName())?"":msgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name())?"":msgM.getMenu_button_name();
+				}else if("Swahili".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1_sw())?"":msgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(msgM.getButton_2_sw())?"":msgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(msgM.getButton_3_sw())?"":msgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonNameSw())?"":msgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonNameSw())?"":msgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonNameSw())?"":msgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name_sw())?"":msgM.getMenu_button_name_sw();
+
+				}						
+			}
+			WAWatiReq waReq = WAWatiReq.builder()
+					.filepath("")
+					.msg(msg)
+					.interactiveYn(interactive_button_yn)
+					.waid(String.valueOf(waid))
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(msgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
+					.build();
+
+			
+			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
+
+			return response;
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return null;
+	}
+
+	@Override
+	public WAWatiReq sendSessMsgZambia(WAMessageMaster msgM, Long waid) {
+		try {
+
+			String url = cs.getwebserviceurlProperty().getProperty("zambia.message.api");
+			
+			String auth = cs.getwebserviceurlProperty().getProperty("zambia.message.auth");
+
+			OkHttpClient okhttp = new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS).build();
+
+			RequestBody body = RequestBody.create(new byte[0], null);
+			
+			String msgEn = StringUtils.isBlank(msgM.getMessagedescen()) ? "" : msgM.getMessagedescen();
+			String msgAr = StringUtils.isBlank(msgM.getMessagedescar()) ? "" : msgM.getMessagedescar();
+			String interactive_button_yn=StringUtils.isBlank(msgM.getInteractiveButtonYn())?"N":msgM.getInteractiveButtonYn();
+			String language =contactRepo.getLanguage(waid.toString());
+			String msg ="";
+			
+			msg ="English".equalsIgnoreCase(language)?msgEn:msgAr;
+			
+			
+			String button1 ="",button2="",button3="",flow_id="",flow_token="",flowRequestDataYn ="",
+							flow_api="",flow_api_auth="",flow_api_method ="",flow_button_name="",cta_button_name="",
+							location_button_name="",menu_button_name="",message_type="",flow_index_screen_name="",
+							flow_api_request="";
+			
+			if("Y".equalsIgnoreCase(interactive_button_yn)) {
+				message_type =msgM.getMessageType();
+				if("FLOW".equalsIgnoreCase(message_type)) {
+					flow_token =StringUtils.isBlank(msgM.getFlowToken())?"":msgM.getFlowToken();
+					flowRequestDataYn =StringUtils.isBlank(msgM.getRequestdataYn())?"N":msgM.getRequestdataYn();
+					flow_api =StringUtils.isBlank(msgM.getFlowApi())?"":msgM.getFlowApi();
+					flow_api_auth =StringUtils.isBlank(msgM.getFlowApiAuth())?"":msgM.getFlowApiAuth();
+					flow_api_method =StringUtils.isBlank(msgM.getFlowApiMethod())?"":msgM.getFlowApiMethod();
+					flow_id =StringUtils.isBlank(msgM.getFlowId())?"":msgM.getFlowId();
+					flow_index_screen_name=StringUtils.isBlank(msgM.getFlow_index_screen_name())?"":msgM.getFlow_index_screen_name();
+					flow_api_request =StringUtils.isBlank(msgM.getFlowApiRequest())?"":msgM.getFlowApiRequest();
+				}
+				
+				if("English".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1())?"":msgM.getButton_1();
+					button2 =StringUtils.isBlank(msgM.getButton_2())?"":msgM.getButton_2();
+					button3 =StringUtils.isBlank(msgM.getButton_3())?"":msgM.getButton_3();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonName())?"":msgM.getFlowButtonName();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonName())?"":msgM.getCtaButtonName();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonName())?"":msgM.getLocButtonName();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name())?"":msgM.getMenu_button_name();
+				}else if("Swahili".equalsIgnoreCase(language)) {
+					button1 =StringUtils.isBlank(msgM.getButton_1_sw())?"":msgM.getButton_1_sw();
+					button2 =StringUtils.isBlank(msgM.getButton_2_sw())?"":msgM.getButton_2_sw();
+					button3 =StringUtils.isBlank(msgM.getButton_3_sw())?"":msgM.getButton_3_sw();
+					flow_button_name =StringUtils.isBlank(msgM.getFlowButtonNameSw())?"":msgM.getFlowButtonNameSw();
+					cta_button_name =StringUtils.isBlank(msgM.getCtaButtonNameSw())?"":msgM.getCtaButtonNameSw();
+					location_button_name =StringUtils.isBlank(msgM.getLocButtonNameSw())?"":msgM.getLocButtonNameSw();
+					menu_button_name=StringUtils.isBlank(msgM.getMenu_button_name_sw())?"":msgM.getMenu_button_name_sw();
+
+				}						
+			}
+			WAWatiReq waReq = WAWatiReq.builder()
+					.filepath("")
+					.msg(msg)
+					.interactiveYn(interactive_button_yn)
+					.waid(String.valueOf(waid))
+					.button_1(button1) 
+					.button_2(button2) 
+					.button_3(button3) 
+					.messageId(msgM.getMessageid())
+					.flow_button_name(flow_button_name)
+					.flowApi(flow_api)
+					.flowId(flow_id)
+					.flowToken(flow_token)
+					.flowApiAuth(flow_api_auth)
+					.flowApiMethod(flow_api_method)
+					.flow_requestdata_yn(flowRequestDataYn)
+					.cta_button_name(cta_button_name)
+					.location_button_name(location_button_name)
+					.messageType(message_type)
+					.menu_button_name(menu_button_name)
+					.flow_index_screen_name(flow_index_screen_name)
+					.flow_api_request(flow_api_request)
+					.build();
+
+			
+			WAWatiReq response = watiApiCall.callSendSessionMsg(okhttp, body, url, auth, waReq);
+
+			return response;
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return null;
+	}
+
 	
 }
