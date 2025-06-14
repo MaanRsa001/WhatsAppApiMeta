@@ -77,7 +77,7 @@ public class ApplicationConfig  {
     				"/swagger-resources/**", "/api-docs", "/api-docs/**", "/fonts/**", "/v2/api-docs/**", "/*.html",
     				"/**/*.html", "/*.jpg", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.gif", "/**/*.svg",
     				"/**/*.ico", "/**/*.ttf", "/**/*.woff", "/**/*.woff2", "/**/*.otf", "/whatsappflow/**","/whatsapp/webhook","/whatsapp/webhook/meta/**","/whatsapptemplate/document/download/**",
-    "/insurance/buypolicy/**"};
+    "/insurance/buypolicy/**","/phoenix/whatsapp/webhook/zambia/**","/phoenix/whatsapp/webhook/namibia/**"};
 
     
     @Bean

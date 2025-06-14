@@ -1,0 +1,9 @@
+package com.maan.whatsapp.service.whatsapp;
+
+import com.maan.whatsapp.request.wati.getcont.WebhookReq;
+
+public interface PhoenixMozambiqueWhatsAppService {
+
+	String mozambiqueWebhookRes(WebhookReq webhookReq);
+
+}

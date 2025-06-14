@@ -79,10 +79,15 @@
 		</dependency>
 
 		<!-- db -->
-		<dependency>
+		<!--<dependency>
 			<groupId>com.oracle</groupId>
 			<artifactId>ojdbc8</artifactId>
 			<version>12.2.0.1</version>
+		</dependency> -->
+		<dependency>
+			     <groupId>mysql</groupId>
+			    <artifactId>mysql-connector-java</artifactId>
+			    <version>8.0.33</version> 
 		</dependency>
 
 		<!-- StringUtils -->
