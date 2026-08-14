@@ -25,5 +25,7 @@ public interface InsuranceService {
 	Object generateUgandaQuote(InsuranceReq req)throws WhatsAppValidationException,JsonMappingException, JsonProcessingException ;
 
 	Object generatePayment(InsuranceReq req) throws WhatsAppValidationException, JsonProcessingException;
+
+	Object generateMTPQuote(InsuranceReq req) throws WhatsAppValidationException;
 	
 }

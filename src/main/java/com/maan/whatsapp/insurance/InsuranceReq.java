@@ -20,6 +20,21 @@ public class InsuranceReq {
 	private String mobile_no;
 	
 	private String type;
+	
+	@JsonProperty("RegistrationNo")
+	private String registrationNo;
+	
+	@JsonProperty("ProcessYN")
+	private String processYN;
+	
+	@JsonProperty("IdType")
+	private String idType;
+	
+	@JsonProperty("IdNumber")
+	private String idNumber;
+	
+	
+	
 
 
 }

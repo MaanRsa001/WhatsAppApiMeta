@@ -412,7 +412,7 @@ public class WatiApiCall {
 
 				apiResp = motSer.callMotorApi(detail, waid);
 
-				String url = commonurl + msgurl;
+				String url = commonurl;
 
 				if (StringUtils.isNotBlank(apiResp)) {
 

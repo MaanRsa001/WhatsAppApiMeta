@@ -267,34 +267,64 @@ public class MotorServiceImpl implements MotorService {
 						else if("Swahili".equalsIgnoreCase(language))
 							response = setErrApiResponse(errResString, pojo);	
 						
+						if("CLM050".equalsIgnoreCase(waTempM.getRemarks()) && waTempM.getStage_order() == 2) {
+							WAWatiReq waRequest = WAWatiReq.builder()
+									.filepath("")
+									.msg(response)
+									.waid(String.valueOf(waid))
+									.button_1(button2) 
+									.button_2(button3) 
+									.button_3(null) 
+									.messageId(waTempM.getRemarks())
+									.flow_button_name(flow_button_name)
+									.flowApi(flow_api)
+									.flowId(flow_id)
+									.flowToken(flow_token)
+									.flowApiAuth(flow_api_auth)
+									.flowApiMethod(flow_api_method)
+									.flow_requestdata_yn(flowRequestDataYn)
+									.cta_button_name(cta_button_name)
+									.location_button_name(location_button_name)
+									.messageType(message_type)
+									.menu_button_name(menu_button_name)
+									.interactiveYn(interactive_button_yn)
+									.apiData("N")
+									.isCtaDynamicYn(isCtaDynamicYn)
+									.ctaButtonUrl(ctaButtonUrl)
+									.ctaButtonKeys(ctaButtonkeys)
+									.build();
+							
+							response = cs.reqPrint(waRequest);
+						}else {
+							WAWatiReq waRequest = WAWatiReq.builder()
+									.filepath("")
+									.msg(response)
+									.waid(String.valueOf(waid))
+									.button_1(button1) 
+									.button_2(button2) 
+									.button_3(button3) 
+									.messageId(waTempM.getRemarks())
+									.flow_button_name(flow_button_name)
+									.flowApi(flow_api)
+									.flowId(flow_id)
+									.flowToken(flow_token)
+									.flowApiAuth(flow_api_auth)
+									.flowApiMethod(flow_api_method)
+									.flow_requestdata_yn(flowRequestDataYn)
+									.cta_button_name(cta_button_name)
+									.location_button_name(location_button_name)
+									.messageType(message_type)
+									.menu_button_name(menu_button_name)
+									.interactiveYn(interactive_button_yn)
+									.apiData("N")
+									.isCtaDynamicYn(isCtaDynamicYn)
+									.ctaButtonUrl(ctaButtonUrl)
+									.ctaButtonKeys(ctaButtonkeys)
+									.build();
+							
+							response = cs.reqPrint(waRequest);
+						}
 						
-						WAWatiReq waRequest = WAWatiReq.builder()
-								.filepath("")
-								.msg(response)
-								.waid(String.valueOf(waid))
-								.button_1(button1) 
-								.button_2(button2) 
-								.button_3(button3) 
-								.messageId(waTempM.getRemarks())
-								.flow_button_name(flow_button_name)
-								.flowApi(flow_api)
-								.flowId(flow_id)
-								.flowToken(flow_token)
-								.flowApiAuth(flow_api_auth)
-								.flowApiMethod(flow_api_method)
-								.flow_requestdata_yn(flowRequestDataYn)
-								.cta_button_name(cta_button_name)
-								.location_button_name(location_button_name)
-								.messageType(message_type)
-								.menu_button_name(menu_button_name)
-								.interactiveYn(interactive_button_yn)
-								.apiData("N")
-								.isCtaDynamicYn(isCtaDynamicYn)
-								.ctaButtonUrl(ctaButtonUrl)
-								.ctaButtonKeys(ctaButtonkeys)
-								.build();
-						
-						response = cs.reqPrint(waRequest);
 						
 					}
 					

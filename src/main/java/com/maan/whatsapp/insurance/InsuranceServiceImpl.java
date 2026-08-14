@@ -218,13 +218,44 @@ public class InsuranceServiceImpl implements InsuranceService{
 
 			}
 		}*/
-		 if("AirtelPayNo".equalsIgnoreCase(req.getType())) {
+		 if("PaymentNo".equalsIgnoreCase(req.getType())) {
 			
 			if(!req.getMobile_no().matches("0?[0-9]{9}")) {
-			//	list.add(new Error("Please enter valid mobile number which should be 9 digits","ErrorMsg","500"));
+				list.add(new Error("Please enter valid mobile number which should be 9 digits","ErrorMsg","500"));
 			}
 		}
-		
+		 
+		 if("RegistrationNo".equalsIgnoreCase(req.getType())) {
+			 if(!req.getRegistrationNo().matches("[a-zA-Z0-9]*")){
+				 list.add(new Error("Special character or Whitespace does not allow  for Registration no","ErrorMsg","500")); 
+			 }
+		 }
+		 
+		  if("IDType".equalsIgnoreCase(req.getType())) {
+				
+				Boolean status =ID_TYPES.stream().anyMatch(p ->p.equals(req.getIdType()));
+				if(!status) {
+					list.add(new Error("Please choose valid IDType","ErrorMsg","500"));
+				}
+			} 
+		  if("IDNumber".equalsIgnoreCase(req.getType())) {
+				if(!req.getIdNumber().matches("[a-zA-Z0-9]*")){
+					list.add(new Error("Special character or Whitespace does not allow for IDNumber","ErrorMsg","500"));
+				}
+			}
+		 
+		/* if("CheckMtpProcess".equalsIgnoreCase(req.getType())) {
+			 if(!"yes".equalsIgnoreCase(req.getProcessYN()) && !"no".equalsIgnoreCase(req.getProcessYN())) {
+					list.add(new Error("Please choose valid claim type","ErrorMsg","500"));
+
+				}
+				
+				if("no".equalsIgnoreCase(req.getProcessYN())) {
+					list.add(new Error("No problem! 😊\r\n"
+							+ "Your quotation has not been processed further. Feel free to contact us anytime if you'd like to get another quote or purchase a policy.","ErrorMsg","500"));
+				} 
+		 }*/
+						
 		if(list.size()>0) {
 			throw new WhatsAppValidationException(list);
 		}
@@ -5221,6 +5252,150 @@ public class InsuranceServiceImpl implements InsuranceService{
 		return bot_response_data;
 
 		
+	}
+
+	@Override
+	public Object generateMTPQuote(InsuranceReq req) throws WhatsAppValidationException {
+		   List<Error> list = new ArrayList<>();
+		try {
+			Map<String,Object> frameMtpReq = new HashMap<>();
+			if(StringUtils.isNotBlank(req.getRegistrationNo()) && "SEARCH".equalsIgnoreCase(req.getType())) {
+				
+				frameMtpReq.put("registrationNumber", req.getRegistrationNo());
+				frameMtpReq.put("mode", "SEARCH");
+			}else if(StringUtils.isNotBlank(req.getRegistrationNo()) && "SAVE".equalsIgnoreCase(req.getType())) {
+				String IdType = req.getIdType() == null ? "" : req.getIdType();
+				String IdNum = req.getIdNumber() == null ? "" : req.getIdNumber();
+				String mobNum = req.getMobile_no() == null ? "" : req.getMobile_no();
+				
+				
+				frameMtpReq.put("registrationNumber", req.getRegistrationNo());
+				frameMtpReq.put("mode", "SAVE");
+				frameMtpReq.put("idType", IdType);
+				frameMtpReq.put("idNumber", IdNum);
+				frameMtpReq.put("mobileNumber", mobNum);
+				frameMtpReq.put("title", "1");
+				frameMtpReq.put("gender", "M");
+			}
+			
+			
+			String api_request =mapper.writeValueAsString(frameMtpReq);
+			
+			//String api_response =serviceImpl.callEwayApi(api, api_request);
+			log.info("MTP API REQUEST : "+api_request);
+			Response response = null;
+			Map<String, Object> tokReq = new HashMap<String, Object>();
+			tokReq.put("LoginId", "guest");
+			tokReq.put("Password", "Admin@01");
+			tokReq.put("ReLoginKey", "Y");
+			final TrustManager[] trustAllCerts = new TrustManager[] {
+					new X509TrustManager() {
+						@Override
+						public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
+
+						@Override
+						public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+							return new java.security.cert.X509Certificate[]{};
+						}
+					}
+			};
+			// Install the all-trusting trust manager
+			final SSLContext sslContext = SSLContext.getInstance("SSL");
+			sslContext.init(null, trustAllCerts, new java.security.SecureRandom()); 
+
+			httpClient = new OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager)trustAllCerts[0]).readTimeout(60, TimeUnit.SECONDS)
+					.connectTimeout(60, TimeUnit.SECONDS).build();
+			
+		//	log.info("Token Request ==> "+tokReq.toString());
+			String tokenJsonReq = new Gson().toJson(tokReq);
+			String tokenApi = "http://154.72.81.122:8086/EwayCommonApi/authentication/login";//"http://192.168.1.42:8086/authentication/login";
+			//log.info("Token Api URL ==> "+tokenApi);
+			RequestBody tokenReqBody = RequestBody.create(tokenJsonReq, mediaType);
+			Request tokenReq = new Request.Builder().url(tokenApi).post(tokenReqBody).build();
+			response = httpClient.newCall(tokenReq).execute();
+			String obj = response.body().string();	
+			Map<String, Object> tokenRes = mapper.readValue(obj, Map.class);
+			Map<String, Object> tokenObj = tokenRes.get("Result") == null ? null
+					: (Map<String, Object>) tokenRes.get("Result");
+			String token = tokenObj.get("Token") == null ? "" : tokenObj.get("Token").toString();
+			//log.info("Token Response ==> "+token);
+			RequestBody apiReqBody = RequestBody.create(api_request, mediaType);
+			Request apiReq = new Request.Builder().addHeader("Authorization", "Bearer " + token).url("http://154.72.81.122:8086/EwayCommonApi/api/mtp/process")
+					.post(apiReqBody).build();
+			
+			response = httpClient.newCall(apiReq).execute();
+		String	api_response = response.body().string();
+		
+		log.info("MTP API RESPONSE : "+response);
+		Map<String,Object> getMotorRes =mapper.readValue(api_response, Map.class);
+		 
+		Map<String,Object> motor_res =getMotorRes.get("result")==null?null:(Map<String, Object>) getMotorRes.get("result");
+			 
+		System.out.println(motor_res);
+		
+		if(motor_res != null) {
+			
+			Map<String,Object> mot = motor_res;
+			Map<String,Object>	bot_response_data = new HashMap<>();
+			String returnCode = motor_res.get("returnCode") == null ? "" : motor_res.get("returnCode").toString();
+			
+			List<Map<String,Object>> data = motor_res.get("data")==null?null:
+				mapper.readValue(mapper.writeValueAsString(motor_res.get("data")), List.class);
+			
+			if(data != null) {
+				Map<String,Object> motRes = data.get(0);
+				bot_response_data.put("paymentRequestId", motRes.get("paymentRequestId")==null?"N/A":motRes.get("paymentRequestId"));
+				bot_response_data.put("paymentChannel", motRes.get("paymentChannel")==null?"N/A":motRes.get("paymentChannel"));
+				bot_response_data.put("returnMessage", motRes.get("returnMessage")==null?"N/A":motRes.get("returnMessage"));
+				
+				return bot_response_data;
+			}
+			
+			if(StringUtils.isNotBlank(returnCode) && "0".contentEquals(returnCode)) {
+				
+				bot_response_data.put("registration", mot.get("vehicleNo")==null?"N/A":mot.get("vehicleNo"));
+				//bot_response_data.put("usage", mot.get("MotorUsageDesc")==null?"N/A":mot.get("MotorUsageDesc"));
+				//bot_response_data.put("vehtype", mot.get("VehicleTypeDesc")==null?"N/A":mot.get("VehicleTypeDesc"));
+				//bot_response_data.put("color",mot.get("ColorDesc")==null?"N/A":mot.get("ColorDesc"));
+				bot_response_data.put("insurance_class",mot.get("service")==null?"N/A":mot.get("service"));
+				bot_response_data.put("premium", mot.get("amount")==null?"N/A":mot.get("amount"));
+				//bot_response_data.put("url", paymnetUrl);
+				//bot_response_data.put("vatamt", vatTax);
+				//bot_response_data.put("suminsured", mot.get("SumInsured")==null?"N/A":mot.get("SumInsured"));
+				//bot_response_data.put("chassis", mot.get("Chassisnumber")==null?"N/A":mot.get("Chassisnumber"));
+				//bot_response_data.put("vat", String.valueOf(vatPercentage.longValue()));
+				//bot_response_data.put("totalpremium", totalPremium);
+				//bot_response_data.put("inceptiondate", policy_start_date);
+				//bot_response_data.put("expirydate",policy_end_date);
+				bot_response_data.put("referenceno", mot.get("customerReferenceNo")==null?"N/A":mot.get("customerReferenceNo"));
+				bot_response_data.put("veh_model_desc", mot.get("model")==null?"N/A":mot.get("model"));
+				bot_response_data.put("veh_make_desc", mot.get("make")==null?"N/A":mot.get("make"));
+				bot_response_data.put("customer_name", mot.get("name")==null?"Customer":mot.get("name"));
+				
+				return bot_response_data;
+			}else {
+				String errorMsg = mot.get("rawReturnMessage") == null ? "" : mot.get("rawReturnMessage").toString();
+				
+				list.add(new Error("*"+errorMsg+"*","ErrorMsg","500")); 
+			}
+			
+		}else {
+			list.add(new Error("*The server is currently unavailable. Please try again later.*","ErrorMsg","500")); 
+		}
+		
+		}catch(Exception e) {
+			e.printStackTrace();
+			list.add(new Error("*The server is currently unavailable. Please try again later.*","ErrorMsg","500")); 
+		}
+		finally {
+			if(list.size()>0) {
+				throw new WhatsAppValidationException(list);
+			}
+		}
+		return null;
 	}
 	
 }

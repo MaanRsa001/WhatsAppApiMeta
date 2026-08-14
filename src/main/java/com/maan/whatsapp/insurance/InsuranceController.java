@@ -74,4 +74,9 @@ public class InsuranceController {
 	public Object generatePayment(@RequestBody InsuranceReq req) throws WhatsAppValidationException, JsonProcessingException{
 		return service.generatePayment(req);
 	}
+	
+	@PostMapping("/mtp/quote")
+	public Object mtpQuote(@RequestBody InsuranceReq req) throws WhatsAppValidationException, JsonProcessingException{
+		return service.generateMTPQuote(req);
+	}
 }

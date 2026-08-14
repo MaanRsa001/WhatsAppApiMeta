@@ -573,12 +573,12 @@ public class WhatsAppServiceImpl implements WhatsAppService {
 									isskipped = "Y";
 								}
 															
-								String commonurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api");
+								String commonurl = cs.getwebserviceurlProperty().getProperty("meta.message.api");
 								String msgurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.sendSessionMessage");
 								String fileurl = cs.getwebserviceurlProperty().getProperty("whatsapp.api.sendSessionFile");
 								String button_msg_url = cs.getwebserviceurlProperty().getProperty("whatsapp.api.button");
 								
-								String auth = cs.getwebserviceurlProperty().getProperty("whatsapp.auth");
+								String auth = cs.getwebserviceurlProperty().getProperty("meta.message.api.auth");
 	
 								OkHttpClient okhttp = new OkHttpClient.Builder()
 										.readTimeout(30, TimeUnit.SECONDS)
