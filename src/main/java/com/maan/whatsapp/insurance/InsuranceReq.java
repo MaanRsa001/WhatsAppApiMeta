@@ -33,6 +33,9 @@ public class InsuranceReq {
 	@JsonProperty("IdNumber")
 	private String idNumber;
 	
+	@JsonProperty("waId")
+	private String waId;
+	
 	
 	
 

@@ -5263,6 +5263,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				
 				frameMtpReq.put("registrationNumber", req.getRegistrationNo());
 				frameMtpReq.put("mode", "SEARCH");
+				frameMtpReq.put("waId", req.getWaId());
 			}else if(StringUtils.isNotBlank(req.getRegistrationNo()) && "SAVE".equalsIgnoreCase(req.getType())) {
 				String IdType = req.getIdType() == null ? "" : req.getIdType();
 				String IdNum = req.getIdNumber() == null ? "" : req.getIdNumber();
@@ -5276,6 +5277,7 @@ public class InsuranceServiceImpl implements InsuranceService{
 				frameMtpReq.put("mobileNumber", mobNum);
 				frameMtpReq.put("title", "1");
 				frameMtpReq.put("gender", "M");
+				frameMtpReq.put("waId", req.getWaId());
 			}
 			
 			

@@ -191,6 +191,7 @@ public class MotorServiceImpl implements MotorService {
 					
 				String request = "";
                    log.info("reqString ==>"+reqString +"reqDetList"+reqDetList);
+                   reqString = reqString.replace("{wa_id}", waid);
 				//if(isValidationApi.equalsIgnoreCase("N")) {
 					request = setApiRequest(reqDetList, reqString);
 					request = setApiRequest(waid, request);
